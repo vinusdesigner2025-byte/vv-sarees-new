@@ -1,0 +1,186 @@
+.final-cta-section {
+  width: 100%;
+  padding: 30px 4% 56px;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(224, 169, 80, 0.14),
+      transparent 42%
+    ),
+    linear-gradient(
+      135deg,
+      #f8efe3,
+      #f2dfc6
+    );
+
+  text-align: center;
+}
+
+.final-cta-content {
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.final-cta-tag {
+  display: inline-block;
+  margin-bottom: 10px;
+
+  color: #b58136;
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.final-cta-content h2 {
+  margin: 0;
+
+  color: #432108;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+  font-size: clamp(40px, 5vw, 62px);
+  font-weight: 650;
+  line-height: 1.05;
+
+  white-space: nowrap;
+}
+
+.final-cta-content p {
+  max-width: 620px;
+  margin: 18px auto 0;
+
+  color: #6c523d;
+
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.final-whatsapp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  margin-top: 24px;
+  min-height: 50px;
+  padding: 12px 24px;
+
+  border-radius: 999px;
+
+  background: #22b84b;
+  color: #ffffff;
+
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+
+  box-shadow:
+    0 12px 28px
+      rgba(34, 184, 75, 0.22);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.final-whatsapp-button svg {
+  font-size: 21px;
+}
+
+.final-whatsapp-button:hover {
+  transform: translateY(-3px);
+
+  background: #1fa944;
+
+  box-shadow:
+    0 18px 34px
+      rgba(34, 184, 75, 0.3);
+}
+
+/* =========================
+   Tablet
+========================= */
+
+@media (max-width: 900px) {
+  .final-cta-section {
+    padding: 26px 3% 50px;
+  }
+
+  .final-cta-content h2 {
+    font-size: 42px;
+  }
+}
+
+/* =========================
+   Mobile
+========================= */
+
+@media (max-width: 700px) {
+  .final-cta-section {
+    padding: 14px 10px 34px;
+  }
+
+  .final-cta-content {
+    width: 100%;
+  }
+
+  .final-cta-tag {
+    margin-bottom: 8px;
+
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  .final-cta-content h2 {
+    font-size: clamp(23px, 6.4vw, 28px);
+    line-height: 1.05;
+    letter-spacing: -0.4px;
+
+    white-space: nowrap;
+  }
+
+  .final-cta-content p {
+    max-width: 360px;
+    margin: 13px auto 0;
+
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .final-whatsapp-button {
+    margin-top: 18px;
+    min-height: 42px;
+    padding: 9px 18px;
+
+    font-size: 12px;
+  }
+
+  .final-whatsapp-button svg {
+    font-size: 18px;
+  }
+}
+
+/* =========================
+   Small Mobile
+========================= */
+
+@media (max-width: 380px) {
+  .final-cta-section {
+    padding: 12px 6px 30px;
+  }
+
+  .final-cta-content h2 {
+    font-size: 22px;
+    letter-spacing: -0.6px;
+  }
+
+  .final-cta-content p {
+    font-size: 11px;
+  }
+}

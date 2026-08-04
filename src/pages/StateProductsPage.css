@@ -1,0 +1,361 @@
+.state-products-page {
+  min-height: 100vh;
+  background: #f8efe3;
+}
+
+/* ================= HERO ================= */
+
+.state-products-hero {
+  padding: 70px 5% 60px;
+  text-align: center;
+
+  background:
+    radial-gradient(circle at top,
+      rgba(216,170,87,.18),
+      transparent 45%),
+    #f8efe3;
+}
+
+.state-products-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #7a471d;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+
+  margin-bottom: 22px;
+}
+
+.state-products-tag {
+  display: block;
+
+  color: #b17835;
+
+  font-size: 11px;
+  letter-spacing: 3px;
+  font-weight: 700;
+}
+
+.state-products-hero h1 {
+  margin-top: 10px;
+
+  font-size: clamp(44px,6vw,70px);
+  color:#4a260d;
+
+  font-family:"Cormorant Garamond",serif;
+}
+
+.state-products-hero h2{
+  margin-top:10px;
+
+  font-size:24px;
+  color:#8a5828;
+
+  font-weight:500;
+}
+
+.state-products-hero p{
+  max-width:760px;
+  margin:20px auto 0;
+
+  color:#705844;
+
+  line-height:1.8;
+}
+
+/* ================= CONTAINER ================= */
+
+.state-products-container{
+  width:min(1350px,95%);
+  margin:auto;
+
+  padding-bottom:80px;
+}
+
+/* ================= SECTION ================= */
+
+.state-product-section{
+  margin-top:60px;
+}
+
+.state-product-section-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+
+  margin-bottom:26px;
+}
+
+.state-product-section-heading span{
+  display:block;
+
+  color:#b17835;
+
+  font-size:11px;
+  letter-spacing:2px;
+  font-weight:700;
+}
+
+.state-product-section-heading h2{
+  margin-top:8px;
+
+  font-size:40px;
+  color:#4a260d;
+
+  font-family:"Cormorant Garamond",serif;
+}
+
+.state-view-all-link{
+  color:#7c3d10;
+  text-decoration:none;
+  font-weight:600;
+}
+
+/* ================= GRID ================= */
+
+.state-products-grid{
+  display:grid;
+
+  grid-template-columns:
+      repeat(auto-fit,minmax(270px,1fr));
+
+  gap:28px;
+}
+
+/* ================= CARD ================= */
+
+.state-product-card{
+
+  background:#fffdf9;
+
+  border-radius:24px;
+
+  overflow:hidden;
+
+  border:1px solid rgba(171,112,49,.15);
+
+  transition:.35s;
+
+  box-shadow:
+      0 15px 35px rgba(0,0,0,.08);
+}
+
+.state-product-card:hover{
+
+  transform:translateY(-8px);
+
+  box-shadow:
+      0 25px 55px rgba(0,0,0,.14);
+}
+
+.state-product-image-wrap{
+  position:relative;
+
+  aspect-ratio:4/5;
+
+  background:#efe4d6;
+}
+
+.state-product-image-wrap img{
+
+  width:100%;
+  height:100%;
+
+  object-fit:cover;
+
+  transition:.5s;
+}
+
+.state-product-card:hover img{
+  transform:scale(1.05);
+}
+
+.state-product-placeholder{
+
+  width:100%;
+  height:100%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  color:#7d6047;
+}
+
+.state-product-wishlist{
+
+  position:absolute;
+
+  top:16px;
+  right:16px;
+
+  width:42px;
+  height:42px;
+
+  border:none;
+  border-radius:50%;
+
+  cursor:pointer;
+
+  background:white;
+
+  display:grid;
+  place-items:center;
+
+  font-size:18px;
+
+  box-shadow:0 8px 20px rgba(0,0,0,.08);
+}
+
+/* ================= INFO ================= */
+
+.state-product-info{
+
+  padding:22px;
+}
+
+.state-product-fabric{
+
+  font-size:11px;
+
+  color:#b17835;
+
+  font-weight:700;
+
+  letter-spacing:1px;
+}
+
+.state-product-name{
+
+  text-decoration:none;
+}
+
+.state-product-name h3{
+
+  margin-top:8px;
+
+  color:#4a260d;
+
+  font-size:23px;
+
+  font-family:"Cormorant Garamond",serif;
+}
+
+.state-product-bottom{
+
+  margin-top:22px;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.state-product-bottom small{
+
+  display:block;
+
+  color:#888;
+}
+
+.state-product-bottom strong{
+
+  font-size:23px;
+
+  color:#4a260d;
+}
+
+.state-product-cart{
+
+  padding:11px 18px;
+
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  border:none;
+  border-radius:999px;
+
+  cursor:pointer;
+
+  background:
+      linear-gradient(
+      135deg,
+      #7c3d10,
+      #542406);
+
+  color:white;
+
+  font-weight:600;
+
+  transition:.3s;
+}
+
+.state-product-cart:hover{
+
+  transform:translateY(-2px);
+}
+
+.state-empty-products{
+
+  padding:60px;
+
+  text-align:center;
+
+  background:white;
+
+  border-radius:20px;
+
+  color:#705844;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:768px){
+
+.state-products-hero{
+
+padding:45px 18px;
+}
+
+.state-products-hero h1{
+
+font-size:44px;
+}
+
+.state-products-hero h2{
+
+font-size:19px;
+}
+
+.state-product-section-heading{
+
+flex-direction:column;
+align-items:flex-start;
+
+gap:14px;
+}
+
+.state-product-section-heading h2{
+
+font-size:30px;
+}
+
+.state-products-grid{
+
+grid-template-columns:1fr;
+}
+
+.state-product-name h3{
+
+font-size:20px;
+}
+
+.state-product-bottom strong{
+
+font-size:20px;
+}
+
+}

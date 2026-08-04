@@ -1,0 +1,411 @@
+/* =========================
+   HERO SECTION
+========================= */
+
+.hero-section {
+  position: relative;
+  width: 100%;
+
+  padding: 18px 3% 8px;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(221, 169, 82, 0.14),
+      transparent 42%
+    ),
+    #f8efe3;
+}
+
+/* =========================
+   SOFT DECORATIVE GLOW
+========================= */
+
+.hero-glow {
+  position: absolute;
+
+  width: 360px;
+  height: 360px;
+
+  border-radius: 50%;
+
+  pointer-events: none;
+
+  filter: blur(80px);
+  opacity: 0.22;
+}
+
+.hero-glow-left {
+  top: 6%;
+  left: -180px;
+
+  background: rgba(204, 144, 62, 0.7);
+}
+
+.hero-glow-right {
+  right: -190px;
+  bottom: 0;
+
+  background: rgba(116, 54, 13, 0.44);
+}
+
+/* =========================
+   HERO CARD
+========================= */
+
+.hero-card {
+  position: relative;
+
+  width: min(1400px, 100%);
+  margin: 0 auto;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(171, 112, 49, 0.18);
+  border-radius: 28px;
+
+  background: #ead9c4;
+
+  box-shadow:
+    0 28px 70px rgba(65, 31, 9, 0.17),
+    0 0 38px rgba(216, 170, 87, 0.13);
+
+  animation: heroCardReveal 0.9s ease both;
+}
+
+.hero-image {
+  display: block;
+
+  width: 100%;
+  height: auto;
+
+  object-fit: cover;
+  object-position: center;
+
+  transform-origin: center;
+
+  animation: heroImageReveal 1.15s ease both;
+}
+
+/* =========================
+   EDGE SHADING
+========================= */
+
+.hero-edge-shade {
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(41, 20, 6, 0.07) 0%,
+      transparent 22%,
+      transparent 72%,
+      rgba(47, 22, 6, 0.1) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(53, 25, 7, 0.05),
+      transparent 14%,
+      transparent 86%,
+      rgba(53, 25, 7, 0.05)
+    );
+}
+
+/* =========================
+   SCROLL INDICATOR
+========================= */
+
+.hero-scroll-indicator {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+
+  transform: translateX(-50%);
+
+  color: rgba(255, 248, 235, 0.88);
+
+  text-shadow: 0 2px 10px rgba(34, 15, 4, 0.45);
+
+  pointer-events: none;
+
+  animation: heroScrollReveal 0.7s 0.75s ease both;
+}
+
+.hero-scroll-indicator > span {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.hero-scroll-line {
+  position: relative;
+
+  width: 1px;
+  height: 28px;
+
+  overflow: hidden;
+
+  background: rgba(255, 248, 235, 0.3);
+}
+
+.hero-scroll-line span {
+  position: absolute;
+  top: -100%;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: #f3cf83;
+
+  animation: heroScrollMove 1.8s ease-in-out infinite;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes heroCardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroImageReveal {
+  from {
+    opacity: 0;
+    transform: scale(1.035);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heroScrollReveal {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes heroScrollMove {
+  0% {
+    transform: translateY(0);
+  }
+
+  55% {
+    transform: translateY(200%);
+  }
+
+  100% {
+    transform: translateY(200%);
+  }
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .hero-section {
+    padding: 14px 2% 8px;
+  }
+
+  .hero-card {
+    border-radius: 22px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+  .hero-section {
+    padding: 8px 8px 4px;
+  }
+
+  .hero-card {
+    border-radius: 17px;
+
+    box-shadow:
+      0 18px 38px rgba(65, 31, 9, 0.14),
+      0 0 24px rgba(216, 170, 87, 0.1);
+  }
+
+  .hero-image {
+    width: 100%;
+    height: auto;
+
+    object-fit: contain;
+  }
+
+  .hero-scroll-indicator {
+    bottom: 9px;
+    gap: 4px;
+  }
+
+  .hero-scroll-indicator > span {
+    font-size: 5px;
+    letter-spacing: 1.2px;
+  }
+
+  .hero-scroll-line {
+    height: 18px;
+  }
+
+  .hero-glow {
+    width: 220px;
+    height: 220px;
+
+    filter: blur(60px);
+  }
+}
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-card,
+  .hero-image,
+  .hero-scroll-indicator,
+  .hero-scroll-line span {
+    animation: none;
+  }
+}
+/* =========================================
+   HERO SLIDER
+========================================= */
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-slider-image {
+  animation: hero-slide-reveal 700ms ease both;
+  user-select: none;
+}
+
+@keyframes hero-slide-reveal {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hero-slider-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: white;
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.3s;
+}
+
+.hero-slider-arrow:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.hero-slider-arrow-left {
+  left: 20px;
+}
+
+.hero-slider-arrow-right {
+  right: 20px;
+}
+
+.hero-slider-arrow svg {
+  width: 24px;
+  height: 24px;
+}
+
+.hero-slider-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 20;
+}
+
+.hero-slider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.hero-slider-dot-active {
+  width: 30px;
+  border-radius: 20px;
+  background: white;
+}
+
+@media (max-width: 768px) {
+  .hero-slider-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hero-slider-arrow-left {
+    left: 10px;
+  }
+
+  .hero-slider-arrow-right {
+    right: 10px;
+  }
+
+  .hero-slider-dots {
+    bottom: 12px;
+  }
+}

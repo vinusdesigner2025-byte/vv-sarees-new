@@ -1,0 +1,744 @@
+.retail-cart-page {
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at top center,
+      rgba(221, 174, 93, 0.13),
+      transparent 34%
+    ),
+    linear-gradient(180deg, #fffaf3, #f7eadb);
+}
+
+.retail-cart-container {
+  width: min(1200px, 92%);
+  margin: 0 auto;
+  padding: 48px 0 68px;
+}
+
+/* Heading */
+
+.retail-cart-heading {
+  max-width: 700px;
+  margin: 0 auto 34px;
+
+  text-align: center;
+}
+
+.retail-cart-heading > span {
+  color: #b7833b;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.retail-cart-heading h1 {
+  margin: 9px 0 0;
+
+  color: #432108;
+
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 52px;
+  line-height: 1;
+}
+
+.retail-cart-heading p {
+  max-width: 560px;
+  margin: 15px auto 0;
+
+  color: #775e4b;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Main layout */
+
+.retail-cart-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(310px, 0.75fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.retail-cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Cart item */
+
+.retail-cart-item {
+  padding: 12px;
+
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 18px;
+
+  border: 1px solid rgba(176, 123, 61, 0.2);
+  border-radius: 20px;
+
+  background: #fffaf3;
+
+  box-shadow:
+    0 14px 30px rgba(73, 38, 13, 0.09),
+    0 0 20px rgba(216, 170, 87, 0.1);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.retail-cart-item:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 21px 42px rgba(73, 38, 13, 0.14),
+    0 0 28px rgba(216, 170, 87, 0.17);
+}
+
+.retail-cart-image-wrap {
+  overflow: hidden;
+
+  aspect-ratio: 4 / 5;
+
+  border-radius: 14px;
+
+  background: #ead9c4;
+
+  text-decoration: none;
+}
+
+.retail-cart-image-placeholder {
+  width: 100%;
+  height: 100%;
+
+  display: grid;
+  place-items: center;
+
+  color: #987a61;
+
+  font-size: 11px;
+}
+
+.retail-cart-item-info {
+  min-width: 0;
+  padding: 4px 4px 4px 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.retail-cart-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.retail-cart-item-top h2 {
+  margin: 0;
+
+  color: #432108;
+
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 27px;
+  line-height: 1.05;
+}
+
+.retail-cart-item-top span,
+.retail-cart-item-top small {
+  display: block;
+  margin-top: 5px;
+}
+
+.retail-cart-item-top span {
+  color: #876b55;
+
+  font-size: 11px;
+}
+
+.retail-cart-item-top small {
+  color: #a28a77;
+
+  font-size: 9px;
+}
+
+.retail-cart-remove {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(174, 63, 48, 0.08);
+  color: #a03d31;
+
+  font-size: 17px;
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.retail-cart-remove:hover {
+  transform: scale(1.06);
+  background: rgba(174, 63, 48, 0.15);
+}
+
+/* Stock */
+
+.retail-cart-stock-row {
+  margin-top: 14px;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.retail-cart-stock {
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.retail-cart-stock.in-stock {
+  background: rgba(34, 158, 87, 0.12);
+  color: #167f48;
+}
+
+.retail-cart-stock.out-of-stock {
+  background: rgba(197, 49, 49, 0.12);
+  color: #ad2828;
+}
+
+.retail-cart-stock-row small {
+  color: #846a56;
+
+  font-size: 9px;
+}
+
+/* Price and quantity */
+
+.retail-cart-item-bottom {
+  margin-top: auto;
+  padding-top: 18px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.retail-cart-item-bottom > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.retail-cart-unit-price {
+  color: #8a705b;
+
+  font-size: 10px;
+}
+
+.retail-cart-item-bottom strong {
+  color: #8b4d1d;
+
+  font-family: Georgia, serif;
+  font-size: 21px;
+}
+
+.retail-quantity-control {
+  min-height: 42px;
+  padding: 4px;
+
+  display: grid;
+  grid-template-columns: 34px 38px 34px;
+  align-items: center;
+
+  border: 1px solid rgba(158, 103, 46, 0.25);
+  border-radius: 999px;
+
+  background: #f5e7d6;
+}
+
+.retail-quantity-control button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #fffaf3;
+  color: #6b3410;
+
+  font-size: 14px;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.retail-quantity-control button:hover:not(:disabled) {
+  transform: scale(1.06);
+  background: #ead5bc;
+}
+
+.retail-quantity-control button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.retail-quantity-control span {
+  display: grid;
+  place-items: center;
+
+  color: #4f2d18;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Order summary */
+
+.retail-cart-summary {
+  position: sticky;
+  top: 18px;
+
+  padding: 24px;
+
+  border: 1px solid rgba(176, 123, 61, 0.22);
+  border-radius: 22px;
+
+  background: rgba(255, 251, 245, 0.9);
+
+  box-shadow:
+    0 18px 40px rgba(73, 38, 13, 0.1),
+    0 0 28px rgba(216, 170, 87, 0.14);
+}
+
+.retail-cart-summary h2 {
+  margin: 0 0 22px;
+
+  color: #432108;
+
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.retail-summary-row,
+.retail-summary-total {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.retail-summary-row {
+  margin-top: 13px;
+}
+
+.retail-summary-row span,
+.retail-summary-row strong {
+  font-size: 11px;
+}
+
+.retail-summary-row span {
+  color: #816956;
+}
+
+.retail-summary-row strong {
+  max-width: 160px;
+
+  color: #4b2a15;
+
+  text-align: right;
+}
+
+.retail-summary-divider {
+  width: 100%;
+  height: 1px;
+  margin: 20px 0;
+
+  background: rgba(165, 111, 50, 0.2);
+}
+
+.retail-summary-total span {
+  color: #4b2a15;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.retail-summary-total strong {
+  color: #8b4d1d;
+
+  font-family: Georgia, serif;
+  font-size: 23px;
+}
+
+.retail-checkout-warning {
+  margin-top: 20px;
+  padding: 11px 12px;
+
+  border: 1px solid rgba(190, 121, 30, 0.2);
+  border-radius: 11px;
+
+  background: rgba(219, 152, 54, 0.11);
+  color: #8d5b18;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.retail-checkout-button,
+.retail-cart-primary-button {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 18px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #6b3410;
+  color: #fff8ec;
+
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 24px rgba(107, 52, 16, 0.18),
+    0 0 17px rgba(216, 170, 87, 0.13);
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.retail-checkout-button {
+  margin-top: 16px;
+}
+
+.retail-checkout-button:hover:not(:disabled),
+.retail-cart-primary-button:hover {
+  transform: translateY(-2px);
+  background: #844516;
+
+  box-shadow:
+    0 16px 32px rgba(107, 52, 16, 0.23),
+    0 0 24px rgba(216, 170, 87, 0.24);
+}
+
+.retail-checkout-button:disabled {
+  cursor: not-allowed;
+
+  background: #baa995;
+  color: rgba(255, 255, 255, 0.8);
+
+  box-shadow: none;
+}
+
+.retail-continue-link {
+  display: block;
+  margin-top: 15px;
+
+  color: #77451f;
+
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* Empty state */
+
+.retail-cart-empty {
+  max-width: 570px;
+  margin: 0 auto;
+  padding: 56px 26px;
+
+  border: 1px solid rgba(176, 123, 61, 0.2);
+  border-radius: 24px;
+
+  background: rgba(255, 251, 245, 0.84);
+
+  text-align: center;
+
+  box-shadow:
+    0 16px 36px rgba(73, 38, 13, 0.09),
+    0 0 28px rgba(216, 170, 87, 0.14);
+}
+
+.retail-cart-empty-icon {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #f1dfc8;
+  color: #9a5a24;
+
+  font-size: 31px;
+
+  box-shadow: 0 0 28px rgba(216, 170, 87, 0.24);
+}
+
+.retail-cart-empty h2 {
+  margin: 20px 0 0;
+
+  color: #432108;
+
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 35px;
+}
+
+.retail-cart-empty p {
+  max-width: 370px;
+  margin: 12px auto 23px;
+
+  color: #7b624f;
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.retail-cart-primary-button {
+  width: auto;
+  min-width: 190px;
+}
+
+/* Tablet */
+
+@media (max-width: 950px) {
+  .retail-cart-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .retail-cart-summary {
+    position: static;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .retail-cart-container {
+    width: 94%;
+    padding: 32px 0 46px;
+  }
+
+  .retail-cart-heading {
+    margin-bottom: 24px;
+  }
+
+  .retail-cart-heading > span {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .retail-cart-heading h1 {
+    font-size: 34px;
+  }
+
+  .retail-cart-heading p {
+    max-width: 330px;
+
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .retail-cart-layout {
+    gap: 14px;
+  }
+
+  .retail-cart-item {
+    padding: 8px;
+
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 10px;
+
+    border-radius: 14px;
+  }
+
+  .retail-cart-image-wrap {
+    border-radius: 10px;
+  }
+
+  .retail-cart-item-info {
+    padding-top: 2px;
+  }
+
+  .retail-cart-item-top h2 {
+    font-size: 18px;
+  }
+
+  .retail-cart-item-top span {
+    font-size: 8px;
+  }
+
+  .retail-cart-item-top small {
+    font-size: 7px;
+  }
+
+  .retail-cart-remove {
+    width: 29px;
+    height: 29px;
+
+    font-size: 13px;
+  }
+
+  .retail-cart-stock-row {
+    margin-top: 8px;
+  }
+
+  .retail-cart-stock {
+    padding: 5px 8px;
+
+    font-size: 7px;
+  }
+
+  .retail-cart-stock-row small {
+    font-size: 7px;
+  }
+
+  .retail-cart-item-bottom {
+    padding-top: 10px;
+
+    align-items: center;
+    gap: 8px;
+  }
+
+  .retail-cart-unit-price {
+    font-size: 7px;
+  }
+
+  .retail-cart-item-bottom strong {
+    font-size: 15px;
+  }
+
+  .retail-quantity-control {
+    min-height: 35px;
+    padding: 3px;
+
+    grid-template-columns: 27px 28px 27px;
+  }
+
+  .retail-quantity-control button {
+    width: 27px;
+    height: 27px;
+
+    font-size: 11px;
+  }
+
+  .retail-quantity-control span {
+    font-size: 10px;
+  }
+
+  .retail-cart-summary {
+    padding: 18px 15px;
+
+    border-radius: 16px;
+  }
+
+  .retail-cart-summary h2 {
+    margin-bottom: 17px;
+
+    font-size: 26px;
+  }
+
+  .retail-summary-row {
+    margin-top: 10px;
+  }
+
+  .retail-summary-row span,
+  .retail-summary-row strong {
+    font-size: 9px;
+  }
+
+  .retail-summary-total span {
+    font-size: 10px;
+  }
+
+  .retail-summary-total strong {
+    font-size: 18px;
+  }
+
+  .retail-checkout-warning {
+    font-size: 8px;
+  }
+
+  .retail-checkout-button {
+    min-height: 42px;
+
+    font-size: 9px;
+  }
+
+  .retail-continue-link {
+    font-size: 8px;
+  }
+
+  .retail-cart-empty {
+    padding: 42px 18px;
+
+    border-radius: 17px;
+  }
+
+  .retail-cart-empty-icon {
+    width: 60px;
+    height: 60px;
+
+    font-size: 25px;
+  }
+
+  .retail-cart-empty h2 {
+    font-size: 27px;
+  }
+
+  .retail-cart-empty p {
+    font-size: 10px;
+  }
+}
+.retail-cart-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.retail-cart-name-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.retail-cart-name-link:hover h2 {
+  color: #9a5a24;
+}

@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap");
+@import "tailwindcss";
+.shipping-bar {
+  width: 100%;
+  height: 36px;
+  overflow: hidden;
+  background: linear-gradient(90deg, #4a2105, #a45209, #4a2105);
+  color: #fff7e8;
+  white-space: nowrap;
+}
+
+.shipping-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  animation: shippingScroll 20s linear infinite;
+  will-change: transform;
+}
+
+.shipping-group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 100%;
+}
+
+.shipping-group span {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 100%;
+  padding: 0 38px;
+
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+@keyframes shippingScroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 700px) {
+  .shipping-bar {
+    height: 32px;
+  }
+
+  .shipping-track {
+    animation-duration: 14s;
+  }
+
+  .shipping-group span {
+    padding: 0 25px;
+    font-size: 12px;
+  }
+}
+

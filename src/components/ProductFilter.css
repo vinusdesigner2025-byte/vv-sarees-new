@@ -1,0 +1,579 @@
+/* =========================
+   FILTER WRAPPER
+========================= */
+
+.product-filter {
+  position: relative;
+  z-index: 70;
+}
+
+/* =========================
+   FILTER OPEN BUTTON
+========================= */
+
+.filter-button {
+  min-width: 110px;
+  min-height: 44px;
+  padding: 10px 16px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border: 1px solid rgba(107, 52, 16, 0.18);
+  border-radius: 12px;
+
+  background: #6b3410;
+  color: #fff8ec;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 24px rgba(107, 52, 16, 0.17),
+    0 0 16px rgba(216, 170, 87, 0.11);
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.filter-button svg {
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.filter-button:hover {
+  transform: translateY(-2px);
+
+  background: #844516;
+
+  box-shadow:
+    0 15px 30px rgba(107, 52, 16, 0.22),
+    0 0 22px rgba(216, 170, 87, 0.2);
+}
+
+.filter-button-active {
+  background: #9a5a24;
+}
+
+.filter-chevron-open {
+  transform: rotate(180deg);
+}
+
+/* =========================
+   DARK OVERLAY
+========================= */
+
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+
+  background: rgba(34, 16, 5, 0.52);
+
+  backdrop-filter: blur(5px);
+
+  animation: filterOverlayFade 0.25s ease;
+}
+
+/* =========================
+   FILTER PANEL
+========================= */
+
+.filter-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 220;
+
+  width: min(430px, 92vw);
+  height: 100dvh;
+  padding: 28px 25px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(224, 169, 80, 0.16),
+      transparent 38%
+    ),
+    #fff9f0;
+
+  border-left: 1px solid rgba(171, 113, 50, 0.19);
+
+  box-shadow:
+    -20px 0 50px rgba(52, 24, 6, 0.2),
+    0 0 30px rgba(216, 170, 87, 0.13);
+
+  animation: filterPanelReveal 0.34s ease;
+}
+
+/* =========================
+   PANEL HEADER
+========================= */
+
+.filter-panel-header {
+  position: sticky;
+  top: -28px;
+  z-index: 3;
+
+  margin: -28px -25px 0;
+  padding: 28px 25px 20px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+
+  border-bottom: 1px solid rgba(166, 108, 47, 0.18);
+
+  background: rgba(255, 249, 240, 0.96);
+
+  backdrop-filter: blur(14px);
+}
+
+.filter-panel-header span {
+  color: #b17a39;
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+}
+
+.filter-panel-header h2 {
+  margin: 6px 0 0;
+
+  color: #432108;
+
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.filter-close-button {
+  width: 39px;
+  height: 39px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(107, 52, 16, 0.08);
+  color: #6b3410;
+
+  font-size: 19px;
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.filter-close-button:hover {
+  transform: rotate(6deg) scale(1.05);
+
+  background: rgba(107, 52, 16, 0.14);
+}
+
+/* =========================
+   FILTER FIELD
+========================= */
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-field label {
+  color: #55331c;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.filter-field select,
+.filter-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
+
+  border: 1px solid rgba(155, 99, 43, 0.23);
+  border-radius: 11px;
+  outline: none;
+
+  background: #fffdf8;
+  color: #492813;
+
+  font-family: inherit;
+  font-size: 11px;
+
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.filter-field select {
+  appearance: none;
+
+  padding-right: 38px;
+
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent 50%,
+      #7f4a20 50%
+    ),
+    linear-gradient(
+      135deg,
+      #7f4a20 50%,
+      transparent 50%
+    );
+
+  background-position:
+    calc(100% - 18px) 19px,
+    calc(100% - 13px) 19px;
+
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.filter-field select:focus,
+.filter-field input:focus {
+  border-color: rgba(144, 83, 30, 0.52);
+
+  background-color: #ffffff;
+
+  box-shadow:
+    0 0 0 3px rgba(216, 170, 87, 0.11),
+    0 0 17px rgba(216, 170, 87, 0.12);
+}
+
+/* =========================
+   PRICE RANGE
+========================= */
+
+.filter-price-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.filter-price-grid input {
+  min-width: 0;
+}
+
+/* Remove number input arrows */
+
+.filter-price-grid input::-webkit-inner-spin-button,
+.filter-price-grid input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.filter-price-grid input[type="number"] {
+  appearance: textfield;
+}
+
+/* =========================
+   STOCK CHECKBOX
+========================= */
+
+.filter-stock-option {
+  min-height: 48px;
+  padding: 11px 13px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: 1px solid rgba(155, 99, 43, 0.18);
+  border-radius: 11px;
+
+  background: rgba(255, 253, 248, 0.84);
+
+  cursor: pointer;
+}
+
+.filter-stock-option input {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+
+  accent-color: #6b3410;
+
+  cursor: pointer;
+}
+
+.filter-stock-option span {
+  color: #62432d;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+
+.filter-panel-actions {
+  margin-top: auto;
+  padding-top: 20px;
+
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 10px;
+
+  border-top: 1px solid rgba(166, 108, 47, 0.17);
+}
+
+.filter-clear-button,
+.filter-apply-button {
+  min-height: 46px;
+  padding: 10px 15px;
+
+  border-radius: 999px;
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.filter-clear-button {
+  border: 1px solid rgba(107, 52, 16, 0.25);
+
+  background: transparent;
+  color: #6b3410;
+}
+
+.filter-clear-button:hover {
+  transform: translateY(-2px);
+
+  background: #f4e4d1;
+}
+
+.filter-apply-button {
+  border: none;
+
+  background: #6b3410;
+  color: #fff8ec;
+
+  box-shadow:
+    0 10px 24px rgba(107, 52, 16, 0.18),
+    0 0 16px rgba(216, 170, 87, 0.12);
+}
+
+.filter-apply-button:hover {
+  transform: translateY(-2px);
+
+  background: #844516;
+
+  box-shadow:
+    0 15px 30px rgba(107, 52, 16, 0.23),
+    0 0 22px rgba(216, 170, 87, 0.2);
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+.filter-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filter-panel::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background: rgba(138, 82, 33, 0.27);
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes filterOverlayFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes filterPanelReveal {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+  .filter-button {
+    min-width: 92px;
+    min-height: 40px;
+    padding: 8px 12px;
+
+    border-radius: 10px;
+
+    font-size: 9px;
+  }
+
+  .filter-button svg {
+    font-size: 13px;
+  }
+
+  .filter-panel {
+    width: min(360px, 94vw);
+    padding: 23px 17px;
+    gap: 17px;
+  }
+
+  .filter-panel-header {
+    top: -23px;
+
+    margin: -23px -17px 0;
+    padding: 23px 17px 17px;
+  }
+
+  .filter-panel-header span {
+    font-size: 7px;
+    letter-spacing: 2px;
+  }
+
+  .filter-panel-header h2 {
+    font-size: 31px;
+  }
+
+  .filter-close-button {
+    width: 34px;
+    height: 34px;
+
+    font-size: 17px;
+  }
+
+  .filter-field {
+    gap: 6px;
+  }
+
+  .filter-field label {
+    font-size: 9px;
+  }
+
+  .filter-field select,
+  .filter-field input {
+    min-height: 42px;
+    padding: 8px 10px;
+
+    border-radius: 9px;
+
+    font-size: 9px;
+  }
+
+  .filter-field select {
+    padding-right: 34px;
+
+    background-position:
+      calc(100% - 16px) 17px,
+      calc(100% - 11px) 17px;
+  }
+
+  .filter-price-grid {
+    gap: 7px;
+  }
+
+  .filter-stock-option {
+    min-height: 43px;
+    padding: 9px 10px;
+
+    border-radius: 9px;
+  }
+
+  .filter-stock-option input {
+    width: 15px;
+    height: 15px;
+  }
+
+  .filter-stock-option span {
+    font-size: 9px;
+  }
+
+  .filter-panel-actions {
+    position: sticky;
+    bottom: -23px;
+    z-index: 3;
+
+    margin: 0 -17px -23px;
+    padding: 15px 17px 23px;
+
+    background: rgba(255, 249, 240, 0.97);
+
+    backdrop-filter: blur(14px);
+  }
+
+  .filter-clear-button,
+  .filter-apply-button {
+    min-height: 41px;
+
+    font-size: 8px;
+  }
+}
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-overlay,
+  .filter-panel {
+    animation: none;
+  }
+
+  .filter-button,
+  .filter-clear-button,
+  .filter-apply-button,
+  .filter-close-button {
+    transition: none;
+  }
+}

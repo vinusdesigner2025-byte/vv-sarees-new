@@ -1,0 +1,760 @@
+.shop-section {
+  position: relative;
+
+  width: 100%;
+  padding: 12px 5% 95px;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 15% 15%,
+      rgba(215, 165, 86, 0.15),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 85% 75%,
+      rgba(118, 55, 14, 0.1),
+      transparent 34%
+    ),
+    #f8efe3;
+}
+
+/* =========================
+   HEADING
+========================= */
+
+.shop-heading {
+  margin: 0 auto 24px;
+
+  text-align: center;
+}
+
+.shop-tag {
+  color: #b27a39;
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.shop-heading h2 {
+  margin: 10px 0 0;
+
+  color: #4a260d;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: clamp(38px, 5vw, 58px);
+  font-weight: 650;
+  line-height: 1;
+}
+
+.shop-heading p {
+  max-width: 470px;
+  margin: 15px auto 0;
+
+  color: #8a6c55;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* =========================
+   GRID
+========================= */
+
+.shop-grid {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 28px;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.shop-card {
+  position: relative;
+
+  min-height: 570px;
+  padding: 34px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+  isolation: isolate;
+
+  border:
+    1px solid
+    rgba(169, 111, 50, 0.2);
+  border-radius: 28px;
+
+  box-shadow:
+    0 25px 55px
+      rgba(66, 31, 8, 0.13),
+    inset 0 1px 0
+      rgba(255, 255, 255, 0.75);
+
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.shop-card-wholesale {
+  background:
+    linear-gradient(
+      155deg,
+      #fffdf9 0%,
+      #f9ecda 42%,
+      #edcc98 100%
+    );
+}
+
+.shop-card-retail {
+  background:
+    linear-gradient(
+      155deg,
+      #fffdfa 0%,
+      #f8ece2 44%,
+      #e9c9b2 100%
+    );
+}
+
+.shop-card:hover {
+  transform: translateY(-9px);
+
+  border-color:
+    rgba(164, 101, 39, 0.38);
+
+  box-shadow:
+    0 35px 75px
+      rgba(66, 31, 8, 0.2),
+    0 0 32px
+      rgba(213, 163, 82, 0.18),
+    inset 0 1px 0
+      rgba(255, 255, 255, 0.82);
+}
+
+.card-heading,
+.card-description,
+.feature-list,
+.card-footer,
+.shop-card-badge {
+  position: relative;
+  z-index: 2;
+}
+
+/* =========================
+   GLOW
+========================= */
+
+.shop-card-shine {
+  position: absolute;
+  top: -90px;
+  left: -90px;
+  z-index: 0;
+
+  width: 270px;
+  height: 250px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 228, 174, 0.72);
+
+  filter: blur(62px);
+  opacity: 0.82;
+
+  pointer-events: none;
+}
+
+.shop-card-glow {
+  position: absolute;
+  right: -85px;
+  bottom: -85px;
+  z-index: 0;
+
+  width: 250px;
+  height: 250px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(176, 108, 37, 0.32);
+
+  filter: blur(58px);
+  opacity: 0.72;
+
+  pointer-events: none;
+}
+
+/* =========================
+   BADGE
+========================= */
+
+.shop-card-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  padding: 6px 11px;
+
+  border:
+    1px solid
+    rgba(132, 72, 24, 0.16);
+  border-radius: 999px;
+
+  background:
+    rgba(255, 250, 241, 0.56);
+
+  color: #8b552a;
+
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+
+  backdrop-filter: blur(8px);
+}
+
+/* =========================
+   CARD HEADING
+========================= */
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.card-main-icon {
+  width: 55px;
+  height: 55px;
+
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  border:
+    1px solid
+    rgba(146, 86, 31, 0.2);
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #7b3c10,
+      #522407
+    );
+
+  color: #f2cb7b;
+
+  font-size: 24px;
+
+  box-shadow:
+    0 12px 26px
+      rgba(78, 35, 7, 0.19),
+    0 0 18px
+      rgba(215, 165, 86, 0.15);
+}
+
+.card-type-label {
+  color: #aa7436;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.card-heading h2 {
+  margin: 4px 0 0;
+
+  color: #4a260d;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: 35px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.heading-line {
+  width: 52px;
+  height: 2px;
+  margin-top: 10px;
+
+  display: block;
+
+  background:
+    linear-gradient(
+      90deg,
+      #9a5a24,
+      transparent
+    );
+}
+
+.card-description {
+  max-width: 420px;
+  margin: 24px 0 0;
+
+  color: #765a44;
+
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+/* =========================
+   FEATURES
+========================= */
+
+.feature-list {
+  margin-top: 28px;
+
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 13px;
+}
+
+.feature-row {
+  min-height: 58px;
+  padding: 11px 13px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border:
+    1px solid
+    rgba(151, 92, 37, 0.13);
+  border-radius: 14px;
+
+  background:
+    rgba(255, 252, 246, 0.52);
+
+  color: #604028;
+
+  font-size: 10px;
+  font-weight: 650;
+
+  backdrop-filter: blur(8px);
+}
+
+.feature-icon {
+  width: 32px;
+  height: 32px;
+
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
+  background:
+    rgba(137, 77, 27, 0.1);
+
+  color: #94541f;
+
+  font-size: 15px;
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+.card-footer {
+  margin-top: auto;
+  padding-top: 30px;
+}
+
+.order-note {
+  padding: 14px 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  border:
+    1px solid
+    rgba(147, 88, 34, 0.17);
+  border-radius: 14px;
+
+  background:
+    rgba(255, 250, 242, 0.55);
+}
+
+.order-note strong {
+  color: #5d3215;
+
+  font-size: 10px;
+}
+
+.order-note span {
+  color: #8e6849;
+
+  font-size: 9px;
+}
+
+.card-button {
+  width: 100%;
+  min-height: 49px;
+  margin-top: 15px;
+  padding: 10px 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7c3d10,
+      #542406
+    );
+
+  color: #fff8ec;
+
+  text-decoration: none;
+
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.4px;
+
+  box-shadow:
+    0 14px 28px
+      rgba(83, 37, 7, 0.2),
+    0 0 20px
+      rgba(219, 169, 84, 0.14);
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+  .shop-section {
+    padding: 6px 7px 38px;
+
+    background:
+      radial-gradient(
+        circle at 10% 18%,
+        rgba(220, 164, 75, 0.2),
+        transparent 33%
+      ),
+      radial-gradient(
+        circle at 90% 84%,
+        rgba(128, 57, 13, 0.14),
+        transparent 38%
+      ),
+      #f8efe3;
+  }
+
+  /* Heading only */
+
+  .shop-heading {
+    margin: 0 auto 18px;
+    padding: 0 8px;
+  }
+
+  .shop-tag {
+    display: block;
+    margin-bottom: 7px;
+
+    font-size: 7px;
+    letter-spacing: 2px;
+  }
+
+  .shop-heading h2 {
+    max-width: 340px;
+    margin: 0 auto;
+
+    font-size:
+      clamp(23px, 6.4vw, 28px);
+    line-height: 1.02;
+  }
+
+  .shop-heading p {
+    display: none;
+  }
+
+  /* Two cards */
+
+  .shop-grid {
+    width: 100%;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    align-items: start;
+    gap: 7px;
+  }
+
+  .shop-card {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 12px 8px 9px;
+
+    border-radius: 17px;
+
+    box-shadow:
+      0 18px 38px
+        rgba(61, 28, 7, 0.15),
+      0 0 24px
+        rgba(214, 163, 82, 0.12),
+      inset 0 1px 0
+        rgba(255, 255, 255, 0.82);
+
+    will-change:
+      transform,
+      opacity;
+  }
+
+  .shop-card:hover {
+    transform: none;
+
+    border-color:
+      rgba(169, 111, 50, 0.2);
+
+    box-shadow:
+      0 18px 38px
+        rgba(61, 28, 7, 0.15),
+      0 0 24px
+        rgba(214, 163, 82, 0.12),
+      inset 0 1px 0
+        rgba(255, 255, 255, 0.82);
+  }
+
+  .shop-card-badge {
+    top: 8px;
+    right: 7px;
+
+    max-width: 82px;
+    padding: 3px 5px;
+
+    overflow: hidden;
+
+    font-size: 4.5px;
+    letter-spacing: 0.35px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shop-card-shine {
+    top: -55px;
+    left: -55px;
+
+    width: 150px;
+    height: 150px;
+
+    filter: blur(37px);
+  }
+
+  .shop-card-glow {
+    right: -55px;
+    bottom: -55px;
+
+    width: 155px;
+    height: 155px;
+
+    filter: blur(39px);
+  }
+
+  .card-heading {
+    padding-top: 15px;
+
+    gap: 6px;
+  }
+
+  .card-main-icon {
+    width: 33px;
+    height: 33px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+  }
+
+  .card-type-label {
+    display: block;
+
+    font-size: 4.8px;
+    letter-spacing: 0.8px;
+  }
+
+  .card-heading h2 {
+    margin-top: 3px;
+
+    font-size:
+      clamp(17px, 4.6vw, 21px);
+    line-height: 0.95;
+  }
+
+  .heading-line {
+    width: 27px;
+    height: 1px;
+    margin-top: 6px;
+  }
+
+  .card-description {
+    width: 100%;
+    margin-top: 7px;
+
+    font-size: 6.7px;
+    line-height: 1.4;
+  }
+
+  .feature-list {
+    margin-top: 7px;
+
+    gap: 4px;
+  }
+
+  .feature-row {
+    min-width: 0;
+    min-height: 35px;
+    padding: 4px;
+
+    gap: 4px;
+
+    border-radius: 9px;
+
+    background:
+      rgba(255, 252, 246, 0.7);
+
+    font-size: 5.7px;
+    line-height: 1.15;
+  }
+
+  .feature-icon {
+    width: 20px;
+    height: 20px;
+
+    border-radius: 6px;
+
+    font-size: 9px;
+  }
+
+  .feature-row > span:last-child {
+    min-width: 0;
+
+    overflow-wrap: anywhere;
+  }
+
+  .card-footer {
+    margin-top: 7px;
+    padding-top: 0;
+  }
+
+  .order-note {
+    padding: 5px;
+
+    gap: 2px;
+
+    border-radius: 9px;
+  }
+
+  .order-note strong {
+    font-size: 6px;
+  }
+
+  .order-note span {
+    font-size: 5.2px;
+    line-height: 1.2;
+  }
+
+  .card-button {
+    min-height: 30px;
+    margin-top: 4px;
+    padding: 5px 6px;
+
+    gap: 4px;
+
+    font-size: 6px;
+    letter-spacing: 0;
+  }
+
+  .card-button svg {
+    font-size: 9px;
+  }
+}
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 380px) {
+  .shop-section {
+    padding-inline: 5px;
+  }
+
+  .shop-grid {
+    gap: 5px;
+  }
+
+  .shop-card {
+    padding-inline: 7px;
+
+    border-radius: 15px;
+  }
+
+  .shop-card-badge {
+    display: none;
+  }
+
+  .card-heading {
+    padding-top: 4px;
+  }
+
+  .card-heading h2 {
+    font-size: 17px;
+  }
+
+  .card-description {
+    font-size: 6.3px;
+  }
+
+  .feature-row {
+    min-height: 33px;
+
+    font-size: 5.2px;
+  }
+
+  .order-note span {
+    font-size: 4.8px;
+  }
+
+  .card-button {
+    font-size: 5.6px;
+  }
+}
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-card,
+  .card-button {
+    transition: none;
+  }
+}

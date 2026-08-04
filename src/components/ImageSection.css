@@ -1,0 +1,57 @@
+.image-section{
+    height:120vh;
+    position:relative;
+    overflow:hidden;
+    background:#f7efe3;
+}
+
+/* Common */
+.left-image,
+.right-image{
+    position:absolute;
+    bottom:0;
+
+    height:68vh;   /* rendu image-um ore height */
+
+    width:auto;
+    object-fit:contain;
+}
+
+/* Left */
+.left-image{
+    left:28;
+    height: 60vh;
+    
+}
+
+/* Right */
+.right-image{
+    right:28;
+      height: 42vh;
+}
+.image-pair {
+  position: absolute;
+  inset: 0;
+}
+
+.pair-two {
+  z-index: 3;
+}
+
+.second-left-image,
+.second-right-image {
+  position: absolute;
+  bottom: 0;
+  width: auto;
+  object-fit: contain;
+}
+
+.second-left-image {
+  left: 0;
+  height: 58vh;
+}
+
+.second-right-image {
+  right: 0;
+  height: 50vh;
+}

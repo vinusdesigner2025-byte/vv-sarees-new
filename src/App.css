@@ -1,0 +1,61 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #f8efe3;
+  font-family: "Poppins", sans-serif;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 100px;
+  color: #5b3415;
+}
+.shipping-bar {
+  width: 100%;
+  overflow: hidden;
+  background: linear-gradient(90deg, #4a2000, #b35400);
+  color: #fff7e8;
+  white-space: nowrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.shipping-track {
+  display: flex;
+  width: max-content;
+  animation: shippingMarquee 18s linear infinite;
+}
+
+.shipping-track span {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 34px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+@keyframes shippingMarquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 700px) {
+  .shipping-track {
+    animation-duration: 13s;
+  }
+
+  .shipping-track span {
+    padding: 8px 24px;
+    font-size: 12px;
+  }
+}

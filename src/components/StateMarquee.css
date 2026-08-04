@@ -1,0 +1,551 @@
+.state-section {
+  position: relative;
+
+  width: 100%;
+  padding: 58px 0 68px;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 8% 12%,
+      rgba(218, 168, 87, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 92% 84%,
+      rgba(118, 55, 14, 0.1),
+      transparent 34%
+    ),
+    #f8efe3;
+}
+
+/* =========================
+   EDITORIAL HEADING
+========================= */
+
+.state-heading {
+  width: min(1180px, 92%);
+  margin: 0 auto 34px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.state-heading-content {
+  text-align: left;
+}
+
+.state-heading-tag {
+  display: block;
+
+  color: #b17835;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}
+
+.state-heading h2 {
+  margin: 10px 0 0;
+
+  color: #4a260d;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: clamp(46px, 5.3vw, 68px);
+  font-weight: 650;
+  line-height: 0.88;
+  letter-spacing: -0.8px;
+}
+
+.state-heading-accent {
+  width: 86px;
+  height: 86px;
+
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  border: 1px solid rgba(157, 96, 40, 0.18);
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      rgba(255, 255, 255, 0.8),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      #f5e4ca,
+      #e6bd83
+    );
+
+  color: #754016;
+
+  font-size: 30px;
+
+  box-shadow:
+    0 18px 38px rgba(65, 31, 9, 0.12),
+    0 0 24px rgba(214, 163, 82, 0.1);
+
+  position: relative;
+}
+
+.state-heading-accent span {
+  position: absolute;
+
+  width: 100px;
+  height: 1px;
+
+  right: 72px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(157, 96, 40, 0.38)
+    );
+}
+
+/* =========================
+   MARQUEE
+========================= */
+
+.state-marquee {
+  position: relative;
+
+  width: 100%;
+  margin-top: 16px;
+
+  overflow: hidden;
+}
+
+.state-track {
+  width: max-content;
+
+  display: flex;
+  align-items: center;
+
+  will-change: transform;
+}
+
+.state-group {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  gap: 16px;
+  padding-right: 16px;
+}
+
+.state-track-left {
+  animation:
+    stateMoveLeft
+    28s
+    linear
+    infinite;
+}
+
+.state-track-right {
+  animation:
+    stateMoveRight
+    30s
+    linear
+    infinite;
+}
+
+.state-marquee:hover .state-track {
+  animation-play-state: paused;
+}
+
+/* =========================
+   EDGE FADE
+========================= */
+
+.state-edge {
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  z-index: 5;
+
+  width: 95px;
+
+  pointer-events: none;
+
+  backdrop-filter: blur(1.5px);
+}
+
+.state-edge-left {
+  left: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      #f8efe3 5%,
+      rgba(248, 239, 227, 0.78) 42%,
+      transparent
+    );
+}
+
+.state-edge-right {
+  right: 0;
+
+  background:
+    linear-gradient(
+      270deg,
+      #f8efe3 5%,
+      rgba(248, 239, 227, 0.78) 42%,
+      transparent
+    );
+}
+
+/* =========================
+   STATE CARD
+========================= */
+
+.state-card {
+  position: relative;
+
+  width: 330px;
+  aspect-ratio: 1.48 / 1;
+
+  display: block;
+  flex-shrink: 0;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(160, 99, 42, 0.2);
+  border-radius: 22px;
+
+  background: #ead7be;
+
+  text-decoration: none;
+
+  box-shadow:
+    0 18px 40px rgba(65, 31, 9, 0.13),
+    0 0 20px rgba(214, 163, 82, 0.08);
+
+  transform: translateZ(0);
+
+  transition:
+    transform 0.38s ease,
+    border-color 0.38s ease,
+    box-shadow 0.38s ease;
+}
+
+.state-card img {
+  position: relative;
+  z-index: 1;
+
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+
+  transition:
+    transform 0.6s ease,
+    filter 0.4s ease;
+}
+
+.state-card-glow {
+  position: absolute;
+  right: -50px;
+  bottom: -60px;
+  z-index: 2;
+
+  width: 150px;
+  height: 150px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(207, 143, 58, 0.2);
+
+  filter: blur(42px);
+  opacity: 0;
+
+  pointer-events: none;
+
+  transition: opacity 0.4s ease;
+}
+
+.state-card::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.2) 48%,
+      transparent 66%
+    );
+
+  transform: translateX(-130%);
+
+  pointer-events: none;
+
+  transition: transform 0.85s ease;
+}
+
+.state-card:hover {
+  transform:
+    translateY(-8px)
+    scale(1.018);
+
+  border-color:
+    rgba(160, 99, 42, 0.36);
+
+  box-shadow:
+    0 30px 58px rgba(65, 31, 9, 0.19),
+    0 0 30px rgba(214, 163, 82, 0.15);
+}
+
+.state-card:hover img {
+  transform: scale(1.035);
+
+  filter:
+    saturate(1.04)
+    contrast(1.02);
+}
+
+.state-card:hover::after {
+  transform: translateX(130%);
+}
+
+.state-card:hover .state-card-glow {
+  opacity: 1;
+}
+
+/* =========================
+   SEAMLESS ANIMATION
+========================= */
+
+@keyframes stateMoveLeft {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes stateMoveRight {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .state-section {
+    padding: 48px 0 58px;
+  }
+
+  .state-heading {
+    margin-bottom: 28px;
+  }
+
+  .state-heading h2 {
+    font-size: clamp(40px, 6vw, 56px);
+  }
+
+  .state-heading-accent {
+    width: 72px;
+    height: 72px;
+
+    font-size: 25px;
+  }
+
+  .state-heading-accent span {
+    width: 70px;
+    right: 60px;
+  }
+
+  .state-card {
+    width: 255px;
+
+    border-radius: 18px;
+  }
+
+  .state-group {
+    gap: 12px;
+    padding-right: 12px;
+  }
+
+  .state-edge {
+    width: 55px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+  .state-section {
+    padding: 34px 0 44px;
+  }
+
+  .state-heading {
+    width: calc(100% - 24px);
+    margin-bottom: 22px;
+
+    align-items: center;
+    gap: 12px;
+  }
+
+  .state-heading-tag {
+    font-size: 6.5px;
+    letter-spacing: 1.55px;
+  }
+
+  .state-heading h2 {
+    margin-top: 7px;
+
+    font-size: clamp(30px, 8.8vw, 40px);
+    line-height: 0.92;
+    letter-spacing: -0.45px;
+  }
+
+  .state-heading-accent {
+    width: 49px;
+    height: 49px;
+
+    font-size: 18px;
+
+    box-shadow:
+      0 11px 23px rgba(65, 31, 9, 0.1),
+      0 0 15px rgba(214, 163, 82, 0.07);
+  }
+
+  .state-heading-accent span {
+    display: none;
+  }
+
+  .state-marquee {
+    margin-top: 9px;
+  }
+
+  .state-group {
+    gap: 8px;
+    padding-right: 8px;
+  }
+
+  .state-card {
+    width: 170px;
+
+    border-radius: 13px;
+
+    box-shadow:
+      0 10px 22px rgba(65, 31, 9, 0.11),
+      0 0 12px rgba(214, 163, 82, 0.06);
+  }
+
+  .state-track-left {
+    animation-duration: 21s;
+  }
+
+  .state-track-right {
+    animation-duration: 23s;
+  }
+
+  .state-edge {
+    width: 23px;
+
+    backdrop-filter: blur(1px);
+  }
+
+  .state-card:hover {
+    transform: none;
+
+    border-color:
+      rgba(160, 99, 42, 0.2);
+
+    box-shadow:
+      0 10px 22px rgba(65, 31, 9, 0.11),
+      0 0 12px rgba(214, 163, 82, 0.06);
+  }
+
+  .state-card:hover img {
+    transform: none;
+    filter: none;
+  }
+
+  .state-card::after,
+  .state-card-glow {
+    display: none;
+  }
+}
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 380px) {
+  .state-heading {
+    width: calc(100% - 18px);
+  }
+
+  .state-heading h2 {
+    font-size: 29px;
+  }
+
+  .state-heading-accent {
+    width: 44px;
+    height: 44px;
+
+    font-size: 16px;
+  }
+
+  .state-card {
+    width: 150px;
+  }
+
+  .state-group {
+    gap: 7px;
+    padding-right: 7px;
+  }
+}
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .state-track-left,
+  .state-track-right {
+    animation: none;
+  }
+
+  .state-card,
+  .state-card img,
+  .state-card::after,
+  .state-card-glow {
+    transition: none;
+  }
+}

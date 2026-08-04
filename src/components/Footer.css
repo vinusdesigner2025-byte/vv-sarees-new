@@ -1,0 +1,1050 @@
+.site-footer {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at top center,
+      rgba(197, 130, 42, 0.12),
+      transparent 34%
+    ),
+    linear-gradient(135deg, #160a03, #241006 55%, #130801);
+
+  color: #eadbc6;
+}
+
+.site-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(
+      rgba(230, 170, 83, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(230, 170, 83, 0.025) 1px,
+      transparent 1px
+    );
+
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+
+.footer-container {
+  position: relative;
+  z-index: 2;
+
+  width: min(1240px, 92%);
+  margin: 0 auto;
+  padding: 64px 0 46px;
+
+  display: grid;
+  grid-template-columns: 1.35fr 0.8fr 0.95fr 1.1fr;
+  gap: 42px;
+}
+
+.footer-brand {
+  max-width: 330px;
+}
+
+.footer-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-logo {
+  width: 54px;
+  height: 54px;
+
+  object-fit: contain;
+}
+
+.footer-logo-wrap h2 {
+  margin: 0;
+
+  color: #e2ad59;
+
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.footer-logo-wrap span {
+  display: block;
+  margin-top: 4px;
+
+  color: rgba(234, 219, 198, 0.58);
+
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.footer-tagline {
+  margin: 22px 0 0;
+
+  color: #e1ab58;
+
+  font-family: Georgia, serif;
+  font-size: 20px;
+}
+
+.footer-description {
+  margin: 13px 0 0;
+
+  color: rgba(234, 219, 198, 0.7);
+
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.footer-column h3 {
+  margin: 0 0 20px;
+
+  color: #e1ab58;
+
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 21px;
+  font-weight: 650;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-links a {
+  width: fit-content;
+
+  color: rgba(234, 219, 198, 0.72);
+
+  text-decoration: none;
+  font-size: 13px;
+
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.footer-links a:hover {
+  color: #e4b15e;
+  transform: translateX(4px);
+}
+
+.footer-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.footer-contact-list a,
+.footer-contact-list div {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  color: rgba(234, 219, 198, 0.72);
+
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.footer-contact-list svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  color: #d8a24c;
+  font-size: 16px;
+}
+
+.footer-socials {
+  margin-top: 24px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-socials a {
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(224, 169, 80, 0.3);
+  border-radius: 50%;
+
+  color: #e5b15c;
+
+  font-size: 17px;
+  text-decoration: none;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.footer-socials a:hover {
+  transform: translateY(-3px) scale(1.08);
+  color: #ffffff;
+}
+
+.footer-socials .instagram:hover {
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+  border-color: transparent;
+}
+
+.footer-socials .facebook:hover {
+  background: #1877f2;
+  border-color: transparent;
+}
+
+.footer-socials .youtube:hover {
+  background: #ff0000;
+  border-color: transparent;
+}
+
+.footer-socials .whatsapp:hover {
+  background: #22b84b;
+  border-color: transparent;
+}
+
+.footer-bottom {
+  position: relative;
+  z-index: 2;
+
+  width: min(1240px, 92%);
+  margin: 0 auto;
+  padding: 20px 0;
+
+  border-top: 1px solid rgba(224, 169, 80, 0.18);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.footer-bottom p,
+.footer-bottom span {
+  margin: 0;
+
+  color: rgba(234, 219, 198, 0.56);
+
+  font-size: 11px;
+}
+
+/* Tablet */
+
+@media (max-width: 980px) {
+  .footer-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .footer-container {
+    width: 92%;
+    padding: 42px 0 30px;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 18px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .footer-logo-wrap {
+    justify-content: center;
+  }
+
+  .footer-logo {
+    width: 45px;
+    height: 45px;
+  }
+
+  .footer-logo-wrap h2 {
+    font-size: 27px;
+  }
+
+  .footer-tagline {
+    margin-top: 16px;
+    font-size: 17px;
+  }
+
+  .footer-description {
+    max-width: 340px;
+    margin: 10px auto 0;
+
+    font-size: 11px;
+  }
+
+  .footer-column h3 {
+    margin-bottom: 14px;
+
+    font-size: 17px;
+  }
+
+  .footer-links {
+    gap: 9px;
+  }
+
+  .footer-links a,
+  .footer-contact-list a,
+  .footer-contact-list div {
+    font-size: 10px;
+  }
+
+  .footer-contact-column {
+    grid-column: 1 / -1;
+  }
+
+  .footer-socials {
+    margin-top: 18px;
+  }
+
+  .footer-socials a {
+    width: 34px;
+    height: 34px;
+
+    font-size: 15px;
+  }
+
+  .footer-bottom {
+    padding: 16px 0;
+
+    flex-direction: column;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .footer-bottom p,
+  .footer-bottom span {
+    font-size: 9px;
+  }
+}
+/* Desktop default */
+
+.footer-mobile {
+  display: none;
+}
+
+/* =========================
+   MOBILE ACCORDION FOOTER
+========================= */
+
+@media (max-width: 700px) {
+  .footer-desktop {
+    display: none;
+  }
+
+  .footer-mobile {
+    position: relative;
+
+    width: 100%;
+    padding: 22px 16px 0;
+
+    display: block;
+    overflow: hidden;
+
+    background:
+      radial-gradient(
+        circle at 90% 82%,
+        rgba(135, 31, 54, 0.38),
+        transparent 31%
+      ),
+      #050505;
+
+    color: #ffffff;
+  }
+
+  .footer-mobile-brand {
+    padding: 8px 0 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    text-align: left;
+  }
+
+  .footer-mobile-logo {
+    width: 50px;
+    height: 50px;
+
+    object-fit: contain;
+  }
+
+  .footer-mobile-brand h2 {
+    margin: 0;
+
+    color: #e3a53d;
+
+    font-family:
+      "Cormorant Garamond",
+      Georgia,
+      serif;
+    font-size: 25px;
+    font-weight: 650;
+    line-height: 1;
+  }
+
+  .footer-mobile-brand span {
+    display: block;
+    margin-top: 5px;
+
+    color: rgba(255, 255, 255, 0.65);
+
+    font-size: 6px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .footer-accordion {
+    border-top: 1px solid
+      rgba(169, 42, 51, 0.75);
+  }
+
+  .footer-accordion:last-of-type {
+    border-bottom: 1px solid
+      rgba(169, 42, 51, 0.75);
+  }
+
+  .footer-accordion summary {
+    min-height: 64px;
+    padding: 0 3px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .footer-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .footer-accordion summary span {
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+  }
+
+  .footer-accordion summary svg {
+    flex-shrink: 0;
+
+    color: rgba(255, 255, 255, 0.85);
+
+    font-size: 16px;
+
+    transition: transform 0.3s ease;
+  }
+
+  .footer-accordion[open] summary svg {
+    transform: rotate(180deg);
+  }
+
+  .footer-accordion-content {
+    padding: 0 3px 18px;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .footer-accordion-content a {
+    min-height: 35px;
+
+    display: flex;
+    align-items: center;
+
+    color: rgba(255, 255, 255, 0.76);
+
+    font-size: 10px;
+    text-decoration: none;
+  }
+
+  .footer-accordion-content a:hover {
+    color: #e3a53d;
+  }
+
+  .footer-mobile-contact {
+    padding: 0 3px 20px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .footer-mobile-contact > a,
+  .footer-mobile-contact > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    color: rgba(255, 255, 255, 0.76);
+
+    font-size: 10px;
+    text-decoration: none;
+  }
+
+  .footer-mobile-contact svg {
+    flex-shrink: 0;
+
+    color: #e3a53d;
+
+    font-size: 15px;
+  }
+
+  .footer-mobile-socials {
+    margin-top: 7px;
+
+    display: flex;
+    gap: 9px;
+  }
+
+  .footer-mobile-socials a {
+    width: 36px;
+    height: 36px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid
+      rgba(227, 165, 61, 0.42);
+    border-radius: 50%;
+
+    color: #e3a53d;
+  }
+
+  .footer-newsletter {
+    padding: 0 3px 20px;
+
+    display: flex;
+    gap: 8px;
+  }
+
+  .footer-newsletter input {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 10px 12px;
+
+    border: 1px solid
+      rgba(227, 165, 61, 0.3);
+    border-radius: 8px;
+    outline: none;
+
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+
+    font-size: 9px;
+  }
+
+  .footer-newsletter input::placeholder {
+    color: rgba(255, 255, 255, 0.48);
+  }
+
+  .footer-newsletter button {
+    min-height: 42px;
+    padding: 9px 14px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #7a3410;
+    color: #ffffff;
+
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .footer-mobile-art {
+    position: relative;
+
+    min-height: 235px;
+    margin: 0 -16px;
+    padding: 155px 18px 22px;
+
+    overflow: hidden;
+
+    text-align: center;
+  }
+
+  .footer-mobile-decoration {
+    position: absolute;
+    right: -35px;
+    bottom: -35px;
+
+    width: 290px;
+    height: 235px;
+
+    border-radius: 52% 0 0 0;
+
+    background:
+      radial-gradient(
+        circle at 55% 46%,
+        rgba(152, 63, 79, 0.58),
+        rgba(91, 26, 42, 0.36) 50%,
+        transparent 72%
+      );
+
+    opacity: 0.82;
+
+    pointer-events: none;
+  }
+
+  .footer-mobile-art::before {
+    content: "VV";
+
+    position: absolute;
+    right: 25px;
+    bottom: 48px;
+
+    color: rgba(227, 165, 61, 0.16);
+
+    font-family:
+      "Cormorant Garamond",
+      Georgia,
+      serif;
+    font-size: 135px;
+    font-weight: 700;
+    line-height: 1;
+
+    pointer-events: none;
+  }
+
+  .footer-mobile-art p,
+  .footer-mobile-art span {
+    position: relative;
+    z-index: 2;
+  }
+
+  .footer-mobile-art p {
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .footer-mobile-art span {
+    display: block;
+    margin-top: 8px;
+
+    color: #e3a53d;
+
+    font-family:
+      "Cormorant Garamond",
+      Georgia,
+      serif;
+    font-size: 14px;
+  }
+}
+/* ========================================
+   FOOTER FONT + MOBILE BOTTOM GAP FIX
+======================================== */
+
+/* Footer full typography */
+.site-footer,
+.site-footer a,
+.site-footer button,
+.site-footer input {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+}
+
+/* Desktop headings */
+.footer-brand h2,
+.footer-column h3 {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-weight: 600;
+}
+
+/* Mobile logo title */
+.footer-mobile-brand h2 {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Small logo subtitle */
+.footer-mobile-brand span {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+/* Accordion headings */
+.footer-accordion summary span {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Accordion links and contact details */
+.footer-accordion-content a,
+.footer-mobile-contact a,
+.footer-mobile-contact > div {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* Newsletter */
+.footer-newsletter input,
+.footer-newsletter button {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: 17px;
+}
+
+/*/* =========================================
+   MOBILE FOOTER
+========================================= */
+
+.footer-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  .footer-mobile {
+    display: block;
+
+    background: #060606;
+
+    padding: 30px 22px 28px;
+
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ==========================
+      BRAND
+  ========================== */
+
+  .footer-mobile-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    margin-bottom: 26px;
+  }
+
+  .footer-mobile-logo {
+    width: 58px;
+    height: auto;
+  }
+
+  .footer-mobile-brand h2 {
+    margin: 0;
+
+    color: #d89539;
+
+    font-family: "Playfair Display", serif;
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .footer-mobile-brand span {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #d2b58d;
+
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ==========================
+      ACCORDION
+  ========================== */
+
+  .footer-accordion {
+    border-top: 1px solid rgba(199, 122, 36, .35);
+  }
+
+  .footer-accordion:last-of-type {
+    border-bottom: 1px solid rgba(199, 122, 36, .35);
+  }
+
+  .footer-accordion summary {
+    list-style: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 22px 2px;
+
+    cursor: pointer;
+  }
+
+  .footer-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .footer-accordion summary span {
+
+    font-family: "Inter", sans-serif;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+    text-transform: uppercase;
+
+    color: #fff;
+  }
+
+  .footer-accordion summary svg {
+    color: #d9d9d9;
+    font-size: 18px;
+
+    transition: .3s;
+  }
+
+  .footer-accordion[open] summary svg {
+    transform: rotate(180deg);
+  }
+
+  /* ==========================
+      CONTENT
+  ========================== */
+
+  .footer-accordion-content,
+  .footer-mobile-contact {
+
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    padding: 0 0 20px;
+  }
+
+  .footer-accordion-content a,
+  .footer-mobile-contact a,
+  .footer-mobile-contact div {
+
+    color: #d5d5d5;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ==========================
+      SOCIAL
+  ========================== */
+
+  .footer-mobile-socials {
+
+    display: flex;
+    gap: 14px;
+
+    margin-top: 8px;
+  }
+
+  .footer-mobile-socials a {
+
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.05);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #fff;
+
+    transition: .3s;
+  }
+
+  .footer-mobile-socials a:hover {
+
+    background: #b46b17;
+  }
+
+  /* ==========================
+      NEWSLETTER
+  ========================== */
+
+  .footer-newsletter {
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    padding-bottom: 22px;
+  }
+
+  .footer-newsletter input {
+
+    height: 46px;
+
+    border: 1px solid rgba(255,255,255,.12);
+
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.04);
+
+    color: white;
+
+    padding: 0 15px;
+
+    outline: none;
+  }
+
+  .footer-newsletter button {
+
+    height: 46px;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    background: #8d4700;
+
+    color: white;
+
+    font-weight: 600;
+
+    cursor: pointer;
+  }
+
+  /* ==========================
+      BOTTOM
+  ========================== */
+
+  .footer-mobile-art {
+
+    margin-top: 28px;
+
+    padding-top: 26px;
+
+    border-top: 1px solid rgba(255,255,255,.08);
+
+    text-align: center;
+
+    position: relative;
+
+    overflow: hidden;
+  }
+
+  .footer-mobile-decoration {
+
+    position: absolute;
+
+    right: -35px;
+    bottom: -35px;
+
+    width: 210px;
+    height: 210px;
+
+    border-radius: 50%;
+
+    background: radial-gradient(
+      rgba(183,62,62,.22),
+      transparent 70%
+    );
+  }
+
+  .footer-mobile-art p {
+
+    margin: 0;
+
+    color: #fff;
+
+    font-size: 13px;
+
+    position: relative;
+    z-index: 2;
+  }
+
+  .footer-mobile-art span {
+
+    display: block;
+
+    margin-top: 10px;
+
+    color: #d89539;
+
+    font-family: "Playfair Display", serif;
+
+    font-size: 24px;
+
+    position: relative;
+    z-index: 2;
+  }
+
+}
