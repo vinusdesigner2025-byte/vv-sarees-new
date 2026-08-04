@@ -31,6 +31,8 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 
 import AdminLayout from "./admin/layout/AdminLayout";
+import ProtectedAdminRoute from "./admin/components/ProtectedAdminRoute";
+
 import AdminLogin from "./admin/pages/AdminLogin";
 import Dashboard from "./admin/pages/Dashboard";
 import Products from "./admin/pages/Products";
@@ -68,7 +70,8 @@ function AdminComingSoon({
     <div
       style={{
         padding: "32px",
-        border: "1px solid rgba(110, 61, 25, 0.1)",
+        border:
+          "1px solid rgba(110, 61, 25, 0.1)",
         borderRadius: "18px",
         background: "#ffffff",
         boxShadow:
@@ -228,87 +231,91 @@ export default function App() {
         element={<AdminLogin />}
       />
 
-      {/* ADMIN PANEL */}
+      {/* PROTECTED ADMIN PANEL */}
 
       <Route
-        path="/admin"
-        element={<AdminLayout />}
+        element={<ProtectedAdminRoute />}
       >
         <Route
-          index
-          element={
-            <Navigate
-              to="dashboard"
-              replace
-            />
-          }
-        />
+          path="/admin"
+          element={<AdminLayout />}
+        >
+          <Route
+            index
+            element={
+              <Navigate
+                to="dashboard"
+                replace
+              />
+            }
+          />
 
-        <Route
-          path="dashboard"
-          element={<Dashboard />}
-        />
+          <Route
+            path="dashboard"
+            element={<Dashboard />}
+          />
 
-        <Route
-          path="products"
-          element={<Products />}
-        />
+          <Route
+            path="products"
+            element={<Products />}
+          />
 
-        <Route
-          path="products/new"
-          element={<NewProduct />}
-        />
+          <Route
+            path="products/new"
+            element={<NewProduct />}
+          />
 
-        <Route
-          path="categories"
-          element={<Categories />}
-        />
+          <Route
+            path="categories"
+            element={<Categories />}
+          />
 
-        <Route
-          path="collections"
-          element={<Collections />}
-        />
+          <Route
+            path="collections"
+            element={<Collections />}
+          />
 
-        <Route
-          path="orders"
-          element={<Orders />}
-        />
+          <Route
+            path="orders"
+            element={<Orders />}
+          />
 
-        <Route
-          path="customers"
-          element={<Customers />}
-        />
+          <Route
+            path="customers"
+            element={<Customers />}
+          />
 
-        <Route
-          path="website/home"
-          element={
-            <AdminComingSoon title="Home Content" />
-          }
-        />
+          <Route
+            path="website/home"
+            element={
+              <AdminComingSoon title="Home Content" />
+            }
+          />
 
-        <Route
-          path="media"
-          element={<MediaLibrary />}
-        />
+          <Route
+            path="media"
+            element={<MediaLibrary />}
+          />
 
-        <Route
-          path="coupons"
-          element={
-            <AdminComingSoon title="Coupons" />
-          }
-        />
+          <Route
+            path="coupons"
+            element={
+              <AdminComingSoon title="Coupons" />
+            }
+          />
 
-        <Route
-          path="reviews"
-          element={
-            <AdminComingSoon title="Reviews" />
-          }
-        />
+          <Route
+            path="reviews"
+            element={
+              <AdminComingSoon title="Reviews" />
+            }
+          />
 
-        <Route
-          path="settings"
-          element={<Settings />}
-        />
+          <Route
+            path="settings"
+            element={<Settings />}
+          />
+        </Route>
       </Route>
 
       {/* INVALID URL */}
