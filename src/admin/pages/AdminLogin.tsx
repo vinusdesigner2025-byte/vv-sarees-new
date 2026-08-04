@@ -9,13 +9,17 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { supabase } from "../../lib/supabase";
-
 import "../css/AdminLogin.css";
 
 type LoginLocationState = {
   from?: string;
 };
+
+const ADMIN_EMAIL =
+  "admin@vvsarees.com";
+
+const ADMIN_PASSWORD =
+  "123456";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -33,9 +37,6 @@ export default function AdminLogin() {
   const [error, setError] =
     useState("");
 
-  const [message, setMessage] =
-    useState("");
-
   const redirectPath =
     (
       location.state as
@@ -44,124 +45,58 @@ export default function AdminLogin() {
     )?.from ?? "/admin/dashboard";
 
   useEffect(() => {
-    const checkExistingSession =
-      async () => {
-        const {
-          data: { session },
-        } =
-          await supabase.auth.getSession();
+    const hasAdminSession =
+      localStorage.getItem(
+        "vv-admin-session"
+      ) === "true";
 
-        if (session) {
-          navigate(
-            "/admin/dashboard",
-            {
-              replace: true,
-            }
-          );
+    if (hasAdminSession) {
+      navigate(
+        "/admin/dashboard",
+        {
+          replace: true,
         }
-      };
-
-    void checkExistingSession();
+      );
+    }
   }, [navigate]);
 
-  const handleLogin = async (
+  const handleLogin = (
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setError("");
-    setMessage("");
+    setIsLoading(true);
 
     const cleanedEmail =
       email.trim().toLowerCase();
 
-    if (
-      !cleanedEmail ||
-      !password
-    ) {
-      setError(
-        "Please enter email and password."
-      );
-      return;
-    }
+    window.setTimeout(() => {
+      if (
+        cleanedEmail ===
+          ADMIN_EMAIL &&
+        password ===
+          ADMIN_PASSWORD
+      ) {
+        localStorage.setItem(
+          "vv-admin-session",
+          "true"
+        );
 
-    setIsLoading(true);
-
-    const { error:
-      loginError } =
-      await supabase.auth
-        .signInWithPassword({
-          email: cleanedEmail,
-          password,
+        navigate(redirectPath, {
+          replace: true,
         });
 
-    if (loginError) {
-      console.error(
-        "Admin login error:",
-        loginError
-      );
+        return;
+      }
 
       setError(
         "Invalid email or password."
       );
 
       setIsLoading(false);
-      return;
-    }
-
-    navigate(redirectPath, {
-      replace: true,
-    });
+    }, 400);
   };
-
-  const handleForgotPassword =
-    async () => {
-      setError("");
-      setMessage("");
-
-      const cleanedEmail =
-        email.trim().toLowerCase();
-
-      if (!cleanedEmail) {
-        setError(
-          "First enter your admin email."
-        );
-        return;
-      }
-
-      setIsLoading(true);
-
-      const { error:
-        resetError } =
-        await supabase.auth
-          .resetPasswordForEmail(
-            cleanedEmail,
-            {
-              redirectTo:
-                `${window.location.origin}/admin/reset-password`,
-            }
-          );
-
-      if (resetError) {
-        console.error(
-          "Password reset error:",
-          resetError
-        );
-
-        setError(
-          `Reset email send aagala: ${resetError.message}`
-        );
-
-        setIsLoading(false);
-        return;
-      }
-
-      setMessage(
-        "Password reset link email-ku anupirukom."
-      );
-
-      setIsLoading(false);
-    };
 
   return (
     <div className="admin-login-page">
@@ -228,21 +163,6 @@ export default function AdminLogin() {
             </div>
           )}
 
-          {message && (
-            <div
-              style={{
-                marginBottom: "14px",
-                padding: "10px 12px",
-                borderRadius: "8px",
-                background: "#eef9f1",
-                color: "#1f7a3d",
-                fontSize: "12px",
-              }}
-            >
-              {message}
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={isLoading}
@@ -250,25 +170,6 @@ export default function AdminLogin() {
             {isLoading
               ? "Signing in..."
               : "Login"}
-          </button>
-
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() =>
-              void handleForgotPassword()
-            }
-            style={{
-              marginTop: "12px",
-              border: "none",
-              background:
-                "transparent",
-              color: "#7a401d",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
-          >
-            Forgot Password?
           </button>
         </form>
       </div>
