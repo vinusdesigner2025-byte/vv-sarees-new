@@ -30,8 +30,8 @@ import Policies from "./pages/Policies";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 
-import AdminLayout from "./admin/layout/AdminLayout";
 import ProtectedAdminRoute from "./admin/components/ProtectedAdminRoute";
+import AdminLayout from "./admin/layout/AdminLayout";
 
 import AdminLogin from "./admin/pages/AdminLogin";
 import Dashboard from "./admin/pages/Dashboard";
@@ -224,7 +224,7 @@ export default function App() {
         element={<Contact />}
       />
 
-      {/* ADMIN LOGIN */}
+      {/* ADMIN LOGIN — PUBLIC */}
 
       <Route
         path="/admin/login"

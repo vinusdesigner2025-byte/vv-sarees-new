@@ -1,9 +1,14 @@
 import {
   FiBell,
+  FiLogOut,
   FiMenu,
   FiSearch,
   FiUser,
 } from "react-icons/fi";
+
+import { useNavigate } from "react-router-dom";
+
+import { supabase } from "../../lib/supabase";
 
 import "../css/AdminTopbar.css";
 
@@ -14,6 +19,16 @@ type AdminTopbarProps = {
 export default function AdminTopbar({
   onMenuClick,
 }: AdminTopbarProps) {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+
+    navigate("/admin/login", {
+      replace: true,
+    });
+  };
+
   return (
     <header className="admin-topbar">
       <div className="admin-topbar-left">
@@ -62,6 +77,15 @@ export default function AdminTopbar({
             <span>VV Sarees</span>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="admin-notification-button"
+          title="Logout"
+        >
+          <FiLogOut />
+        </button>
       </div>
     </header>
   );
