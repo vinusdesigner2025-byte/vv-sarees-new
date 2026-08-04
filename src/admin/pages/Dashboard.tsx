@@ -602,7 +602,7 @@ export default function Dashboard() {
         <div>
           <h1>
             {getGreeting()},
-            Vinodhini 👋
+           👋
           </h1>
 
           <p>
