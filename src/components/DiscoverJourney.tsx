@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FiArrowUpRight, FiPlay } from "react-icons/fi";
+import { FiArrowUpRight } from "react-icons/fi";
 
 import journeyImage from "../assets/journey-screen.jpeg";
 
@@ -15,7 +15,7 @@ export default function DiscoverJourney() {
         <Link
           to="/journey"
           className="discover-journey-media"
-          aria-label="Watch the VV Sarees journey"
+          aria-label="View the VV Sarees journey"
         >
           <img
             src={journeyImage}
@@ -28,14 +28,6 @@ export default function DiscoverJourney() {
             aria-hidden="true"
           />
 
-          <span
-            className="discover-journey-play"
-            aria-hidden="true"
-          >
-            <FiPlay />
-          </span>
-
-          {/* Mobile cinematic text */}
           <div className="journey-mobile-caption">
             <span>From Our Travels</span>
 

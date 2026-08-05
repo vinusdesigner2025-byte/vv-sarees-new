@@ -239,6 +239,67 @@ function createSlug(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+
+async function uploadImageSafely({
+  file,
+  folder,
+}: {
+  file: File;
+  folder: string;
+}) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (session) {
+    const { error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    if (refreshError) {
+      console.warn(
+        "Old Supabase session removed before upload:",
+        refreshError
+      );
+
+      await supabase.auth.signOut({
+        scope: "local",
+      });
+    }
+  }
+
+  try {
+    const uploaded = await uploadWebsiteImage({
+      file,
+      folder,
+    });
+
+    console.log("Website image upload success:", {
+      folder,
+      path: uploaded.path,
+      publicUrl: uploaded.publicUrl,
+    });
+
+    return uploaded;
+  } catch (error) {
+    console.error("Website image upload failed:", {
+      folder,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      error,
+    });
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown upload error";
+
+    throw new Error(
+      `Image upload failed (${folder}): ${message}`
+    );
+  }
+}
+
 export default function MediaLibrary() {
   const { refreshMedia } = useWebsiteMedia();
 
@@ -419,7 +480,7 @@ export default function MediaLibrary() {
 
     try {
       setUploadingKey(slot.key);
-      const uploaded = await uploadWebsiteImage({
+      const uploaded = await uploadImageSafely({
         file,
         folder: `${slot.section}/${slot.slotKey}`,
       });
@@ -556,7 +617,7 @@ export default function MediaLibrary() {
 
     try {
       setUploadingKey(key);
-      const uploaded = await uploadWebsiteImage({
+      const uploaded = await uploadImageSafely({
         file,
         folder: `states/${state.slug}`,
       });
@@ -673,7 +734,7 @@ export default function MediaLibrary() {
 
     try {
       setUploadingKey(uploadKey);
-      const uploaded = await uploadWebsiteImage({
+      const uploaded = await uploadImageSafely({
         file,
         folder: `hero/${slide.localId}/${imageType}`,
       });
@@ -900,6 +961,11 @@ export default function MediaLibrary() {
   const saveStateImages = async () => {
     for (let index = 0; index < media.stateImages.length; index += 1) {
       const state = media.stateImages[index];
+
+      if (!state.url && !state.databaseId) {
+        continue;
+      }
+
       const payload = {
         section: "states",
         slot_key: state.slug,
@@ -941,7 +1007,9 @@ export default function MediaLibrary() {
       await saveStateImages();
       await loadMedia();
       await refreshMedia();
-      setSavedMessage("Website images saved successfully.");
+      setSavedMessage(
+        "Website images saved successfully. Homepage refresh pannina changes varum."
+      );
       window.setTimeout(() => setSavedMessage(""), 3000);
     } catch (error) {
       console.error("Website media save failed:", error);
