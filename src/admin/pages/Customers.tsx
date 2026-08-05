@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -11,6 +12,8 @@ import {
   FiUsers,
   FiX,
 } from "react-icons/fi";
+
+import { supabase } from "../../lib/supabase";
 
 import "../css/Customers.css";
 
@@ -45,6 +48,23 @@ type CustomerFilter =
   | "all"
   | CustomerType;
 
+type OrderRow = {
+  id: string;
+  order_number: string;
+  order_type: CustomerType;
+  customer_name: string;
+  phone: string;
+  email: string | null;
+  grand_total: number;
+  order_status: string;
+  address_line_1: string;
+  address_line_2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  created_at: string;
+};
+
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -52,15 +72,32 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-export default function Customers() {
-  /*
-    Supabase connect pannumbodhu real customers
-    inga fetch panni setCustomers-la save pannuvom.
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 
-    Dummy customers intentionally add pannala.
-  */
-  const [customers] =
+const getCustomerKey = (order: OrderRow) => {
+  const email = order.email?.trim().toLowerCase();
+
+  if (email) {
+    return `email:${email}`;
+  }
+
+  return `phone:${order.phone.trim()}`;
+};
+
+export default function Customers() {
+  const [customers, setCustomers] =
     useState<Customer[]>([]);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
 
   const [searchTerm, setSearchTerm] =
     useState("");
@@ -72,6 +109,92 @@ export default function Customers() {
     selectedCustomer,
     setSelectedCustomer,
   ] = useState<Customer | null>(null);
+
+  const loadCustomers = async () => {
+    setIsLoading(true);
+    setLoadError("");
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select(`
+        id,
+        order_number,
+        order_type,
+        customer_name,
+        phone,
+        email,
+        grand_total,
+        order_status,
+        address_line_1,
+        address_line_2,
+        city,
+        state,
+        pincode,
+        created_at
+      `)
+      .neq("order_status", "cancelled")
+      .order("created_at", {
+        ascending: false,
+      });
+
+    if (error) {
+      console.error("Customers load error:", error);
+      setLoadError(`Customers load aagala: ${error.message}`);
+      setCustomers([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const orders = (data ?? []) as OrderRow[];
+    const groupedCustomers = new Map<string, Customer>();
+
+    orders.forEach((order) => {
+      const key = getCustomerKey(order);
+      const existingCustomer = groupedCustomers.get(key);
+
+      if (!existingCustomer) {
+        groupedCustomers.set(key, {
+          id: key,
+          name: order.customer_name || "Unnamed Customer",
+          phone: order.phone || "",
+          email: order.email || "",
+          type:
+            order.order_type === "wholesale"
+              ? "wholesale"
+              : "retail",
+          businessName: "",
+          gstNumber: "",
+          addressLine1: order.address_line_1 || "",
+          addressLine2: order.address_line_2 || "",
+          city: order.city || "",
+          state: order.state || "",
+          pincode: order.pincode || "",
+          totalOrders: 1,
+          lifetimeSpend: Number(order.grand_total ?? 0),
+          lastOrderDate: formatDate(order.created_at),
+          createdAt: formatDate(order.created_at),
+        });
+
+        return;
+      }
+
+      existingCustomer.totalOrders += 1;
+      existingCustomer.lifetimeSpend += Number(
+        order.grand_total ?? 0
+      );
+
+      if (order.order_type === "wholesale") {
+        existingCustomer.type = "wholesale";
+      }
+    });
+
+    setCustomers(Array.from(groupedCustomers.values()));
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    void loadCustomers();
+  }, []);
 
   const filteredCustomers = useMemo(() => {
     const normalizedSearch = searchTerm
@@ -158,6 +281,23 @@ export default function Customers() {
         </div>
       </header>
 
+      {loadError && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 14px",
+            border: "1px solid #efc7c2",
+            borderRadius: "10px",
+            background: "#fff3f1",
+            color: "#a13e35",
+            fontSize: "12px",
+            fontWeight: 700,
+          }}
+        >
+          {loadError}
+        </div>
+      )}
+
       <section className="customers-summary-grid">
         <article className="customer-summary-card">
           <div className="customer-summary-icon">
@@ -167,7 +307,7 @@ export default function Customers() {
           <div>
             <span>Total Customers</span>
             <strong>
-              {customers.length}
+              {isLoading ? "..." : customers.length}
             </strong>
           </div>
         </article>
@@ -179,7 +319,7 @@ export default function Customers() {
 
           <div>
             <span>Retail Customers</span>
-            <strong>{retailCount}</strong>
+            <strong>{isLoading ? "..." : retailCount}</strong>
           </div>
         </article>
 
@@ -190,7 +330,7 @@ export default function Customers() {
 
           <div>
             <span>Wholesale Customers</span>
-            <strong>{wholesaleCount}</strong>
+            <strong>{isLoading ? "..." : wholesaleCount}</strong>
           </div>
         </article>
 
@@ -201,7 +341,7 @@ export default function Customers() {
 
           <div>
             <span>Total Orders</span>
-            <strong>{totalOrders}</strong>
+            <strong>{isLoading ? "..." : totalOrders}</strong>
           </div>
         </article>
       </section>
@@ -247,7 +387,19 @@ export default function Customers() {
           </select>
         </div>
 
-        {customers.length === 0 ? (
+        {isLoading ? (
+          <div className="customers-empty-state">
+            <div className="customers-empty-icon">
+              <FiUsers />
+            </div>
+
+            <h2>Loading customers...</h2>
+
+            <p>
+              Supabase-la irundhu customer details load aaguthu.
+            </p>
+          </div>
+        ) : customers.length === 0 ? (
           <div className="customers-empty-state">
             <div className="customers-empty-icon">
               <FiUsers />
