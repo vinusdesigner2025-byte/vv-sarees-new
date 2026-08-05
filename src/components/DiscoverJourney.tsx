@@ -1,17 +1,51 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowUpRight } from "react-icons/fi";
 
-import journeyImage from "../assets/journey-screen.jpeg";
+import { useWebsiteMedia } from "../context/WebsiteMediaContext";
+
+import journeyFallback from "../assets/journey-screen.jpeg";
 
 import "./DiscoverJourney.css";
 
+type WebsiteMediaRow = {
+  id: number;
+  section: string | null;
+  slot_key: string | null;
+  image_url: string | null;
+  is_active: boolean | null;
+};
+
 export default function DiscoverJourney() {
+  const { media } = useWebsiteMedia();
+
+  const journeyImage = useMemo(() => {
+    const row = (media as WebsiteMediaRow[]).find(
+      (item) =>
+        item.section === "journey" &&
+        item.slot_key === "journey-image" &&
+        item.is_active !== false &&
+        !!item.image_url
+    );
+
+    return row?.image_url ?? journeyFallback;
+  }, [media]);
+
   return (
     <section
       className="discover-journey"
       aria-labelledby="discover-journey-title"
     >
       <div className="discover-journey-inner">
+
+        {/* MOBILE HEADING */}
+        <div className="journey-mobile-heading">
+          <span>From Our Travels</span>
+
+          <h2>Discover Our Journey</h2>
+        </div>
+
+        {/* IMAGE */}
         <Link
           to="/journey"
           className="discover-journey-media"
@@ -22,23 +56,9 @@ export default function DiscoverJourney() {
             alt="VV Sarees journey across India"
             loading="lazy"
           />
-
-          <span
-            className="discover-journey-overlay"
-            aria-hidden="true"
-          />
-
-          <div className="journey-mobile-caption">
-            <span>From Our Travels</span>
-
-            <h3>
-              Discover Our
-              <br />
-              Journey
-            </h3>
-          </div>
         </Link>
 
+        {/* CONTENT */}
         <div className="discover-journey-content">
           <span className="discover-journey-eyebrow">
             From Our Travels
@@ -61,9 +81,9 @@ export default function DiscoverJourney() {
           </p>
 
           <p className="journey-mobile-description">
-            Travel with us across India as we meet skilled weavers,
-            discover timeless traditions and handpick sarees filled
-            with heritage and craftsmanship.
+            Travel with us across India as we meet skilled
+            weavers, discover timeless traditions and handpick
+            sarees filled with heritage and craftsmanship.
           </p>
 
           <Link
@@ -71,7 +91,7 @@ export default function DiscoverJourney() {
             className="discover-journey-button"
           >
             <span>Watch Our Journey</span>
-            <FiArrowUpRight aria-hidden="true" />
+            <FiArrowUpRight />
           </Link>
         </div>
       </div>

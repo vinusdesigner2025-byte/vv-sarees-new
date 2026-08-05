@@ -1,34 +1,114 @@
-import { useRef, useState } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import { useWebsiteMedia } from "../context/WebsiteMediaContext";
 
 import "./HouseSlider.css";
 
-import houseLeft from "../assets/house of left.jpg";
-import houseCenter from "../assets/house of senter.png";
-import houseRight from "../assets/house of right.jpg";
+import houseLeftFallback from "../assets/house of left.jpg";
+import houseCenterFallback from "../assets/house of senter.png";
+import houseRightFallback from "../assets/house of right.jpg";
+
+type WebsiteMediaRow = {
+  id: number;
+  section: string | null;
+  slot_key: string | null;
+  title: string | null;
+  image_url: string | null;
+  display_order: number | null;
+  is_active: boolean | null;
+};
 
 type HouseImage = {
+  id: number | string;
   image: string;
   alt: string;
 };
 
-const houseImages: HouseImage[] = [
+const fallbackImages: HouseImage[] = [
   {
-    image: houseLeft,
+    id: "fallback-left",
+    image: houseLeftFallback,
     alt: "VV Sarees showroom collection display",
   },
   {
-    image: houseCenter,
+    id: "fallback-center",
+    image: houseCenterFallback,
     alt: "VV Sarees showroom entrance",
   },
   {
-    image: houseRight,
+    id: "fallback-right",
+    image: houseRightFallback,
     alt: "VV Sarees showroom interior",
   },
 ];
 
 export default function HouseOfVVSarees() {
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(1);
+  const { media } = useWebsiteMedia();
+
+  const sliderRef =
+    useRef<HTMLDivElement>(null);
+
+  const [activeIndex, setActiveIndex] =
+    useState(1);
+
+  const houseImages =
+    useMemo<HouseImage[]>(() => {
+      const rows =
+        (
+          media as WebsiteMediaRow[]
+        )
+          .filter(
+            (row) =>
+              row.section ===
+                "house-slider" &&
+              row.slot_key ===
+                "house-slide" &&
+              row.is_active !== false &&
+              Boolean(row.image_url)
+          )
+          .sort(
+            (first, second) =>
+              Number(
+                first.display_order ?? 0
+              ) -
+              Number(
+                second.display_order ?? 0
+              )
+          )
+          .map((row, index) => ({
+            id: row.id,
+            image: row.image_url ?? "",
+            alt:
+              row.title?.trim() ||
+              `VV Sarees showroom image ${
+                index + 1
+              }`,
+          }));
+
+      return rows.length > 0
+        ? rows
+        : fallbackImages;
+    }, [media]);
+
+  const desktopLeft =
+    houseImages[0] ??
+    fallbackImages[0];
+
+  const desktopCenter =
+    houseImages[1] ??
+    houseImages[0] ??
+    fallbackImages[1];
+
+  const desktopRight =
+    houseImages[2] ??
+    houseImages[
+      houseImages.length - 1
+    ] ??
+    fallbackImages[2];
 
   const handleScroll = () => {
     const slider = sliderRef.current;
@@ -36,21 +116,31 @@ export default function HouseOfVVSarees() {
     if (!slider) return;
 
     const cards =
-      slider.querySelectorAll<HTMLElement>(".house-mobile-card");
+      slider.querySelectorAll<HTMLElement>(
+        ".house-mobile-card"
+      );
 
     let closestIndex = 0;
-    let closestDistance = Number.POSITIVE_INFINITY;
+    let closestDistance =
+      Number.POSITIVE_INFINITY;
 
     cards.forEach((card, index) => {
       const sliderCenter =
-        slider.scrollLeft + slider.clientWidth / 2;
+        slider.scrollLeft +
+        slider.clientWidth / 2;
 
       const cardCenter =
-        card.offsetLeft + card.offsetWidth / 2;
+        card.offsetLeft +
+        card.offsetWidth / 2;
 
-      const distance = Math.abs(sliderCenter - cardCenter);
+      const distance = Math.abs(
+        sliderCenter - cardCenter
+      );
 
-      if (distance < closestDistance) {
+      if (
+        distance <
+        closestDistance
+      ) {
         closestDistance = distance;
         closestIndex = index;
       }
@@ -59,15 +149,20 @@ export default function HouseOfVVSarees() {
     setActiveIndex(closestIndex);
   };
 
-  const scrollToSlide = (index: number) => {
+  const scrollToSlide = (
+    index: number
+  ) => {
     const slider = sliderRef.current;
 
     if (!slider) return;
 
     const cards =
-      slider.querySelectorAll<HTMLElement>(".house-mobile-card");
+      slider.querySelectorAll<HTMLElement>(
+        ".house-mobile-card"
+      );
 
-    const targetCard = cards[index];
+    const targetCard =
+      cards[index];
 
     if (!targetCard) return;
 
@@ -103,42 +198,40 @@ export default function HouseOfVVSarees() {
           />
         </header>
 
-        {/* DESKTOP GALLERY */}
-
         <div className="house-desktop-gallery">
           <figure className="house-desktop-card house-desktop-card-small">
             <img
-              src={houseLeft}
-              alt="VV Sarees showroom collection display"
+              src={desktopLeft.image}
+              alt={desktopLeft.alt}
               loading="lazy"
             />
           </figure>
 
           <figure className="house-desktop-card house-desktop-card-main">
             <img
-              src={houseCenter}
-              alt="VV Sarees showroom entrance"
+              src={desktopCenter.image}
+              alt={desktopCenter.alt}
               loading="lazy"
             />
 
             <figcaption>
               <span>VV Sarees</span>
+
               <strong>
-                A home for timeless Indian weaves
+                A home for timeless
+                Indian weaves
               </strong>
             </figcaption>
           </figure>
 
           <figure className="house-desktop-card house-desktop-card-small">
             <img
-              src={houseRight}
-              alt="VV Sarees showroom interior"
+              src={desktopRight.image}
+              alt={desktopRight.alt}
               loading="lazy"
             />
           </figure>
         </div>
-
-        {/* MOBILE SWIPE GALLERY */}
 
         <div
           ref={sliderRef}
@@ -146,53 +239,70 @@ export default function HouseOfVVSarees() {
           onScroll={handleScroll}
           aria-label="VV Sarees showroom gallery"
         >
-          {houseImages.map((item, index) => (
-            <figure
-              className={`house-mobile-card ${
-                activeIndex === index
-                  ? "house-mobile-card-active"
-                  : ""
-              }`}
-              key={item.alt}
-            >
-              <img
-                src={item.image}
-                alt={item.alt}
-                loading="lazy"
-              />
-            </figure>
-          ))}
+          {houseImages.map(
+            (item, index) => (
+              <figure
+                className={`house-mobile-card ${
+                  activeIndex ===
+                  index
+                    ? "house-mobile-card-active"
+                    : ""
+                }`}
+                key={item.id}
+              >
+                <img
+                  src={item.image}
+                  alt={item.alt}
+                  loading="lazy"
+                />
+              </figure>
+            )
+          )}
         </div>
 
         <div className="house-mobile-progress">
           <span className="house-mobile-counter">
-            {String(activeIndex + 1).padStart(2, "0")}
+            {String(
+              activeIndex + 1
+            ).padStart(2, "0")}
+
             <small>/</small>
-            {String(houseImages.length).padStart(2, "0")}
+
+            {String(
+              houseImages.length
+            ).padStart(2, "0")}
           </span>
 
           <div
             className="house-mobile-dots"
             aria-label="Choose showroom image"
           >
-            {houseImages.map((item, index) => (
-              <button
-                type="button"
-                key={item.alt}
-                className={
-                  activeIndex === index
-                    ? "house-dot house-dot-active"
-                    : "house-dot"
-                }
-                aria-label={`View showroom image ${index + 1}`}
-                aria-current={
-                  activeIndex === index
-                    ? "true"
-                    : undefined
-                }
-                onClick={() => scrollToSlide(index)}
-              />
-            ))}
+            {houseImages.map(
+              (item, index) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={
+                    activeIndex ===
+                    index
+                      ? "house-dot house-dot-active"
+                      : "house-dot"
+                  }
+                  aria-label={`View showroom image ${
+                    index + 1
+                  }`}
+                  aria-current={
+                    activeIndex ===
+                    index
+                      ? "true"
+                      : undefined
+                  }
+                  onClick={() =>
+                    scrollToSlide(index)
+                  }
+                />
+              )
+            )}
           </div>
 
           <span className="house-swipe-label">

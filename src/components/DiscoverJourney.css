@@ -259,6 +259,14 @@
 }
 
 /* =========================
+   MOBILE HEADING
+========================= */
+
+.journey-mobile-heading {
+  display: none;
+}
+
+/* =========================
    TABLET
 ========================= */
 
@@ -269,11 +277,9 @@
 
   .discover-journey-inner {
     width: min(100% - 40px, 960px);
-
     grid-template-columns:
       minmax(0, 1.35fr)
       minmax(310px, 0.85fr);
-
     gap: 42px;
   }
 
@@ -292,108 +298,80 @@
 
 @media (max-width: 700px) {
   .discover-journey {
-    padding: 24px 0 34px;
+    padding: 42px 0 34px;
   }
 
   .discover-journey-inner {
-    width: calc(100% - 24px);
-
+    width: calc(100% - 32px);
     display: flex;
     flex-direction: column;
     gap: 0;
   }
 
-  .discover-journey-media {
+  /* Heading above image */
+  .journey-mobile-heading {
+    order: 1;
+    display: block;
     width: 100%;
-    height: 320px;
-    aspect-ratio: auto;
+    margin-bottom: 24px;
+    text-align: center;
+  }
 
+  .journey-mobile-heading span {
+    display: block;
+    margin-bottom: 10px;
+    color: #a55a19;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+  }
+
+  .journey-mobile-heading h2 {
+    margin: 0;
+    color: #58250d;
+    font-family:
+      "Cormorant Garamond",
+      Georgia,
+      serif;
+    font-size: clamp(27px, 7.2vw, 36px);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.6px;
+    white-space: nowrap;
+  }
+
+  /* Full uncropped image */
+  .discover-journey-media {
+    order: 2;
+    width: 100%;
+    height: auto;
+    aspect-ratio: auto;
     border: 0;
     border-radius: 22px;
-
+    overflow: hidden;
     box-shadow:
       0 20px 42px rgba(62, 27, 7, 0.17),
       0 7px 16px rgba(62, 27, 7, 0.08);
   }
 
   .discover-journey-media img {
+    display: block;
     width: 100%;
-    height: 100%;
-
-    object-fit: cover;
+    height: auto;
+    object-fit: contain;
     object-position: center;
   }
 
-  .discover-journey-overlay {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(18, 7, 1, 0.01) 28%,
-        rgba(18, 7, 1, 0.14) 56%,
-        rgba(18, 7, 1, 0.88) 100%
-      );
-  }
-
-  .discover-journey-play {
-    top: 42%;
-
-    width: 54px;
-    height: 54px;
-
-    border-color: rgba(255, 255, 255, 0.82);
-
-    background: rgba(69, 27, 3, 0.48);
-
-    font-size: 20px;
-
-    box-shadow:
-      0 15px 34px rgba(0, 0, 0, 0.3);
-
-    backdrop-filter: blur(7px);
-    -webkit-backdrop-filter: blur(7px);
-  }
-
+  .discover-journey-overlay,
+  .discover-journey-play,
   .journey-mobile-caption {
-    position: absolute;
-    right: 20px;
-    bottom: 18px;
-    left: 20px;
-    z-index: 3;
-
-    display: block;
-  }
-
-  .journey-mobile-caption span {
-    display: block;
-    margin-bottom: 7px;
-
-    color: #e9b96d;
-
-    font-size: 7px;
-    font-weight: 800;
-    letter-spacing: 2.7px;
-    text-transform: uppercase;
-  }
-
-  .journey-mobile-caption h3 {
-    margin: 0;
-
-    color: #fff8ed;
-
-    font-family:
-      "Cormorant Garamond",
-      Georgia,
-      serif;
-
-    font-size: 40px;
-    font-weight: 600;
-    line-height: 0.86;
-    letter-spacing: -0.7px;
+    display: none !important;
   }
 
   .discover-journey-media:hover {
     transform: none;
-
     box-shadow:
       0 20px 42px rgba(62, 27, 7, 0.17),
       0 7px 16px rgba(62, 27, 7, 0.08);
@@ -404,45 +382,48 @@
     filter: none;
   }
 
+  /* Content below image */
   .discover-journey-content {
+    order: 3;
     width: 100%;
-    padding: 20px 5px 0;
-
+    padding: 38px 6px 0;
+    display: flex;
+    flex-direction: column;
     align-items: stretch;
+    gap: 26px;
     text-align: left;
   }
 
   .discover-journey-eyebrow,
-  .discover-journey-content h2,
+  .discover-journey-content > h2,
   .journey-desktop-description {
     display: none;
   }
 
   .journey-mobile-description {
     display: block;
-
+    max-width: none;
+    margin: 0;
     padding: 0 4px;
-
-    color: #7e4319 !important;
-
-    font-size: 18px !important;
-    line-height: 1.22 !important;
+    color: #7e4319;
+    font-family:
+      "Cormorant Garamond",
+      Georgia,
+      serif;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1.3;
   }
 
   .discover-journey-button {
     width: 100%;
     min-width: 0;
-    min-height: 52px;
-
-    margin-top: 20px;
-    padding: 0 20px;
-
+    min-height: 64px;
+    margin: 0;
+    padding: 0 26px;
     justify-content: space-between;
-
-    border-radius: 15px;
-
+    border-radius: 18px;
     font-size: 13px;
-
     box-shadow:
       0 15px 30px rgba(103, 43, 3, 0.17);
   }
@@ -458,41 +439,32 @@
 
 @media (max-width: 380px) {
   .discover-journey {
-    padding: 20px 0 30px;
+    padding: 36px 0 30px;
   }
 
   .discover-journey-inner {
-    width: calc(100% - 18px);
+    width: calc(100% - 24px);
+  }
+
+  .journey-mobile-heading h2 {
+    font-size: clamp(25px, 7vw, 30px);
   }
 
   .discover-journey-media {
-    height: 285px;
     border-radius: 19px;
   }
 
-  .discover-journey-play {
-    width: 50px;
-    height: 50px;
-
-    font-size: 18px;
-  }
-
-  .journey-mobile-caption {
-    right: 17px;
-    bottom: 16px;
-    left: 17px;
-  }
-
-  .journey-mobile-caption h3 {
-    font-size: 36px;
+  .discover-journey-content {
+    padding-top: 30px;
+    gap: 22px;
   }
 
   .journey-mobile-description {
-    font-size: 17px !important;
+    font-size: 19px;
   }
 
   .discover-journey-button {
-    min-height: 49px;
+    min-height: 56px;
   }
 }
 

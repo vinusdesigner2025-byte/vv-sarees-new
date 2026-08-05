@@ -1,15 +1,31 @@
+import {
+  useMemo,
+} from "react";
+
 import { Link } from "react-router-dom";
 
 import { FiCompass } from "react-icons/fi";
 
+import { useWebsiteMedia } from "../context/WebsiteMediaContext";
+
 import "./StateMarquee.css";
 
-import kerala from "../assets/kerala.png";
-import rajasthan from "../assets/Rajasthan.png";
-import maharashtra from "../assets/Maharashtra.png";
-import andhra from "../assets/Andra.png";
-import uttarPradesh from "../assets/Uthraprathesh.png";
-import tamilNadu from "../assets/tamilnadu.png";
+import keralaFallback from "../assets/kerala.png";
+import rajasthanFallback from "../assets/Rajasthan.png";
+import maharashtraFallback from "../assets/Maharashtra.png";
+import andhraFallback from "../assets/Andra.png";
+import uttarPradeshFallback from "../assets/Uthraprathesh.png";
+import tamilNaduFallback from "../assets/tamilnadu.png";
+
+type WebsiteMediaRow = {
+  id: number;
+  section: string | null;
+  slot_key: string | null;
+  title: string | null;
+  image_url: string | null;
+  display_order: number | null;
+  is_active: boolean | null;
+};
 
 type StateItem = {
   name: string;
@@ -17,38 +33,35 @@ type StateItem = {
   href: string;
 };
 
-const topStates: StateItem[] = [
+const fallbackStates: StateItem[] = [
   {
     name: "Andhra Pradesh",
-    image: andhra,
+    image: andhraFallback,
     href: "/state/andhra-pradesh",
   },
   {
     name: "Uttar Pradesh",
-    image: uttarPradesh,
+    image: uttarPradeshFallback,
     href: "/state/uttar-pradesh",
   },
   {
     name: "Tamil Nadu",
-    image: tamilNadu,
+    image: tamilNaduFallback,
     href: "/state/tamil-nadu",
   },
-];
-
-const bottomStates: StateItem[] = [
   {
     name: "Kerala",
-    image: kerala,
+    image: keralaFallback,
     href: "/state/kerala",
   },
   {
     name: "Rajasthan",
-    image: rajasthan,
+    image: rajasthanFallback,
     href: "/state/rajasthan",
   },
   {
     name: "Maharashtra",
-    image: maharashtra,
+    image: maharashtraFallback,
     href: "/state/maharashtra",
   },
 ];
@@ -86,7 +99,7 @@ function StateGroup({
     <div className="state-group">
       {states.map((state, index) => (
         <StateCard
-          key={`${prefix}-${state.name}-${index}`}
+          key={`${prefix}-${state.href}-${index}`}
           {...state}
         />
       ))}
@@ -95,6 +108,68 @@ function StateGroup({
 }
 
 export default function StateMarquee() {
+  const {
+    media,
+    loading,
+  } = useWebsiteMedia();
+
+  const stateItems =
+    useMemo<StateItem[]>(() => {
+      const rows =
+        (media as WebsiteMediaRow[])
+          .filter(
+            (row) =>
+              row.section === "states" &&
+              row.is_active !== false &&
+              Boolean(row.slot_key) &&
+              Boolean(row.image_url)
+          )
+          .sort(
+            (first, second) =>
+              Number(
+                first.display_order ?? 0
+              ) -
+              Number(
+                second.display_order ?? 0
+              )
+          )
+          .map((row) => ({
+            name:
+              row.title?.trim() ||
+              row.slot_key ||
+              "State",
+            image:
+              row.image_url ?? "",
+            href:
+              `/state/${row.slot_key}`,
+          }));
+
+      return rows.length > 0
+        ? rows
+        : fallbackStates;
+    }, [media]);
+
+  const middleIndex =
+    Math.ceil(
+      stateItems.length / 2
+    );
+
+  const topStates =
+    stateItems.slice(
+      0,
+      middleIndex
+    );
+
+  const bottomStates =
+    stateItems.slice(
+      middleIndex
+    );
+
+  const safeBottomStates =
+    bottomStates.length > 0
+      ? bottomStates
+      : topStates;
+
   return (
     <section
       className="state-section"
@@ -145,16 +220,26 @@ export default function StateMarquee() {
 
         <div className="state-track state-track-right">
           <StateGroup
-            states={bottomStates}
+            states={safeBottomStates}
             prefix="bottom-original"
           />
 
           <StateGroup
-            states={bottomStates}
+            states={safeBottomStates}
             prefix="bottom-copy"
           />
         </div>
       </div>
+
+      {loading && (
+        <span
+          style={{
+            display: "none",
+          }}
+        >
+          Loading state images
+        </span>
+      )}
     </section>
   );
 }
