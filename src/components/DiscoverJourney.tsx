@@ -14,6 +14,7 @@ type WebsiteMediaRow = {
   slot_key: string | null;
   image_url: string | null;
   is_active: boolean | null;
+  settings: Record<string, unknown> | null;
 };
 
 export default function DiscoverJourney() {
@@ -25,10 +26,25 @@ export default function DiscoverJourney() {
         item.section === "journey" &&
         item.slot_key === "journey-image" &&
         item.is_active !== false &&
-        !!item.image_url
+        Boolean(item.image_url)
     );
 
     return row?.image_url ?? journeyFallback;
+  }, [media]);
+
+  const youtubeUrl = useMemo(() => {
+    const settingsRow = (media as WebsiteMediaRow[]).find(
+      (item) =>
+        item.section === "site-settings" &&
+        item.slot_key === "contact-social"
+    );
+
+    const value =
+      settingsRow?.settings?.youtubeUrl;
+
+    return typeof value === "string"
+      ? value.trim()
+      : "";
   }, [media]);
 
   return (
@@ -39,6 +55,7 @@ export default function DiscoverJourney() {
       <div className="discover-journey-inner">
 
         {/* MOBILE HEADING */}
+
         <div className="journey-mobile-heading">
           <span>From Our Travels</span>
 
@@ -46,6 +63,7 @@ export default function DiscoverJourney() {
         </div>
 
         {/* IMAGE */}
+
         <Link
           to="/journey"
           className="discover-journey-media"
@@ -59,6 +77,7 @@ export default function DiscoverJourney() {
         </Link>
 
         {/* CONTENT */}
+
         <div className="discover-journey-content">
           <span className="discover-journey-eyebrow">
             From Our Travels
@@ -81,18 +100,30 @@ export default function DiscoverJourney() {
           </p>
 
           <p className="journey-mobile-description">
-            Travel with us across India as we meet skilled
-            weavers, discover timeless traditions and handpick
-            sarees filled with heritage and craftsmanship.
+            Travel with us across India as we meet skilled weavers,
+            discover timeless traditions and handpick sarees filled
+            with heritage and craftsmanship.
           </p>
 
-          <Link
-            to="/journey"
-            className="discover-journey-button"
-          >
-            <span>Watch Our Journey</span>
-            <FiArrowUpRight />
-          </Link>
+          {youtubeUrl ? (
+            <a
+              href={youtubeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="discover-journey-button"
+            >
+              <span>Watch Our Journey</span>
+              <FiArrowUpRight aria-hidden="true" />
+            </a>
+          ) : (
+            <Link
+              to="/journey"
+              className="discover-journey-button"
+            >
+              <span>Watch Our Journey</span>
+              <FiArrowUpRight aria-hidden="true" />
+            </Link>
+          )}
         </div>
       </div>
     </section>

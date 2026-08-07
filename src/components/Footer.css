@@ -1048,3 +1048,141 @@
   }
 
 }
+/* =========================
+   FOOTER DARK THEME FIX
+========================= */
+
+footer {
+  background: #1d0902 !important;
+}
+
+.footer-desktop {
+  background:
+    linear-gradient(
+      135deg,
+      #1a0702 0%,
+      #2b0d03 50%,
+      #180601 100%
+    ) !important;
+
+  color: #f5dfbd;
+}
+
+.footer-container {
+  background: transparent !important;
+}
+
+.footer-brand,
+.footer-column,
+.footer-contact-column {
+  background: transparent !important;
+}
+
+/* MAIN HEADINGS */
+
+.footer-brand h2,
+.footer-column h3 {
+  color: #d99a32 !important;
+}
+
+/* BRAND */
+
+.footer-logo-wrap span {
+  color: #b98655 !important;
+}
+
+.footer-tagline {
+  color: #e1a23a !important;
+}
+
+.footer-description {
+  color: #c9a783 !important;
+}
+
+/* LINKS */
+
+.footer-links a {
+  color: #cba982 !important;
+}
+
+.footer-links a:hover {
+  color: #e7aa3c !important;
+}
+
+/* CONTACT */
+
+.footer-contact-list a,
+.footer-contact-list div {
+  color: #cba982 !important;
+}
+
+.footer-contact-list svg {
+  color: #d99a32 !important;
+}
+
+/* SOCIAL ICONS */
+
+.footer-socials a {
+  color: #d99a32 !important;
+  border-color: rgba(217, 154, 50, 0.45) !important;
+}
+
+.footer-socials a:hover {
+  background: #d99a32 !important;
+  color: #1d0902 !important;
+}
+
+/* BOTTOM */
+
+.footer-bottom {
+  border-top:
+    1px solid rgba(217, 154, 50, 0.25) !important;
+
+  color: #a98462 !important;
+}
+
+/* MOBILE */
+
+.footer-mobile {
+  background:
+    linear-gradient(
+      180deg,
+      #210902 0%,
+      #160501 100%
+    ) !important;
+
+  color: #f5dfbd !important;
+}
+
+.footer-mobile-brand h2 {
+  color: #d99a32 !important;
+}
+
+.footer-mobile-brand span {
+  color: #b98655 !important;
+}
+
+.footer-accordion {
+  border-color:
+    rgba(217, 154, 50, 0.22) !important;
+}
+
+.footer-accordion summary {
+  color: #e0a03a !important;
+}
+
+.footer-accordion-content a,
+.footer-mobile-contact a,
+.footer-mobile-contact > div {
+  color: #cba982 !important;
+}
+
+.footer-mobile-socials a {
+  color: #d99a32 !important;
+  border-color:
+    rgba(217, 154, 50, 0.4) !important;
+}
+
+.footer-mobile-art {
+  color: #a98462 !important;
+}

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   FaFacebookF,
   FaInstagram,
@@ -14,12 +15,123 @@ import {
 
 import { Link } from "react-router-dom";
 
+import { useWebsiteMedia } from "../context/WebsiteMediaContext";
+
 import logo from "../assets/VV logo.png";
 import "./Footer.css";
 
+type WebsiteMediaRow = {
+  id: number;
+  section: string | null;
+  slot_key: string | null;
+  settings: Record<string, unknown> | null;
+};
+
+type ContactSocialSettings = {
+  primaryPhone: string;
+  secondaryPhone: string;
+  whatsappNumber: string;
+  email: string;
+  location: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  youtubeUrl: string;
+};
+
+function getSettingString(
+  settings: Record<string, unknown> | null,
+  key: string
+) {
+  const value = settings?.[key];
+
+  return typeof value === "string"
+    ? value.trim()
+    : "";
+}
+
+function cleanPhoneNumber(value: string) {
+  return value.replace(/\D/g, "");
+}
+
 export default function Footer() {
+  const { media } = useWebsiteMedia();
+
+  const settings =
+    useMemo<ContactSocialSettings>(() => {
+      const row = (media as WebsiteMediaRow[]).find(
+        (item) =>
+          item.section === "site-settings" &&
+          item.slot_key === "contact-social"
+      );
+
+      return {
+        primaryPhone: getSettingString(
+          row?.settings ?? null,
+          "primaryPhone"
+        ),
+        secondaryPhone: getSettingString(
+          row?.settings ?? null,
+          "secondaryPhone"
+        ),
+        whatsappNumber: getSettingString(
+          row?.settings ?? null,
+          "whatsappNumber"
+        ),
+        email:
+          getSettingString(
+            row?.settings ?? null,
+            "email"
+          ) || "info@vvsarees.com",
+        location:
+          getSettingString(
+            row?.settings ?? null,
+            "location"
+          ) || "Chennai, Tamil Nadu",
+        instagramUrl: getSettingString(
+          row?.settings ?? null,
+          "instagramUrl"
+        ),
+        facebookUrl: getSettingString(
+          row?.settings ?? null,
+          "facebookUrl"
+        ),
+        youtubeUrl: getSettingString(
+          row?.settings ?? null,
+          "youtubeUrl"
+        ),
+      };
+    }, [media]);
+
+  const primaryPhoneLink =
+    cleanPhoneNumber(settings.primaryPhone);
+
+  const secondaryPhoneLink =
+    cleanPhoneNumber(settings.secondaryPhone);
+
+  const whatsappNumber =
+    cleanPhoneNumber(settings.whatsappNumber);
+
+  const whatsappUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}`
+    : "";
+
+  const socialLinkProps = (
+    url: string
+  ) => ({
+    href: url || undefined,
+    target: url ? "_blank" : undefined,
+    rel: url ? "noreferrer" : undefined,
+    onClick: (
+      event: React.MouseEvent<HTMLAnchorElement>
+    ) => {
+      if (!url) {
+        event.preventDefault();
+      }
+    },
+  });
+
   return (
-    <footer className="site-footer">
+    <footer>
       {/* =========================
           DESKTOP FOOTER
       ========================= */}
@@ -36,7 +148,9 @@ export default function Footer() {
 
               <div>
                 <h2>VV Sarees</h2>
-                <span>Voice of Vanigan Sarees</span>
+                <span>
+                  Voice of Vanigan Sarees
+                </span>
               </div>
             </div>
 
@@ -56,10 +170,18 @@ export default function Footer() {
 
             <nav className="footer-links">
               <Link to="/">Home</Link>
-              <Link to="/wholesale">Wholesale</Link>
-              <Link to="/retail">Retail</Link>
-              <Link to="/about">About Us</Link>
-              <Link to="/contact">Contact Us</Link>
+              <Link to="/wholesale">
+                Wholesale
+              </Link>
+              <Link to="/retail">
+                Retail
+              </Link>
+              <Link to="/about">
+                About Us
+              </Link>
+              <Link to="/contact">
+                Contact Us
+              </Link>
             </nav>
           </div>
 
@@ -93,37 +215,81 @@ export default function Footer() {
             <h3>Contact</h3>
 
             <div className="footer-contact-list">
-              <a href="tel:+91XXXXXXXXXX">
-                <FiPhone />
-                <span>+91 XXXXX XXXXX</span>
-              </a>
+              {settings.primaryPhone && (
+                <a
+                  href={`tel:${primaryPhoneLink}`}
+                >
+                  <FiPhone />
+                  <span>
+                    {settings.primaryPhone}
+                  </span>
+                </a>
+              )}
 
-              <a href="mailto:info@vvsarees.com">
-                <FiMail />
-                <span>info@vvsarees.com</span>
-              </a>
+              {settings.secondaryPhone && (
+                <a
+                  href={`tel:${secondaryPhoneLink}`}
+                >
+                  <FiPhone />
+                  <span>
+                    {settings.secondaryPhone}
+                  </span>
+                </a>
+              )}
 
-              <div>
-                <FiMapPin />
-                <span>Chennai, Tamil Nadu</span>
-              </div>
+              {settings.email && (
+                <a
+                  href={`mailto:${settings.email}`}
+                >
+                  <FiMail />
+                  <span>
+                    {settings.email}
+                  </span>
+                </a>
+              )}
+
+              {settings.location && (
+                <div>
+                  <FiMapPin />
+                  <span>
+                    {settings.location}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="footer-socials">
-              <a href="#" aria-label="Instagram">
+              <a
+                {...socialLinkProps(
+                  settings.instagramUrl
+                )}
+                aria-label="Instagram"
+              >
                 <FaInstagram />
               </a>
 
-              <a href="#" aria-label="Facebook">
+              <a
+                {...socialLinkProps(
+                  settings.facebookUrl
+                )}
+                aria-label="Facebook"
+              >
                 <FaFacebookF />
               </a>
 
-              <a href="#" aria-label="YouTube">
+              <a
+                {...socialLinkProps(
+                  settings.youtubeUrl
+                )}
+                aria-label="YouTube"
+              >
                 <FaYoutube />
               </a>
 
               <a
-                href="https://wa.me/91XXXXXXXXXX"
+                {...socialLinkProps(
+                  whatsappUrl
+                )}
                 aria-label="WhatsApp"
               >
                 <FaWhatsapp />
@@ -137,7 +303,9 @@ export default function Footer() {
             © 2026 VV Sarees. All rights reserved.
           </p>
 
-          <span>We Source, You Shine.</span>
+          <span>
+            We Source, You Shine.
+          </span>
         </div>
       </div>
 
@@ -155,7 +323,9 @@ export default function Footer() {
 
           <div>
             <h2>VV Sarees</h2>
-            <span>Voice of Vanigan Sarees</span>
+            <span>
+              Voice of Vanigan Sarees
+            </span>
           </div>
         </div>
 
@@ -167,10 +337,18 @@ export default function Footer() {
 
           <nav className="footer-accordion-content">
             <Link to="/">Home</Link>
-            <Link to="/wholesale">Wholesale</Link>
-            <Link to="/retail">Retail</Link>
-            <Link to="/about">About Us</Link>
-            <Link to="/contact">Contact Us</Link>
+            <Link to="/wholesale">
+              Wholesale
+            </Link>
+            <Link to="/retail">
+              Retail
+            </Link>
+            <Link to="/about">
+              About Us
+            </Link>
+            <Link to="/contact">
+              Contact Us
+            </Link>
           </nav>
         </details>
 
@@ -210,36 +388,72 @@ export default function Footer() {
           </summary>
 
           <div className="footer-mobile-contact">
-            <a href="tel:+91XXXXXXXXXX">
-              <FiPhone />
-              +91 XXXXX XXXXX
-            </a>
+            {settings.primaryPhone && (
+              <a
+                href={`tel:${primaryPhoneLink}`}
+              >
+                <FiPhone />
+                {settings.primaryPhone}
+              </a>
+            )}
 
-            <a href="mailto:info@vvsarees.com">
-              <FiMail />
-              info@vvsarees.com
-            </a>
+            {settings.secondaryPhone && (
+              <a
+                href={`tel:${secondaryPhoneLink}`}
+              >
+                <FiPhone />
+                {settings.secondaryPhone}
+              </a>
+            )}
 
-            <div>
-              <FiMapPin />
-              Chennai, Tamil Nadu
-            </div>
+            {settings.email && (
+              <a
+                href={`mailto:${settings.email}`}
+              >
+                <FiMail />
+                {settings.email}
+              </a>
+            )}
+
+            {settings.location && (
+              <div>
+                <FiMapPin />
+                {settings.location}
+              </div>
+            )}
 
             <div className="footer-mobile-socials">
-              <a href="#" aria-label="Instagram">
+              <a
+                {...socialLinkProps(
+                  settings.instagramUrl
+                )}
+                aria-label="Instagram"
+              >
                 <FaInstagram />
               </a>
 
-              <a href="#" aria-label="Facebook">
+              <a
+                {...socialLinkProps(
+                  settings.facebookUrl
+                )}
+                aria-label="Facebook"
+              >
                 <FaFacebookF />
               </a>
 
-              <a href="#" aria-label="YouTube">
+              <a
+                {...socialLinkProps(
+                  settings.youtubeUrl
+                )}
+                aria-label="YouTube"
+              >
                 <FaYoutube />
               </a>
 
               <a
-                href="https://wa.me/91XXXXXXXXXX"
+                {...socialLinkProps(
+                  whatsappUrl
+                )}
                 aria-label="WhatsApp"
               >
                 <FaWhatsapp />
@@ -250,7 +464,9 @@ export default function Footer() {
 
         <details className="footer-accordion">
           <summary>
-            <span>Subscribe Our Newsletter</span>
+            <span>
+              Subscribe Our Newsletter
+            </span>
             <FiChevronDown />
           </summary>
 
@@ -280,7 +496,9 @@ export default function Footer() {
             © 2026 VV Sarees. All rights reserved.
           </p>
 
-          <span>We Source, You Shine.</span>
+          <span>
+            We Source, You Shine.
+          </span>
         </div>
       </div>
     </footer>

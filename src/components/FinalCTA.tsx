@@ -1,11 +1,45 @@
+import { useMemo } from "react";
 import { FaWhatsapp } from "react-icons/fa";
+
+import { useWebsiteMedia } from "../context/WebsiteMediaContext";
+
 import "./FinalCTA.css";
 
+type WebsiteMediaRow = {
+  id: number;
+  section: string | null;
+  slot_key: string | null;
+  settings: Record<string, unknown> | null;
+};
+
 export default function FinalCTA() {
+  const { media } = useWebsiteMedia();
+
+  const whatsappNumber = useMemo(() => {
+    const settingsRow = (media as WebsiteMediaRow[]).find(
+      (item) =>
+        item.section === "site-settings" &&
+        item.slot_key === "contact-social"
+    );
+
+    const number = settingsRow?.settings?.whatsappNumber;
+
+    if (typeof number !== "string") {
+      return "";
+    }
+
+    // wa.me-ku +, spaces, hyphen ellam remove pannuvom
+    return number.replace(/\D/g, "");
+  }, [media]);
+
+  const whatsappLink = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}`
+    : "#";
+
   return (
     <section className="final-cta-section">
-      <div className="final-cta-content">
-        <span className="final-cta-tag">
+      <div className="final-cta-inner">
+        <span className="final-cta-eyebrow">
           VV SAREES
         </span>
 
@@ -21,10 +55,15 @@ export default function FinalCTA() {
         </p>
 
         <a
-          href="https://wa.me/91XXXXXXXXXX"
-          target="_blank"
-          rel="noreferrer"
+          href={whatsappLink}
+          target={whatsappNumber ? "_blank" : undefined}
+          rel={whatsappNumber ? "noreferrer" : undefined}
           className="final-whatsapp-button"
+          onClick={(event) => {
+            if (!whatsappNumber) {
+              event.preventDefault();
+            }
+          }}
         >
           <FaWhatsapp />
           Connect on WhatsApp
