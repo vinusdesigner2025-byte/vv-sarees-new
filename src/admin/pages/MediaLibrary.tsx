@@ -58,6 +58,18 @@ type HouseSlide = {
   isActive: boolean;
 };
 
+type ContactSocialSettings = {
+  databaseId: number | null;
+  primaryPhone: string;
+  secondaryPhone: string;
+  whatsappNumber: string;
+  email: string;
+  location: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  youtubeUrl: string;
+};
+
 type MediaState = {
   heroSlides: HeroSlide[];
   heroAutoplay: boolean;
@@ -65,6 +77,7 @@ type MediaState = {
   stateImages: StateImage[];
   journeyImage: SingleImage;
   houseSlides: HouseSlide[];
+  contactSocial: ContactSocialSettings;
 };
 
 type WebsiteMediaRow = {
@@ -112,6 +125,17 @@ const createInitialMedia = (): MediaState => ({
   stateImages: createDefaultStateImages(),
   journeyImage: { ...emptyImage },
   houseSlides: [],
+  contactSocial: {
+    databaseId: null,
+    primaryPhone: "",
+    secondaryPhone: "",
+    whatsappNumber: "",
+    email: "info@vvsarees.com",
+    location: "Chennai, Tamil Nadu",
+    instagramUrl: "",
+    facebookUrl: "",
+    youtubeUrl: "",
+  },
 });
 
 function getSettingString(
@@ -284,6 +308,52 @@ export default function MediaLibrary() {
           ),
           isActive: row.is_active ?? true,
         }));
+
+      const contactSocialRow = rows.find(
+        (row) =>
+          row.section === "site-settings" &&
+          row.slot_key === "contact-social"
+      );
+
+      if (contactSocialRow) {
+        next.contactSocial = {
+          databaseId: contactSocialRow.id,
+          primaryPhone: getSettingString(
+            contactSocialRow.settings,
+            "primaryPhone"
+          ),
+          secondaryPhone: getSettingString(
+            contactSocialRow.settings,
+            "secondaryPhone"
+          ),
+          whatsappNumber: getSettingString(
+            contactSocialRow.settings,
+            "whatsappNumber"
+          ),
+          email:
+            getSettingString(
+              contactSocialRow.settings,
+              "email"
+            ) || "info@vvsarees.com",
+          location:
+            getSettingString(
+              contactSocialRow.settings,
+              "location"
+            ) || "Chennai, Tamil Nadu",
+          instagramUrl: getSettingString(
+            contactSocialRow.settings,
+            "instagramUrl"
+          ),
+          facebookUrl: getSettingString(
+            contactSocialRow.settings,
+            "facebookUrl"
+          ),
+          youtubeUrl: getSettingString(
+            contactSocialRow.settings,
+            "youtubeUrl"
+          ),
+        };
+      }
 
       setMedia(next);
     } catch (error) {
@@ -772,6 +842,76 @@ export default function MediaLibrary() {
     }
   };
 
+  const updateContactSocial = (
+    changes: Partial<ContactSocialSettings>
+  ) => {
+    setMedia((current) => ({
+      ...current,
+      contactSocial: {
+        ...current.contactSocial,
+        ...changes,
+      },
+    }));
+  };
+
+  const saveContactSocial = async () => {
+    const payload = {
+      section: "site-settings",
+      slot_key: "contact-social",
+      title: "Contact & Social Links",
+      display_order: 1,
+      is_active: true,
+      settings: {
+        primaryPhone:
+          media.contactSocial.primaryPhone.trim(),
+        secondaryPhone:
+          media.contactSocial.secondaryPhone.trim(),
+        whatsappNumber:
+          media.contactSocial.whatsappNumber.trim(),
+        email:
+          media.contactSocial.email.trim(),
+        location:
+          media.contactSocial.location.trim(),
+        instagramUrl:
+          media.contactSocial.instagramUrl.trim(),
+        facebookUrl:
+          media.contactSocial.facebookUrl.trim(),
+        youtubeUrl:
+          media.contactSocial.youtubeUrl.trim(),
+      },
+      updated_at: new Date().toISOString(),
+    };
+
+    if (media.contactSocial.databaseId) {
+      const { error } = await supabase
+        .from("website_media")
+        .update(payload)
+        .eq(
+          "id",
+          media.contactSocial.databaseId
+        );
+
+      if (error) throw new Error(error.message);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("website_media")
+      .insert(payload)
+      .select("id")
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    setMedia((current) => ({
+      ...current,
+      contactSocial: {
+        ...current.contactSocial,
+        databaseId: data.id,
+      },
+    }));
+  };
+
   const saveHero = async () => {
     const { data: settingsRow, error } = await supabase
       .from("website_media")
@@ -1020,12 +1160,13 @@ export default function MediaLibrary() {
       await saveStates();
       await saveJourney();
       await saveHouse();
+      await saveContactSocial();
 
       await loadMedia();
       await refreshMedia();
 
       setSavedMessage(
-        "Website images saved successfully."
+        "Website media and contact details saved successfully."
       );
 
       window.setTimeout(
@@ -1068,7 +1209,7 @@ export default function MediaLibrary() {
         <div>
           <h1>Website Media</h1>
           <p>
-            Hero, states, journey and house slider images.
+            Hero, states, journey, house slider, contact and social links.
           </p>
         </div>
 
@@ -1562,6 +1703,84 @@ export default function MediaLibrary() {
             })}
           </div>
         )}
+      </section>
+
+      <section className="website-manager-section">
+        <div className="website-section-header">
+          <div>
+            <h2>Contact &amp; Social Links</h2>
+            <p>
+              Update footer contact details, WhatsApp and social media links.
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="contact-social-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "18px",
+          }}
+        >
+          {[
+            ["Primary Contact Number", "primaryPhone", "+91 XXXXXXXXXX"],
+            ["Secondary Contact Number", "secondaryPhone", "+91 XXXXXXXXXX"],
+            ["WhatsApp Number", "whatsappNumber", "919876543210"],
+            ["Email", "email", "info@vvsarees.com"],
+            ["Location", "location", "Chennai, Tamil Nadu"],
+            ["Instagram URL", "instagramUrl", "https://instagram.com/..."],
+            ["Facebook URL", "facebookUrl", "https://facebook.com/..."],
+            ["YouTube URL", "youtubeUrl", "https://youtube.com/@..."],
+          ].map(([label, key, placeholder]) => (
+            <label
+              key={key}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <span>{label}</span>
+              <input
+                type={
+                  key === "email"
+                    ? "email"
+                    : key.toLowerCase().includes("url")
+                      ? "url"
+                      : "text"
+                }
+                placeholder={placeholder}
+                value={
+                  media.contactSocial[
+                    key as keyof Omit<
+                      ContactSocialSettings,
+                      "databaseId"
+                    >
+                  ]
+                }
+                onChange={(event) =>
+                  updateContactSocial({
+                    [key]: event.target.value,
+                  } as Partial<ContactSocialSettings>)
+                }
+              />
+            </label>
+          ))}
+        </div>
+
+        <p
+          style={{
+            marginTop: "16px",
+            color: "#8e735d",
+            fontSize: "12px",
+            lineHeight: 1.6,
+          }}
+        >
+          WhatsApp number-ai country code-oda spaces illaama save pannunga.
+          Example: 919876543210
+        </p>
       </section>
 
       <div className="website-manager-bottom">
