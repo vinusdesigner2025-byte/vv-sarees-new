@@ -57,6 +57,7 @@ type TrackedOrder = {
   payment: string;
   courier: string;
   trackingNumber: string;
+  trackingUrl: string;
   estimatedDelivery: string;
   status: OrderStatus;
   orderDate: string;
@@ -75,6 +76,7 @@ type OrderRow = {
   order_status: OrderStatus;
   courier_name: string | null;
   tracking_number: string | null;
+  tracking_url: string | null;
   created_at: string;
   updated_at: string;
   grand_total: number;
@@ -318,6 +320,7 @@ export default function TrackOrderPage() {
           order_status,
           courier_name,
           tracking_number,
+          tracking_url,
           created_at,
           updated_at,
           grand_total,
@@ -386,6 +389,8 @@ export default function TrackOrderPage() {
       trackingNumber:
         order.tracking_number ||
         "Not available yet",
+      trackingUrl:
+        order.tracking_url || "",
       estimatedDelivery:
         order.order_status ===
         "delivered"
@@ -658,6 +663,24 @@ export default function TrackOrderPage() {
                   }
                 </strong>
               </div>
+
+              {searchedOrder.trackingUrl && (
+                <div className="summary-row">
+                  <span>
+                    Track Package
+                  </span>
+
+                  <a
+                    href={searchedOrder.trackingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="track-package-link"
+                  >
+                    Open Courier Tracking
+                    <FiTruck />
+                  </a>
+                </div>
+              )}
 
               <div className="summary-row">
                 <span>

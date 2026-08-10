@@ -37,6 +37,7 @@ import AdminLogin from "./admin/pages/AdminLogin";
 import Dashboard from "./admin/pages/Dashboard";
 import Products from "./admin/pages/Products";
 import NewProduct from "./admin/pages/NewProduct";
+import EditProduct from "./admin/pages/EditProduct";
 import Categories from "./admin/pages/Categories";
 import Collections from "./admin/pages/Collections";
 import Orders from "./admin/pages/Orders";
@@ -46,7 +47,7 @@ import Settings from "./admin/pages/Settings";
 
 function HomePage() {
   return (
-    <div className="min-h-screen bg-[#F8EFE3]">
+    <>
       <Header />
       <Hero />
       <WholesaleRetail />
@@ -55,7 +56,7 @@ function HomePage() {
       <HouseSlider />
       <FinalCTA />
       <Footer />
-    </div>
+    </>
   );
 }
 
@@ -224,7 +225,7 @@ export default function App() {
         element={<Contact />}
       />
 
-      {/* ADMIN LOGIN — PUBLIC */}
+      {/* ADMIN LOGIN */}
 
       <Route
         path="/admin/login"
@@ -263,6 +264,20 @@ export default function App() {
           <Route
             path="products/new"
             element={<NewProduct />}
+          />
+
+          {/* EYE ICON */}
+          <Route
+            path="products/:id"
+            element={
+              <AdminComingSoon title="Product Details" />
+            }
+          />
+
+          {/* PEN ICON */}
+          <Route
+            path="products/:id/edit"
+            element={<EditProduct />}
           />
 
           <Route

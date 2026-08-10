@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 
 import {
   FiEdit2,
-  FiEye,
   FiPackage,
   FiPlus,
   FiSearch,
@@ -848,18 +847,6 @@ export default function Products() {
 
                       <td data-label="Actions">
                         <div className="product-table-actions">
-                          <button
-                            type="button"
-                            title="View product"
-                            onClick={() =>
-                              navigate(
-                                `/admin/products/${product.id}`
-                              )
-                            }
-                          >
-                            <FiEye />
-                          </button>
-
                           <button
                             type="button"
                             title="Edit product"

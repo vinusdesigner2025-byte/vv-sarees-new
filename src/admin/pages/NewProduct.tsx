@@ -44,6 +44,45 @@ type ProductCategory = {
   slug: string;
 };
 
+const INDIA_REGIONS = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
+] as const;
+
 const createEmptyVariant = (): ColourVariant => ({
   id: crypto.randomUUID(),
   colourName: "",
@@ -80,6 +119,9 @@ export default function NewProduct() {
     useState("");
 
   const [category, setCategory] =
+    useState("");
+
+  const [state, setState] =
     useState("");
 
   const [categories, setCategories] =
@@ -359,6 +401,14 @@ export default function NewProduct() {
       return false;
     }
 
+    if (!state) {
+      alert(
+        "Product state select pannu."
+      );
+
+      return false;
+    }
+
     if (
       !retailPrice ||
       Number(retailPrice) <= 0
@@ -482,6 +532,7 @@ export default function NewProduct() {
           name: productName.trim(),
           slug,
           category,
+          state,
           collection: "",
           description:
             description.trim(),
@@ -846,6 +897,38 @@ export default function NewProduct() {
                           {item.name}
                         </option>
                       )
+                    )
+                  )}
+                </select>
+              </div>
+
+              <div className="new-product-field">
+                <label htmlFor="product-state">
+                  State / Union Territory
+                </label>
+
+                <select
+                  id="product-state"
+                  value={state}
+                  disabled={isSaving}
+                  onChange={(event) =>
+                    setState(
+                      event.target.value
+                    )
+                  }
+                >
+                  <option value="">
+                    Select State / UT
+                  </option>
+
+                  {INDIA_REGIONS.map(
+                    (region) => (
+                      <option
+                        key={region}
+                        value={region}
+                      >
+                        {region}
+                      </option>
                     )
                   )}
                 </select>

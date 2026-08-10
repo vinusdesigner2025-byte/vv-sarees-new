@@ -71,6 +71,7 @@ type Order = {
 
   carrierName: string;
   trackingNumber: string;
+  trackingUrl: string;
 
   products: OrderProduct[];
 
@@ -127,6 +128,7 @@ type OrderRow = {
   total_quantity: number;
   tracking_number: string | null;
   courier_name: string | null;
+  tracking_url: string | null;
   created_at: string;
   updated_at: string;
   order_items: OrderItemRow[] | null;
@@ -263,6 +265,9 @@ export default function Orders() {
   const [trackingNumber, setTrackingNumber] =
     useState("");
 
+  const [trackingUrl, setTrackingUrl] =
+    useState("");
+
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -291,6 +296,7 @@ export default function Orders() {
         total_quantity,
         tracking_number,
         courier_name,
+        tracking_url,
         created_at,
         updated_at,
         order_items (
@@ -386,6 +392,8 @@ export default function Orders() {
               order.courier_name ?? "",
             trackingNumber:
               order.tracking_number ?? "",
+            trackingUrl:
+              order.tracking_url ?? "",
             products:
               order.order_items?.map(
                 (item) => ({
@@ -582,6 +590,10 @@ export default function Orders() {
       selectedOrder.trackingNumber
     );
 
+    setTrackingUrl(
+      selectedOrder.trackingUrl
+    );
+
     setIsDispatchModalOpen(true);
   };
 
@@ -609,6 +621,33 @@ export default function Orders() {
       return;
     }
 
+    if (!trackingUrl.trim()) {
+      alert(
+        "Tracking URL is required."
+      );
+      return;
+    }
+
+    try {
+      const parsedUrl = new URL(
+        trackingUrl.trim()
+      );
+
+      if (
+        parsedUrl.protocol !== "http:" &&
+        parsedUrl.protocol !== "https:"
+      ) {
+        throw new Error(
+          "Invalid protocol"
+        );
+      }
+    } catch {
+      alert(
+        "Valid tracking URL enter pannu. Example: https://..."
+      );
+      return;
+    }
+
     setIsUpdating(true);
 
     const { error } = await supabase
@@ -619,6 +658,8 @@ export default function Orders() {
           carrierName.trim(),
         tracking_number:
           trackingNumber.trim(),
+        tracking_url:
+          trackingUrl.trim(),
         updated_at:
           new Date().toISOString(),
       })
@@ -645,6 +686,8 @@ export default function Orders() {
                 carrierName.trim(),
               trackingNumber:
                 trackingNumber.trim(),
+              trackingUrl:
+                trackingUrl.trim(),
             }
           : order
       )
@@ -654,6 +697,7 @@ export default function Orders() {
     setIsDispatchModalOpen(false);
     setCarrierName("");
     setTrackingNumber("");
+    setTrackingUrl("");
     setActiveStage("shipped");
     setIsUpdating(false);
   };
@@ -1333,6 +1377,24 @@ export default function Orders() {
                         }
                       </strong>
                     </div>
+
+                    {selectedOrder.trackingUrl && (
+                      <div>
+                        <span>
+                          Tracking Link
+                        </span>
+
+                        <a
+                          href={
+                            selectedOrder.trackingUrl
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Track Package
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </section>
               ) : null}
@@ -1545,6 +1607,24 @@ export default function Orders() {
                     placeholder="Enter tracking number"
                     onChange={(event) =>
                       setTrackingNumber(
+                        event.target.value
+                      )
+                    }
+                  />
+                </div>
+
+                <div className="dispatch-form-field">
+                  <label htmlFor="tracking-url">
+                    Tracking URL
+                  </label>
+
+                  <input
+                    id="tracking-url"
+                    type="url"
+                    value={trackingUrl}
+                    placeholder="https://..."
+                    onChange={(event) =>
+                      setTrackingUrl(
                         event.target.value
                       )
                     }
