@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+
 import {
   FiHeart,
   FiShoppingCart,
@@ -8,7 +9,10 @@ import {
 import ProductHeader from "../components/ProductHeader";
 import Footer from "../components/Footer";
 
-import { useShop } from "../context/ShopContext";
+import {
+  useShop,
+  type ProductId,
+} from "../context/ShopContext";
 
 import "./RetailWishlist.css";
 
@@ -19,38 +23,67 @@ export default function RetailWishlist() {
     removeFromWishlist,
   } = useShop();
 
-  const isEmpty = retailWishlist.length === 0;
+  const isEmpty =
+    retailWishlist.length === 0;
 
-  const handleMoveToCart = (productId: number) => {
-    const selectedProduct = retailWishlist.find(
-      (item) => item.id === productId
+  const handleMoveToCart = (
+    productId: ProductId
+  ) => {
+    const selectedProduct =
+      retailWishlist.find(
+        (item) =>
+          item.id === productId
+      );
+
+    if (!selectedProduct) {
+      return;
+    }
+
+    addToCart(
+      selectedProduct,
+      "retail"
     );
 
-    if (!selectedProduct) return;
-
-    addToCart(selectedProduct, "retail");
-    removeFromWishlist(productId, "retail");
+    removeFromWishlist(
+      productId,
+      "retail"
+    );
   };
 
-  const handleMoveAllToCart = () => {
-    retailWishlist.forEach((product) => {
-      addToCart(product, "retail");
-    });
+  const handleMoveAllToCart =
+    () => {
+      retailWishlist.forEach(
+        (product) => {
+          addToCart(
+            product,
+            "retail"
+          );
+        }
+      );
 
-    retailWishlist.forEach((product) => {
-      removeFromWishlist(product.id, "retail");
-    });
-  };
+      retailWishlist.forEach(
+        (product) => {
+          removeFromWishlist(
+            product.id,
+            "retail"
+          );
+        }
+      );
+    };
 
   return (
-    <div className="retail-wishlist-page">
+    <div>
       <ProductHeader mode="retail" />
 
       <main className="retail-wishlist-container">
         <div className="retail-wishlist-heading">
-          <span>VV SAREES</span>
+          <span>
+            VV SAREES
+          </span>
 
-          <h1>Retail Wishlist</h1>
+          <h1>
+            Retail Wishlist
+          </h1>
 
           <p>
             Save your favourite sarees and move them to your
@@ -64,7 +97,9 @@ export default function RetailWishlist() {
               <FiHeart />
             </div>
 
-            <h2>Your Wishlist is Empty</h2>
+            <h2>
+              Your Wishlist is Empty
+            </h2>
 
             <p>
               Explore our retail collection and save the
@@ -83,8 +118,11 @@ export default function RetailWishlist() {
             <div className="retail-wishlist-summary">
               <div>
                 <strong>
-                  {retailWishlist.length}{" "}
-                  {retailWishlist.length === 1
+                  {
+                    retailWishlist.length
+                  }{" "}
+                  {retailWishlist.length ===
+                  1
                     ? "Item"
                     : "Items"}
                 </strong>
@@ -97,7 +135,9 @@ export default function RetailWishlist() {
               <button
                 type="button"
                 className="retail-wishlist-move-all"
-                onClick={handleMoveAllToCart}
+                onClick={
+                  handleMoveAllToCart
+                }
               >
                 <FiShoppingCart />
                 Move All to Cart
@@ -105,121 +145,155 @@ export default function RetailWishlist() {
             </div>
 
             <section className="retail-wishlist-grid">
-              {retailWishlist.map((item) => {
-                const isInStock = item.stock > 0;
+              {retailWishlist.map(
+                (item) => {
+                  const isInStock =
+                    item.stock > 0;
 
-                return (
-                  <article
-                    className="retail-wishlist-card"
-                    key={item.id}
-                  >
-                    <Link
-                      to={`/retail/product/${item.slug}`}
-                      className="retail-wishlist-image-wrap"
-                      aria-label={`View ${item.name}`}
+                  return (
+                    <article
+                      className="retail-wishlist-card"
+                      key={item.id}
                     >
-                      {item.image ? (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="retail-wishlist-image"
-                        />
-                      ) : (
-                        <div className="retail-wishlist-image-placeholder">
-                          Product Image
-                        </div>
-                      )}
-                    </Link>
+                      <Link
+                        to={`/retail/product/${item.slug}`}
+                        className="retail-wishlist-image-wrap"
+                        aria-label={`View ${item.name}`}
+                      >
+                        {item.image ? (
+                          <img
+                            src={
+                              item.image
+                            }
+                            alt={
+                              item.name
+                            }
+                            className="retail-wishlist-image"
+                          />
+                        ) : (
+                          <div className="retail-wishlist-image-placeholder">
+                            Product Image
+                          </div>
+                        )}
+                      </Link>
 
-                    <div className="retail-wishlist-info">
-                      <div className="retail-wishlist-top-row">
-                        <div>
-                          <Link
-                            to={`/retail/product/${item.slug}`}
-                            className="retail-wishlist-name-link"
+                      <div className="retail-wishlist-info">
+                        <div className="retail-wishlist-top-row">
+                          <div>
+                            <Link
+                              to={`/retail/product/${item.slug}`}
+                              className="retail-wishlist-name-link"
+                            >
+                              <h2>
+                                {
+                                  item.name
+                                }
+                              </h2>
+                            </Link>
+
+                            {item.colour && (
+                              <span>
+                                {
+                                  item.colour
+                                }
+                              </span>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            className="retail-wishlist-remove-button"
+                            onClick={() =>
+                              removeFromWishlist(
+                                item.id,
+                                "retail"
+                              )
+                            }
+                            aria-label={`Remove ${item.name}`}
                           >
-                            <h2>{item.name}</h2>
-                          </Link>
+                            <FiTrash2 />
+                          </button>
+                        </div>
 
-                          {item.colour && (
-                            <span>{item.colour}</span>
+                        <div className="retail-wishlist-stars">
+                          {[
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                          ].map(
+                            (star) => (
+                              <span
+                                key={
+                                  star
+                                }
+                                className={
+                                  star <=
+                                  item.rating
+                                    ? "retail-wishlist-star-active"
+                                    : ""
+                                }
+                              >
+                                ★
+                              </span>
+                            )
+                          )}
+                        </div>
+
+                        <strong className="retail-wishlist-price">
+                          ₹
+                          {
+                            item.price
+                          }
+                        </strong>
+
+                        <div className="retail-wishlist-stock-row">
+                          <span
+                            className={
+                              isInStock
+                                ? "retail-wishlist-stock retail-in-stock"
+                                : "retail-wishlist-stock retail-out-of-stock"
+                            }
+                          >
+                            {isInStock
+                              ? "In Stock"
+                              : "Out of Stock"}
+                          </span>
+
+                          {isInStock && (
+                            <small>
+                              Available:{" "}
+                              {
+                                item.stock
+                              }
+                            </small>
                           )}
                         </div>
 
                         <button
                           type="button"
-                          className="retail-wishlist-remove-button"
+                          className="retail-wishlist-cart-button"
                           onClick={() =>
-                            removeFromWishlist(
-                              item.id,
-                              "retail"
+                            handleMoveToCart(
+                              item.id
                             )
                           }
-                          aria-label={`Remove ${item.name}`}
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-
-                      <div className="retail-wishlist-stars">
-                        {[1, 2, 3, 4, 5].map(
-                          (star) => (
-                            <span
-                              key={star}
-                              className={
-                                star <= item.rating
-                                  ? "retail-wishlist-star-active"
-                                  : ""
-                              }
-                            >
-                              ★
-                            </span>
-                          )
-                        )}
-                      </div>
-
-                      <strong className="retail-wishlist-price">
-                        ₹{item.price}
-                      </strong>
-
-                      <div className="retail-wishlist-stock-row">
-                        <span
-                          className={
-                            isInStock
-                              ? "retail-wishlist-stock retail-in-stock"
-                              : "retail-wishlist-stock retail-out-of-stock"
+                          disabled={
+                            !isInStock
                           }
                         >
+                          <FiShoppingCart />
+
                           {isInStock
-                            ? "In Stock"
+                            ? "Move to Cart"
                             : "Out of Stock"}
-                        </span>
-
-                        {isInStock && (
-                          <small>
-                            Available: {item.stock}
-                          </small>
-                        )}
+                        </button>
                       </div>
-
-                      <button
-                        type="button"
-                        className="retail-wishlist-cart-button"
-                        onClick={() =>
-                          handleMoveToCart(item.id)
-                        }
-                        disabled={!isInStock}
-                      >
-                        <FiShoppingCart />
-
-                        {isInStock
-                          ? "Move to Cart"
-                          : "Out of Stock"}
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+                    </article>
+                  );
+                }
+              )}
             </section>
           </>
         )}
