@@ -9,17 +9,13 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import { supabase } from "../../lib/supabase";
+
 import "../css/AdminLogin.css";
 
 type LoginLocationState = {
   from?: string;
 };
-
-const ADMIN_EMAIL =
-  "admin@vvsarees.com";
-
-const ADMIN_PASSWORD =
-  "123456";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -44,68 +40,220 @@ export default function AdminLogin() {
         | null
     )?.from ?? "/admin/dashboard";
 
-  useEffect(() => {
-    const hasAdminSession =
-      localStorage.getItem(
-        "vv-admin-session"
-      ) === "true";
+  /* =========================
+     CHECK EXISTING SESSION
+  ========================= */
 
-    if (hasAdminSession) {
-      navigate(
-        "/admin/dashboard",
-        {
-          replace: true,
+  useEffect(() => {
+    let mounted = true;
+
+    const checkAdminSession =
+      async () => {
+        try {
+          const {
+            data: {
+              user,
+            },
+          } =
+            await supabase.auth
+              .getUser();
+
+          if (
+            !mounted ||
+            !user
+          ) {
+            return;
+          }
+
+          const {
+            data: adminUser,
+            error: adminError,
+          } =
+            await supabase
+              .from("admin_users")
+              .select(
+                "user_id, email"
+              )
+              .eq(
+                "user_id",
+                user.id
+              )
+              .maybeSingle();
+
+          if (!mounted) {
+            return;
+          }
+
+          if (
+            adminError ||
+            !adminUser
+          ) {
+            /*
+              Logged-in customer
+              admin login page-ku
+              vandha logout panniduvom.
+            */
+
+            await supabase.auth
+              .signOut();
+
+            return;
+          }
+
+          navigate(
+            "/admin/dashboard",
+            {
+              replace: true,
+            }
+          );
+        } catch (sessionError) {
+          console.error(
+            "Admin session check error:",
+            sessionError
+          );
         }
-      );
-    }
+      };
+
+    void checkAdminSession();
+
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
 
-  const handleLogin = (
+  /* =========================
+     ADMIN LOGIN
+  ========================= */
+
+  const handleLogin = async (
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+
+    if (isLoading) {
+      return;
+    }
 
     setError("");
     setIsLoading(true);
 
     const cleanedEmail =
-      email.trim().toLowerCase();
+      email
+        .trim()
+        .toLowerCase();
 
-    window.setTimeout(() => {
+    try {
+      /* =========================
+         SUPABASE EMAIL LOGIN
+      ========================= */
+
+      const {
+        data,
+        error:
+          loginError,
+      } =
+        await supabase.auth
+          .signInWithPassword({
+            email:
+              cleanedEmail,
+
+            password,
+          });
+
+      if (loginError) {
+        throw loginError;
+      }
+
+      if (!data.user) {
+        throw new Error(
+          "Login user not found."
+        );
+      }
+
+      /* =========================
+         CHECK ADMIN_USERS TABLE
+      ========================= */
+
+      const {
+        data: adminUser,
+        error:
+          adminError,
+      } =
+        await supabase
+          .from("admin_users")
+          .select(
+            "user_id, email"
+          )
+          .eq(
+            "user_id",
+            data.user.id
+          )
+          .maybeSingle();
+
       if (
-        cleanedEmail ===
-          ADMIN_EMAIL &&
-        password ===
-          ADMIN_PASSWORD
+        adminError ||
+        !adminUser
       ) {
-        localStorage.setItem(
-          "vv-admin-session",
-          "true"
+        /*
+          Normal customer account
+          admin panel-ku access
+          panna vida koodadhu.
+        */
+
+        await supabase.auth
+          .signOut();
+
+        setError(
+          "This account does not have admin access."
         );
 
-        navigate(redirectPath, {
-          replace: true,
-        });
+        setIsLoading(
+          false
+        );
 
         return;
       }
 
+      /* =========================
+         ADMIN LOGIN SUCCESS
+      ========================= */
+
+      navigate(
+        redirectPath,
+        {
+          replace: true,
+        }
+      );
+    } catch (loginError) {
+      console.error(
+        "Admin login error:",
+        loginError
+      );
+
       setError(
-        "Invalid email or password."
+        "Invalid admin email or password."
       );
 
       setIsLoading(false);
-    }, 400);
+    }
   };
 
   return (
     <div className="admin-login-page">
       <div className="admin-login-card">
-        <h1>VV Sarees</h1>
+        <h1>
+          VV Sarees
+        </h1>
 
-        <p>Admin CMS Login</p>
+        <p>
+          Admin CMS Login
+        </p>
 
-        <form onSubmit={handleLogin}>
+        <form
+          onSubmit={
+            handleLogin
+          }
+        >
           <div className="admin-input-group">
             <label htmlFor="admin-email">
               Email
@@ -114,11 +262,17 @@ export default function AdminLogin() {
             <input
               id="admin-email"
               type="email"
-              placeholder="admin@vvsarees.com"
-              value={email}
-              disabled={isLoading}
+              placeholder="Enter admin email"
+              value={
+                email
+              }
+              disabled={
+                isLoading
+              }
               autoComplete="email"
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 setEmail(
                   event.target.value
                 )
@@ -136,10 +290,16 @@ export default function AdminLogin() {
               id="admin-password"
               type="password"
               placeholder="Enter password"
-              value={password}
-              disabled={isLoading}
+              value={
+                password
+              }
+              disabled={
+                isLoading
+              }
               autoComplete="current-password"
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 setPassword(
                   event.target.value
                 )
@@ -151,12 +311,23 @@ export default function AdminLogin() {
           {error && (
             <div
               style={{
-                marginBottom: "14px",
-                padding: "10px 12px",
-                borderRadius: "8px",
-                background: "#fff1ef",
-                color: "#a13e35",
-                fontSize: "12px",
+                marginBottom:
+                  "14px",
+
+                padding:
+                  "10px 12px",
+
+                borderRadius:
+                  "8px",
+
+                background:
+                  "#fff1ef",
+
+                color:
+                  "#a13e35",
+
+                fontSize:
+                  "12px",
               }}
             >
               {error}
@@ -165,7 +336,9 @@ export default function AdminLogin() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={
+              isLoading
+            }
           >
             {isLoading
               ? "Signing in..."

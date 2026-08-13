@@ -23,8 +23,13 @@ import RetailCart from "./pages/RetailCart";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import TrackOrderPage from "./pages/TrackOrderPage";
+
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MyAccountPage from "./pages/MyAccountPage";
+
 import StateProductsPage from "./pages/StateProductsPage";
 import Policies from "./pages/Policies";
 import About from "./pages/About";
@@ -45,6 +50,11 @@ import Customers from "./admin/pages/Customers";
 import MediaLibrary from "./admin/pages/MediaLibrary";
 import Settings from "./admin/pages/Settings";
 
+
+/* =========================================
+   HOME PAGE
+========================================= */
+
 function HomePage() {
   return (
     <>
@@ -59,6 +69,11 @@ function HomePage() {
     </>
   );
 }
+
+
+/* =========================================
+   ADMIN COMING SOON
+========================================= */
 
 type AdminComingSoonProps = {
   title: string;
@@ -117,10 +132,18 @@ function AdminComingSoon({
   );
 }
 
+
+/* =========================================
+   APP ROUTES
+========================================= */
+
 export default function App() {
   return (
     <Routes>
-      {/* PUBLIC WEBSITE */}
+
+      {/* =====================================
+          PUBLIC WEBSITE
+      ===================================== */}
 
       <Route
         path="/"
@@ -137,6 +160,11 @@ export default function App() {
         element={<RetailPage />}
       />
 
+
+      {/* =====================================
+          PRODUCT DETAILS
+      ===================================== */}
+
       <Route
         path="/wholesale/product/:slug"
         element={
@@ -151,6 +179,11 @@ export default function App() {
         }
       />
 
+
+      {/* =====================================
+          WISHLIST
+      ===================================== */}
+
       <Route
         path="/wholesale/wishlist"
         element={<WholesaleWishlist />}
@@ -161,6 +194,11 @@ export default function App() {
         element={<RetailWishlist />}
       />
 
+
+      {/* =====================================
+          CART
+      ===================================== */}
+
       <Route
         path="/wholesale/cart"
         element={<WholesaleCart />}
@@ -170,6 +208,11 @@ export default function App() {
         path="/retail/cart"
         element={<RetailCart />}
       />
+
+
+      {/* =====================================
+          CHECKOUT
+      ===================================== */}
 
       <Route
         path="/wholesale/checkout"
@@ -195,9 +238,29 @@ export default function App() {
         element={<TrackOrderPage />}
       />
 
+
+      {/* =====================================
+          CUSTOMER AUTHENTICATION
+      ===================================== */}
+
       <Route
         path="/login"
         element={<LoginPage />}
+      />
+
+      <Route
+        path="/register"
+        element={<RegisterPage />}
+      />
+
+      <Route
+        path="/forgot-password"
+        element={<ForgotPasswordPage />}
+      />
+
+      <Route
+        path="/reset-password"
+        element={<ResetPasswordPage />}
       />
 
       <Route
@@ -205,10 +268,20 @@ export default function App() {
         element={<MyAccountPage />}
       />
 
+
+      {/* =====================================
+          STATE PRODUCTS
+      ===================================== */}
+
       <Route
         path="/state/:state"
         element={<StateProductsPage />}
       />
+
+
+      {/* =====================================
+          INFORMATION PAGES
+      ===================================== */}
 
       <Route
         path="/policies"
@@ -225,14 +298,20 @@ export default function App() {
         element={<Contact />}
       />
 
-      {/* ADMIN LOGIN */}
+
+      {/* =====================================
+          ADMIN LOGIN
+      ===================================== */}
 
       <Route
         path="/admin/login"
         element={<AdminLogin />}
       />
 
-      {/* PROTECTED ADMIN PANEL */}
+
+      {/* =====================================
+          PROTECTED ADMIN PANEL
+      ===================================== */}
 
       <Route
         element={<ProtectedAdminRoute />}
@@ -241,6 +320,9 @@ export default function App() {
           path="/admin"
           element={<AdminLayout />}
         >
+
+          {/* Default Admin Route */}
+
           <Route
             index
             element={
@@ -251,10 +333,16 @@ export default function App() {
             }
           />
 
+
+          {/* Dashboard */}
+
           <Route
             path="dashboard"
             element={<Dashboard />}
           />
+
+
+          {/* Products */}
 
           <Route
             path="products"
@@ -266,74 +354,111 @@ export default function App() {
             element={<NewProduct />}
           />
 
-          {/* EYE ICON */}
           <Route
             path="products/:id"
             element={
-              <AdminComingSoon title="Product Details" />
+              <AdminComingSoon
+                title="Product Details"
+              />
             }
           />
 
-          {/* PEN ICON */}
           <Route
             path="products/:id/edit"
             element={<EditProduct />}
           />
+
+
+          {/* Categories */}
 
           <Route
             path="categories"
             element={<Categories />}
           />
 
+
+          {/* Collections */}
+
           <Route
             path="collections"
             element={<Collections />}
           />
+
+
+          {/* Orders */}
 
           <Route
             path="orders"
             element={<Orders />}
           />
 
+
+          {/* Customers */}
+
           <Route
             path="customers"
             element={<Customers />}
           />
 
+
+          {/* Website Content */}
+
           <Route
             path="website/home"
             element={
-              <AdminComingSoon title="Home Content" />
+              <AdminComingSoon
+                title="Home Content"
+              />
             }
           />
+
+
+          {/* Media Library */}
 
           <Route
             path="media"
             element={<MediaLibrary />}
           />
 
+
+          {/* Coupons */}
+
           <Route
             path="coupons"
             element={
-              <AdminComingSoon title="Coupons" />
+              <AdminComingSoon
+                title="Coupons"
+              />
             }
           />
+
+
+          {/* Reviews */}
 
           <Route
             path="reviews"
             element={
-              <AdminComingSoon title="Reviews" />
+              <AdminComingSoon
+                title="Reviews"
+              />
             }
           />
+
+
+          {/* Settings */}
 
           <Route
             path="settings"
             element={<Settings />}
           />
+
         </Route>
       </Route>
 
-      {/* INVALID URL */}
+
+      {/* =====================================
+          INVALID / UNKNOWN URL
+      ===================================== */}
 
       <Route
         path="*"
@@ -344,6 +469,7 @@ export default function App() {
           />
         }
       />
+
     </Routes>
   );
 }

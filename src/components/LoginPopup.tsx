@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
+
 import {
   FiEye,
   FiEyeOff,
@@ -6,6 +11,7 @@ import {
   FiMail,
   FiX,
 } from "react-icons/fi";
+
 import { FcGoogle } from "react-icons/fc";
 
 import { useAuth } from "../context/AuthContext";
@@ -23,49 +29,128 @@ export default function LoginPopup({
   onClose,
   onLoginSuccess,
 }: LoginPopupProps) {
-  const { login, loginWithGoogle } = useAuth();
+  const {
+    login,
+    loginWithGoogle,
+  } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] =
-    useState(false);
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
+
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] = useState(false);
+
+  const [
+    isGoogleLoading,
+    setIsGoogleLoading,
+  ] = useState(false);
+
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
-    document.body.style.overflow = isOpen
-      ? "hidden"
-      : "";
+    document.body.style.overflow =
+      isOpen ? "hidden" : "";
 
     return () => {
       document.body.style.overflow = "";
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
-  const handleGoogleLogin = () => {
-    loginWithGoogle();
+  /* =========================
+     GOOGLE LOGIN
+  ========================= */
 
-    onLoginSuccess?.();
-    onClose();
-  };
+  const handleGoogleLogin =
+    async () => {
+      if (
+        isGoogleLoading ||
+        isSubmitting
+      ) {
+        return;
+      }
 
-  const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>
+      setError("");
+      setIsGoogleLoading(true);
+
+      const result =
+        await loginWithGoogle();
+
+      if (!result.success) {
+        setError(
+          result.error ||
+            "Google login failed."
+        );
+
+        setIsGoogleLoading(false);
+      }
+
+      /*
+        Success aana browser
+        Google OAuth page-ku
+        redirect aagum.
+
+        So inga popup close /
+        success callback manually
+        call panna thevai illa.
+      */
+    };
+
+  /* =========================
+     EMAIL LOGIN
+  ========================= */
+
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
+    if (
+      isSubmitting ||
+      isGoogleLoading
+    ) {
+      return;
+    }
+
+    setError("");
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      login(email);
+    const result =
+      await login(
+        email,
+        password
+      );
+
+    if (!result.success) {
+      setError(
+        result.error ||
+          "Invalid email or password."
+      );
 
       setIsSubmitting(false);
 
-      onLoginSuccess?.();
-      onClose();
-    }, 700);
+      return;
+    }
+
+    setIsSubmitting(false);
+
+    onLoginSuccess?.();
+
+    onClose();
   };
 
   return (
@@ -75,7 +160,9 @@ export default function LoginPopup({
     >
       <section
         className="login-popup-card"
-        onClick={(event) => event.stopPropagation()}
+        onClick={(event) =>
+          event.stopPropagation()
+        }
       >
         <button
           type="button"
@@ -87,34 +174,58 @@ export default function LoginPopup({
         </button>
 
         <div className="login-popup-heading">
-          <span>VV SAREES</span>
+          <span>
+            VV SAREES
+          </span>
 
-          <h2>Login Required</h2>
+          <h2>
+            Login Required
+          </h2>
 
           <p>
-            Login to add sarees to your wishlist or cart.
+            Login to add sarees to your
+            wishlist or cart.
           </p>
         </div>
+
+        {/* GOOGLE */}
 
         <button
           type="button"
           className="login-popup-google"
-          onClick={handleGoogleLogin}
+          onClick={() =>
+            void handleGoogleLogin()
+          }
+          disabled={
+            isGoogleLoading ||
+            isSubmitting
+          }
         >
           <FcGoogle />
-          Continue with Google
+
+          {isGoogleLoading
+            ? "Connecting to Google..."
+            : "Continue with Google"}
         </button>
 
         <div className="login-popup-divider">
-          <span>or continue with email</span>
+          <span>
+            or continue with email
+          </span>
         </div>
+
+        {/* EMAIL LOGIN */}
 
         <form
           className="login-popup-form"
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
         >
           <label>
-            <span>Email Address</span>
+            <span>
+              Email Address
+            </span>
 
             <div className="login-popup-input">
               <FiMail />
@@ -123,29 +234,47 @@ export default function LoginPopup({
                 type="email"
                 value={email}
                 onChange={(event) =>
-                  setEmail(event.target.value)
+                  setEmail(
+                    event.target.value
+                  )
                 }
                 placeholder="Enter your email"
+                autoComplete="email"
+                disabled={
+                  isSubmitting ||
+                  isGoogleLoading
+                }
                 required
               />
             </div>
           </label>
 
           <label>
-            <span>Password</span>
+            <span>
+              Password
+            </span>
 
             <div className="login-popup-input">
               <FiLock />
 
               <input
                 type={
-                  showPassword ? "text" : "password"
+                  showPassword
+                    ? "text"
+                    : "password"
                 }
                 value={password}
                 onChange={(event) =>
-                  setPassword(event.target.value)
+                  setPassword(
+                    event.target.value
+                  )
                 }
                 placeholder="Enter your password"
+                autoComplete="current-password"
+                disabled={
+                  isSubmitting ||
+                  isGoogleLoading
+                }
                 required
               />
 
@@ -153,12 +282,19 @@ export default function LoginPopup({
                 type="button"
                 className="login-popup-password-toggle"
                 onClick={() =>
-                  setShowPassword((current) => !current)
+                  setShowPassword(
+                    (current) =>
+                      !current
+                  )
                 }
                 aria-label={
                   showPassword
                     ? "Hide password"
                     : "Show password"
+                }
+                disabled={
+                  isSubmitting ||
+                  isGoogleLoading
                 }
               >
                 {showPassword ? (
@@ -170,10 +306,38 @@ export default function LoginPopup({
             </div>
           </label>
 
+          {/* ERROR */}
+
+          {error && (
+            <div
+              style={{
+                marginBottom:
+                  "14px",
+                padding:
+                  "10px 12px",
+                borderRadius:
+                  "8px",
+                background:
+                  "#fff1ef",
+                color:
+                  "#a13e35",
+                fontSize:
+                  "12px",
+                lineHeight:
+                  1.5,
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
             className="login-popup-submit"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting ||
+              isGoogleLoading
+            }
           >
             {isSubmitting
               ? "Logging in..."
@@ -183,7 +347,10 @@ export default function LoginPopup({
 
         <p className="login-popup-register">
           Don&apos;t have an account?{" "}
-          <a href="/register">Create Account</a>
+
+          <a href="/register">
+            Create Account
+          </a>
         </p>
       </section>
     </div>
