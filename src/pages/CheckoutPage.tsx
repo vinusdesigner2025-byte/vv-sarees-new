@@ -34,11 +34,146 @@ type CheckoutPageProps = {
   mode: "wholesale" | "retail";
 };
 
-type PaymentMethod = "upi" | "cod";
+type PaymentMethod =
+  | "razorpay"
+  | "cod";
+
+type RazorpaySuccessResponse = {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayFailureResponse = {
+  error?: {
+    code?: string;
+    description?: string;
+    source?: string;
+    step?: string;
+    reason?: string;
+    metadata?: {
+      order_id?: string;
+      payment_id?: string;
+    };
+  };
+};
+
+type RazorpayOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+  notes: {
+    vv_order_id: string;
+    vv_order_number: string;
+    order_type: string;
+  };
+  handler: (
+    response: RazorpaySuccessResponse
+  ) => void | Promise<void>;
+  modal?: {
+    ondismiss?: () => void;
+  };
+};
+
+type RazorpayInstance = {
+  open: () => void;
+  on: (
+    event: "payment.failed",
+    callback: (
+      response: RazorpayFailureResponse
+    ) => void
+  ) => void;
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (
+      options: RazorpayOptions
+    ) => RazorpayInstance;
+  }
+}
+
+type RazorpayOrderResponse = {
+  order_id: string;
+  amount: number;
+  currency: string;
+  app_order_id: string;
+  order_number: string;
+};
+
+type RazorpayVerifyResponse = {
+  verified: boolean;
+  app_order_id?: string;
+  order_number?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  error?: string;
+};
 
 const PAYMENT_METHODS = {
-  upi: true,
+  razorpay: true,
   cod: false,
+};
+
+const RAZORPAY_SCRIPT_URL =
+  "https://checkout.razorpay.com/v1/checkout.js";
+
+const loadRazorpayScript = () => {
+  return new Promise<boolean>(
+    (resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+
+      const existingScript =
+        document.querySelector<HTMLScriptElement>(
+          `script[src="${RAZORPAY_SCRIPT_URL}"]`
+        );
+
+      if (existingScript) {
+        existingScript.addEventListener(
+          "load",
+          () => resolve(true),
+          { once: true }
+        );
+
+        existingScript.addEventListener(
+          "error",
+          () => resolve(false),
+          { once: true }
+        );
+
+        return;
+      }
+
+      const script =
+        document.createElement("script");
+
+      script.src =
+        RAZORPAY_SCRIPT_URL;
+
+      script.async = true;
+
+      script.onload = () =>
+        resolve(true);
+
+      script.onerror = () =>
+        resolve(false);
+
+      document.body.appendChild(
+        script
+      );
+    }
+  );
 };
 
 const createOrderNumber = () => {
@@ -95,7 +230,7 @@ export default function CheckoutPage({
   const [
     paymentMethod,
     setPaymentMethod,
-  ] = useState<PaymentMethod>("upi");
+  ] = useState<PaymentMethod>("razorpay");
 
   const [
     isSubmitting,
@@ -261,9 +396,40 @@ export default function CheckoutPage({
       | string
       | null = null;
 
+    let createdOrderNumber = "";
+    let gatewaySuccessReceived =
+      false;
+
     try {
+      if (
+        paymentMethod ===
+        "razorpay"
+      ) {
+        const razorpayKeyId =
+          import.meta.env
+            .VITE_RAZORPAY_KEY_ID;
+
+        if (!razorpayKeyId) {
+          throw new Error(
+            "Razorpay Key ID configure aagala."
+          );
+        }
+
+        const scriptLoaded =
+          await loadRazorpayScript();
+
+        if (!scriptLoaded) {
+          throw new Error(
+            "Razorpay checkout load aagala. Internet connection check panni retry pannu."
+          );
+        }
+      }
+
       const orderNumber =
         createOrderNumber();
+
+      createdOrderNumber =
+        orderNumber;
 
       const {
         data: createdOrder,
@@ -379,6 +545,247 @@ export default function CheckoutPage({
         throw itemsError;
       }
 
+      if (
+        paymentMethod ===
+        "razorpay"
+      ) {
+        const {
+          data:
+            razorpayOrderData,
+          error:
+            razorpayOrderError,
+        } =
+          await supabase.functions.invoke(
+            "razorpay-create-order",
+            {
+              body: {
+                orderId:
+                  createdOrder.id,
+              },
+            }
+          );
+
+        if (razorpayOrderError) {
+          throw razorpayOrderError;
+        }
+
+        const razorpayOrder =
+          razorpayOrderData as
+            | RazorpayOrderResponse
+            | null;
+
+        if (
+          !razorpayOrder?.order_id ||
+          !razorpayOrder.amount ||
+          !razorpayOrder.currency
+        ) {
+          throw new Error(
+            "Razorpay order create aagala."
+          );
+        }
+
+        const razorpayKeyId =
+          import.meta.env
+            .VITE_RAZORPAY_KEY_ID;
+
+        const RazorpayConstructor =
+          window.Razorpay;
+
+        if (
+          !razorpayKeyId ||
+          !RazorpayConstructor
+        ) {
+          throw new Error(
+            "Razorpay checkout ready illa."
+          );
+        }
+
+        await new Promise<void>(
+          (resolve, reject) => {
+            let paymentFlowSettled =
+              false;
+
+            const finishWithError = (
+              error: Error
+            ) => {
+              if (
+                paymentFlowSettled
+              ) {
+                return;
+              }
+
+              paymentFlowSettled =
+                true;
+
+              reject(error);
+            };
+
+            const finishSuccessfully =
+              () => {
+                if (
+                  paymentFlowSettled
+                ) {
+                  return;
+                }
+
+                paymentFlowSettled =
+                  true;
+
+                resolve();
+              };
+
+            const razorpay =
+              new RazorpayConstructor(
+                {
+                  key:
+                    razorpayKeyId,
+
+                  amount:
+                    Number(
+                      razorpayOrder.amount
+                    ),
+
+                  currency:
+                    razorpayOrder.currency,
+
+                  name:
+                    "VV Sarees",
+
+                  description:
+                    `${
+                      isWholesale
+                        ? "Wholesale"
+                        : "Retail"
+                    } Order ${createdOrder.order_number}`,
+
+                  order_id:
+                    razorpayOrder.order_id,
+
+                  prefill: {
+                    name:
+                      formData.fullName.trim(),
+
+                    email:
+                      formData.email.trim(),
+
+                    contact:
+                      formData.phone.trim(),
+                  },
+
+                  notes: {
+                    vv_order_id:
+                      createdOrder.id,
+
+                    vv_order_number:
+                      createdOrder.order_number,
+
+                    order_type:
+                      mode,
+                  },
+
+                  handler:
+                    async (
+                      response
+                    ) => {
+                      gatewaySuccessReceived =
+                        true;
+
+                      try {
+                        const {
+                          data:
+                            verifyData,
+                          error:
+                            verifyError,
+                        } =
+                          await supabase.functions.invoke(
+                            "razorpay-verify-payment",
+                            {
+                              body: {
+                                app_order_id:
+                                  createdOrder.id,
+
+                                razorpay_order_id:
+                                  response.razorpay_order_id,
+
+                                razorpay_payment_id:
+                                  response.razorpay_payment_id,
+
+                                razorpay_signature:
+                                  response.razorpay_signature,
+                              },
+                            }
+                          );
+
+                        if (
+                          verifyError
+                        ) {
+                          throw verifyError;
+                        }
+
+                        const verification =
+                          verifyData as
+                            | RazorpayVerifyResponse
+                            | null;
+
+                        if (
+                          !verification?.verified
+                        ) {
+                          throw new Error(
+                            verification?.error ??
+                              "Payment verification failed."
+                          );
+                        }
+
+                        finishSuccessfully();
+                      } catch (
+                        error
+                      ) {
+                        finishWithError(
+                          new Error(
+                            `Payment received, but verification complete aagala: ${getErrorMessage(
+                              error
+                            )}`
+                          )
+                        );
+                      }
+                    },
+
+                  modal: {
+                    ondismiss:
+                      () => {
+                        finishWithError(
+                          new Error(
+                            "Payment cancelled."
+                          )
+                        );
+                      },
+                  },
+                }
+              );
+
+            razorpay.on(
+              "payment.failed",
+              (
+                response
+              ) => {
+                const description =
+                  response.error
+                    ?.description;
+
+                finishWithError(
+                  new Error(
+                    description ||
+                      "Payment failed. Please try again."
+                  )
+                );
+              }
+            );
+
+            razorpay.open();
+          }
+        );
+      }
+
       navigate(
         `/order-success?order=${encodeURIComponent(
           createdOrder.order_number
@@ -403,11 +810,62 @@ export default function CheckoutPage({
       );
     } catch (error) {
       console.error(
-        "Checkout order save error:",
+        "Checkout order/payment error:",
         error
       );
 
+      /*
+       * If Razorpay has already returned a
+       * successful payment response, never
+       * delete the order automatically.
+       * It may only need verification/reconciliation.
+       */
+      if (
+        gatewaySuccessReceived &&
+        createdOrderId &&
+        createdOrderNumber
+      ) {
+        setSubmitError(
+          `Payment response vandhuruku, aana verification complete aagala. Same payment-a thirumba panna vendam. Order ${createdOrderNumber}. ${getErrorMessage(
+            error
+          )}`
+        );
+
+        navigate(
+          `/order-success?order=${encodeURIComponent(
+            createdOrderNumber
+          )}&mode=${mode}`,
+          {
+            state: {
+              orderId:
+                createdOrderId,
+
+              orderNumber:
+                createdOrderNumber,
+
+              mode,
+              customerName:
+                formData.fullName.trim(),
+
+              totalQuantity,
+              grandTotal,
+              paymentMethod,
+            },
+          }
+        );
+
+        return;
+      }
+
       if (createdOrderId) {
+        await supabase
+          .from("order_items")
+          .delete()
+          .eq(
+            "order_id",
+            createdOrderId
+          );
+
         await supabase
           .from("orders")
           .delete()
@@ -814,11 +1272,11 @@ export default function CheckoutPage({
               </div>
 
               <div className="checkout-payment-options">
-                {PAYMENT_METHODS.upi && (
+                {PAYMENT_METHODS.razorpay && (
                   <label
                     className={`checkout-option-card ${
                       paymentMethod ===
-                      "upi"
+                      "razorpay"
                         ? "checkout-option-active"
                         : ""
                     }`}
@@ -826,14 +1284,14 @@ export default function CheckoutPage({
                     <input
                       type="radio"
                       name="payment"
-                      value="upi"
+                      value="razorpay"
                       checked={
                         paymentMethod ===
-                        "upi"
+                        "razorpay"
                       }
                       onChange={() =>
                         setPaymentMethod(
-                          "upi"
+                          "razorpay"
                         )
                       }
                       disabled={
@@ -843,15 +1301,16 @@ export default function CheckoutPage({
 
                     <div>
                       <strong>
-                        UPI Payment
+                        Online Payment
                       </strong>
 
                       <span>
-                        Order will be
-                        created with
-                        pending payment.
-                        Razorpay can be
-                        connected next.
+                        Pay securely using
+                        Razorpay. UPI,
+                        cards and other
+                        available payment
+                        methods will open
+                        in the checkout.
                       </span>
                     </div>
 
@@ -906,8 +1365,8 @@ export default function CheckoutPage({
                 <FiLock />
 
                 <span>
-                  Your order details are
-                  securely saved.
+                  Your payment is processed
+                  securely through Razorpay.
                 </span>
               </div>
             </section>
@@ -1011,8 +1470,14 @@ export default function CheckoutPage({
               }
             >
               {isSubmitting
-                ? "Placing Order..."
-                : "Place Order"}
+                ? paymentMethod ===
+                  "razorpay"
+                  ? "Processing Payment..."
+                  : "Placing Order..."
+                : paymentMethod ===
+                  "razorpay"
+                  ? "Pay Securely"
+                  : "Place Order"}
             </button>
 
             <Link
