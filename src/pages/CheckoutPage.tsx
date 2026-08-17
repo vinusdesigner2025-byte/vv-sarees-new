@@ -736,6 +736,120 @@ export default function CheckoutPage({
                           );
                         }
 
+                        const shiprocketPayload = {
+                          app_order_id:
+                            createdOrder.id,
+
+                          order_id:
+                            createdOrder.order_number,
+
+                          order_date: new Date()
+                            .toISOString()
+                            .slice(0, 19)
+                            .replace("T", " "),
+
+                          pickup_location:
+                            "work",
+
+                          billing_customer_name:
+                            formData.fullName.trim(),
+
+                          billing_last_name:
+                            "",
+
+                          billing_address:
+                            formData.addressLine1.trim(),
+
+                          billing_address_2:
+                            formData.addressLine2.trim(),
+
+                          billing_city:
+                            formData.city.trim(),
+
+                          billing_pincode:
+                            formData.pincode.trim(),
+
+                          billing_state:
+                            formData.state,
+
+                          billing_country:
+                            "India",
+
+                          billing_email:
+                            formData.email.trim(),
+
+                          billing_phone:
+                            formData.phone.trim(),
+
+                          shipping_is_billing:
+                            true,
+
+                          order_items:
+                            cartItems.map(
+                              (item) => ({
+                                name:
+                                  item.name,
+
+                                sku:
+                                  item.slug ||
+                                  String(
+                                    item.id
+                                  ),
+
+                                units:
+                                  Number(
+                                    item.quantity
+                                  ),
+
+                                selling_price:
+                                  Number(
+                                    item.price
+                                  ),
+                              })
+                            ),
+
+                          payment_method:
+                            "Prepaid",
+
+                          sub_total:
+                            Number(
+                              subtotal
+                            ),
+
+                          length: 30,
+                          breadth: 25,
+                          height: 5,
+                          weight: 0.5,
+                        };
+
+                        const {
+                          data:
+                            shiprocketData,
+                          error:
+                            shiprocketError,
+                        } =
+                          await supabase.functions.invoke(
+                            "shiprocket-create-order",
+                            {
+                              body:
+                                shiprocketPayload,
+                            }
+                          );
+
+                        if (
+                          shiprocketError
+                        ) {
+                          console.error(
+                            "Shiprocket order creation failed:",
+                            shiprocketError
+                          );
+                        } else {
+                          console.log(
+                            "Shiprocket order created:",
+                            shiprocketData
+                          );
+                        }
+
                         finishSuccessfully();
                       } catch (
                         error

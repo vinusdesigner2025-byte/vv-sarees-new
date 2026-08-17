@@ -77,6 +77,9 @@ type OrderRow = {
   courier_name: string | null;
   tracking_number: string | null;
   tracking_url: string | null;
+  shiprocket_order_id: string | null;
+  shiprocket_shipment_id: string | null;
+  tracking_status: string | null;
   created_at: string;
   updated_at: string;
   grand_total: number;
@@ -128,6 +131,133 @@ const formatPayment = (
   }
 
   return `${method.toUpperCase()} - Pending`;
+};
+
+
+type ShiprocketTrackResponse = {
+  success?: boolean;
+  order_id?: string;
+  shiprocket_order_id?: string | number | null;
+  shipment_id?: string | number | null;
+  status?: string | number | null;
+  awb_code?: string | null;
+  courier_name?: string | null;
+  tracking?: any;
+  shiprocket_order?: any;
+  error?: string;
+};
+
+const mapShiprocketStatus = (
+  value: unknown
+): OrderStatus => {
+  const status = String(
+    value ?? ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (
+    status.includes("cancel") ||
+    status.includes("rto")
+  ) {
+    return "cancelled";
+  }
+
+  if (
+    status.includes("deliver")
+  ) {
+    return "delivered";
+  }
+
+  if (
+    status.includes("ship") ||
+    status.includes("transit") ||
+    status.includes("out for delivery") ||
+    status.includes("pickup")
+  ) {
+    return "shipped";
+  }
+
+  if (
+    status.includes("pack") ||
+    status.includes("process") ||
+    status.includes("ready") ||
+    status.includes("manifest") ||
+    status.includes("awb")
+  ) {
+    return "processing";
+  }
+
+  if (
+    status.includes("new") ||
+    status.includes("confirm") ||
+    status.includes("pending")
+  ) {
+    return "confirmed";
+  }
+
+  return "pending";
+};
+
+const getShiprocketTrackingUrl = (
+  response: ShiprocketTrackResponse
+) => {
+  const candidates = [
+    response?.tracking?.tracking_url,
+    response?.tracking?.track_url,
+    response?.tracking?.shipment_track_url,
+    response?.tracking?.tracking_data
+      ?.track_url,
+    response?.tracking?.tracking_data
+      ?.shipment_track_url,
+    response?.shiprocket_order
+      ?.last_mile_awb_track_url,
+  ];
+
+  const found = candidates.find(
+    (value) =>
+      typeof value === "string" &&
+      value.trim()
+  );
+
+  return typeof found === "string"
+    ? found.trim()
+    : "";
+};
+
+const getShiprocketEstimatedDelivery = (
+  response: ShiprocketTrackResponse,
+  status: OrderStatus
+) => {
+  if (status === "delivered") {
+    return "Delivered";
+  }
+
+  const candidates = [
+    response?.tracking?.etd,
+    response?.tracking?.edd,
+    response?.tracking?.estimated_delivery,
+    response?.tracking?.tracking_data?.etd,
+    response?.tracking?.tracking_data?.edd,
+    response?.shiprocket_order?.etd_date,
+    response?.shiprocket_order?.shipments?.[0]
+      ?.etd,
+  ];
+
+  const found = candidates.find(
+    (value) =>
+      typeof value === "string" &&
+      value.trim() &&
+      !value.startsWith("0000-00-00")
+  );
+
+  if (typeof found === "string") {
+    return found;
+  }
+
+  return status === "shipped"
+    ? "3–5 Business Days"
+    : "Will be confirmed soon";
 };
 
 const getStatusRank = (
@@ -321,6 +451,9 @@ export default function TrackOrderPage() {
           courier_name,
           tracking_number,
           tracking_url,
+          shiprocket_order_id,
+          shiprocket_shipment_id,
+          tracking_status,
           created_at,
           updated_at,
           grand_total,
@@ -357,8 +490,163 @@ export default function TrackOrderPage() {
       return;
     }
 
-    const order =
+    let order =
       data as OrderRow;
+
+    /*
+     * Ask Shiprocket for the latest status.
+     * If Shiprocket is temporarily unavailable,
+     * the page still shows the Supabase order.
+     */
+    let shiprocketTrack:
+      | ShiprocketTrackResponse
+      | null = null;
+
+    try {
+      const {
+        data: trackingData,
+        error: trackingError,
+      } = await supabase.functions.invoke(
+        "shiprocket-track-order",
+        {
+          body: {
+            order_id:
+              order.order_number,
+          },
+        }
+      );
+
+      if (trackingError) {
+        console.error(
+          "Shiprocket tracking error:",
+          trackingError
+        );
+      } else if (
+        trackingData?.success
+      ) {
+        shiprocketTrack =
+          trackingData as ShiprocketTrackResponse;
+
+        const latestStatus =
+          mapShiprocketStatus(
+            shiprocketTrack.status
+          );
+
+        const latestCourier =
+          String(
+            shiprocketTrack.courier_name ??
+              ""
+          ).trim();
+
+        const latestAwb =
+          String(
+            shiprocketTrack.awb_code ??
+              ""
+          ).trim();
+
+        const latestTrackingUrl =
+          getShiprocketTrackingUrl(
+            shiprocketTrack
+          );
+
+        const updates = {
+          order_status:
+            latestStatus,
+
+          tracking_status:
+            shiprocketTrack.status != null
+              ? String(
+                  shiprocketTrack.status
+                )
+              : order.tracking_status,
+
+          shiprocket_order_id:
+            shiprocketTrack
+              .shiprocket_order_id != null
+              ? String(
+                  shiprocketTrack
+                    .shiprocket_order_id
+                )
+              : order.shiprocket_order_id,
+
+          shiprocket_shipment_id:
+            shiprocketTrack.shipment_id !=
+            null
+              ? String(
+                  shiprocketTrack
+                    .shipment_id
+                )
+              : order.shiprocket_shipment_id,
+
+          courier_name:
+            latestCourier ||
+            order.courier_name,
+
+          tracking_number:
+            latestAwb ||
+            order.tracking_number,
+
+          tracking_url:
+            latestTrackingUrl ||
+            order.tracking_url,
+
+          updated_at:
+            new Date().toISOString(),
+        };
+
+        const {
+          data: updatedOrder,
+          error: updateError,
+        } = await supabase
+          .from("orders")
+          .update(updates)
+          .eq("id", order.id)
+          .select(`
+            id,
+            order_number,
+            order_type,
+            customer_name,
+            payment_method,
+            payment_status,
+            order_status,
+            courier_name,
+            tracking_number,
+            tracking_url,
+            shiprocket_order_id,
+            shiprocket_shipment_id,
+            tracking_status,
+            created_at,
+            updated_at,
+            grand_total,
+            address_line_1,
+            address_line_2,
+            city,
+            state,
+            pincode
+          `)
+          .maybeSingle();
+
+        if (updateError) {
+          console.error(
+            "Tracking details save error:",
+            updateError
+          );
+        } else if (updatedOrder) {
+          order =
+            updatedOrder as OrderRow;
+        } else {
+          order = {
+            ...order,
+            ...updates,
+          };
+        }
+      }
+    } catch (trackingError) {
+      console.error(
+        "Shiprocket tracking request failed:",
+        trackingError
+      );
+    }
 
     const address = [
       order.address_line_1,
@@ -369,6 +657,56 @@ export default function TrackOrderPage() {
     ]
       .filter(Boolean)
       .join(", ");
+
+    const liveStatus =
+      shiprocketTrack?.success
+        ? mapShiprocketStatus(
+            shiprocketTrack.status
+          )
+        : order.order_status;
+
+    const liveCourier =
+      String(
+        shiprocketTrack?.courier_name ??
+          ""
+      ).trim() ||
+      order.courier_name ||
+      "Not assigned yet";
+
+    const liveTrackingNumber =
+      String(
+        shiprocketTrack?.awb_code ??
+          ""
+      ).trim() ||
+      order.tracking_number ||
+      "Not available yet";
+
+    const liveTrackingUrl =
+      (shiprocketTrack
+        ? getShiprocketTrackingUrl(
+            shiprocketTrack
+          )
+        : "") ||
+      order.tracking_url ||
+      "";
+
+    const estimatedDelivery =
+      shiprocketTrack
+        ? getShiprocketEstimatedDelivery(
+            shiprocketTrack,
+            liveStatus
+          )
+        : liveStatus === "delivered"
+          ? "Delivered"
+          : liveStatus === "shipped"
+            ? "3–5 Business Days"
+            : "Will be confirmed soon";
+
+    const orderForTimeline: OrderRow = {
+      ...order,
+      order_status:
+        liveStatus,
+    };
 
     setSearchedOrder({
       id: order.id,
@@ -384,23 +722,14 @@ export default function TrackOrderPage() {
           order.payment_status
         ),
       courier:
-        order.courier_name ||
-        "Not assigned yet",
+        liveCourier,
       trackingNumber:
-        order.tracking_number ||
-        "Not available yet",
+        liveTrackingNumber,
       trackingUrl:
-        order.tracking_url || "",
-      estimatedDelivery:
-        order.order_status ===
-        "delivered"
-          ? "Delivered"
-          : order.order_status ===
-            "shipped"
-            ? "3–5 Business Days"
-            : "Will be confirmed soon",
+        liveTrackingUrl,
+      estimatedDelivery,
       status:
-        order.order_status,
+        liveStatus,
       orderDate:
         formatDateTime(
           order.created_at
@@ -410,7 +739,9 @@ export default function TrackOrderPage() {
       ),
       address,
       timeline:
-        createTimeline(order),
+        createTimeline(
+          orderForTimeline
+        ),
     });
 
     setOrderId(
@@ -525,8 +856,8 @@ export default function TrackOrderPage() {
             </h2>
 
             <p>
-              Supabase-la irundhu order
-              status load aaguthu.
+              Latest delivery status
+              load aaguthu.
             </p>
           </section>
         )}
