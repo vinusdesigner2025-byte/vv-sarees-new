@@ -53,6 +53,7 @@ type ProductRow = {
   slug: string;
   name: string;
   category: string;
+  state: string | null;
   description: string | null;
   wholesale_price: number;
   wholesale_minimum: number;
@@ -77,6 +78,7 @@ type WholesaleProduct = {
   slug: string;
   name: string;
   category: string;
+  state: string;
   description: string;
   rating: number;
   wholesaleMinimum: number;
@@ -150,6 +152,7 @@ export default function WholesalePage() {
           slug,
           name,
           category,
+          state,
           description,
           wholesale_price,
           wholesale_minimum,
@@ -195,6 +198,8 @@ export default function WholesalePage() {
           name: product.name,
           category:
             product.category ?? "",
+          state:
+            product.state ?? "",
           description:
             product.description ?? "",
           rating: 0,
@@ -304,6 +309,7 @@ export default function WholesalePage() {
         const searchableText = [
           product.name,
           product.category,
+          product.state,
           product.description,
           ...product.variants.map(
             (variant) =>
@@ -315,8 +321,19 @@ export default function WholesalePage() {
 
         const categoryValue =
           product.category
+            .trim()
             .toLowerCase()
-            .replace(/\s+/g, "-");
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-");
+
+        const stateValue =
+          product.state
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-");
 
         const matchesSearch =
           !searchTerm ||
@@ -328,6 +345,10 @@ export default function WholesalePage() {
           filters.category === "all" ||
           categoryValue ===
             filters.category;
+
+        const matchesState =
+          filters.state === "all" ||
+          stateValue === filters.state;
 
         const matchesMinimumPrice =
           lowestPrice >=
@@ -348,6 +369,7 @@ export default function WholesalePage() {
         return (
           matchesSearch &&
           matchesCategory &&
+          matchesState &&
           matchesMinimumPrice &&
           matchesMaximumPrice &&
           matchesRating &&
@@ -484,7 +506,7 @@ export default function WholesalePage() {
 
             <p>
               Try changing the category,
-              price, rating or stock
+              state, price, rating or stock
               filters.
             </p>
 

@@ -95,14 +95,21 @@ function StateGroup({
   states: StateItem[];
   prefix: string;
 }) {
+  const repeatedStates = [
+    ...states,
+    ...states,
+  ];
+
   return (
     <div className="state-group">
-      {states.map((state, index) => (
-        <StateCard
-          key={`${prefix}-${state.href}-${index}`}
-          {...state}
-        />
-      ))}
+      {repeatedStates.map(
+        (state, index) => (
+          <StateCard
+            key={`${prefix}-${state.href}-${index}`}
+            {...state}
+          />
+        )
+      )}
     </div>
   );
 }
