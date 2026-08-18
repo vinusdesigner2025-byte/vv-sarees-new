@@ -152,46 +152,52 @@ const Header = () => {
       </header>
 
 
-      {/* =========================
-          SHIPPING BAR
-      ========================= */}
+     {/* =========================
+    SHIPPING BAR
+========================= */}
 
-      <div className="shipping-bar">
-        <div className="shipping-track">
+<div className="shipping-bar">
+  <div className="shipping-track">
 
-          <div className="shipping-group">
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU &amp; PUDUCHERRY
-            </span>
+    <div className="shipping-group">
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU &amp; PUDUCHERRY
-            </span>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU &amp; PUDUCHERRY
-            </span>
-          </div>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
+    </div>
 
-          <div
-            className="shipping-group"
-            aria-hidden="true"
-          >
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU &amp; PUDUCHERRY
-            </span>
+    <div
+      className="shipping-group"
+      aria-hidden="true"
+    >
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU &amp; PUDUCHERRY
-            </span>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU &amp; PUDUCHERRY
-            </span>
-          </div>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
+    </div>
 
-        </div>
-      </div>
+  </div>
+</div>
 
 
       {/* =========================

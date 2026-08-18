@@ -216,54 +216,52 @@ const ProductHeader = ({
       </header>
 
 
-      {/* =========================
-          SHIPPING BAR
-      ========================= */}
+{/* =========================
+    SHIPPING BAR
+========================= */}
 
-      <div className="product-shipping-bar">
-        <div className="product-shipping-track">
+<div className="product-shipping-bar">
+  <div className="product-shipping-track">
 
-          <div className="product-shipping-group">
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU
-              &amp; PUDUCHERRY
-            </span>
+    <div className="product-shipping-group">
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU
-              &amp; PUDUCHERRY
-            </span>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU
-              &amp; PUDUCHERRY
-            </span>
-          </div>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
+    </div>
 
+    <div
+      className="product-shipping-group"
+      aria-hidden="true"
+    >
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-          <div
-            className="product-shipping-group"
-            aria-hidden="true"
-          >
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU
-              &amp; PUDUCHERRY
-            </span>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU
-              &amp; PUDUCHERRY
-            </span>
+      <span>
+        🚚 FREE SHIPPING WITHIN TAMIL NADU,
+        PUDUCHERRY &amp; BANGALORE
+      </span>
+    </div>
 
-            <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU
-              &amp; PUDUCHERRY
-            </span>
-          </div>
-
-        </div>
-      </div>
-
+  </div>
+</div>
 
       {/* =========================
           OVERLAY
