@@ -9,7 +9,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 import "../css/AdminLogin.css";
 
@@ -41,7 +41,7 @@ export default function AdminLogin() {
     )?.from ?? "/admin/dashboard";
 
   /* =========================
-     CHECK EXISTING SESSION
+     CHECK EXISTING ADMIN SESSION
   ========================= */
 
   useEffect(() => {
@@ -54,22 +54,35 @@ export default function AdminLogin() {
             data: {
               user,
             },
+            error: userError,
           } =
-            await supabase.auth
+            await adminSupabase.auth
               .getUser();
 
+          if (!mounted) {
+            return;
+          }
+
           if (
-            !mounted ||
+            userError ||
             !user
           ) {
             return;
           }
 
+          /* =========================
+             VERIFY ADMIN USER
+
+             IMPORTANT:
+             admin_users query-um
+             adminSupabase-la dhaan.
+          ========================= */
+
           const {
             data: adminUser,
             error: adminError,
           } =
-            await supabase
+            await adminSupabase
               .from("admin_users")
               .select(
                 "user_id, email"
@@ -89,12 +102,16 @@ export default function AdminLogin() {
             !adminUser
           ) {
             /*
-              Logged-in customer
-              admin login page-ku
-              vandha logout panniduvom.
+              Invalid admin session.
+
+              ADMIN session mattum
+              logout pannuvom.
+
+              Customer login
+              touch aagaadhu.
             */
 
-            await supabase.auth
+            await adminSupabase.auth
               .signOut();
 
             return;
@@ -144,7 +161,7 @@ export default function AdminLogin() {
 
     try {
       /* =========================
-         SUPABASE EMAIL LOGIN
+         ADMIN AUTH LOGIN
       ========================= */
 
       const {
@@ -152,7 +169,7 @@ export default function AdminLogin() {
         error:
           loginError,
       } =
-        await supabase.auth
+        await adminSupabase.auth
           .signInWithPassword({
             email:
               cleanedEmail,
@@ -171,7 +188,7 @@ export default function AdminLogin() {
       }
 
       /* =========================
-         CHECK ADMIN_USERS TABLE
+         VERIFY ADMIN_USERS TABLE
       ========================= */
 
       const {
@@ -179,7 +196,7 @@ export default function AdminLogin() {
         error:
           adminError,
       } =
-        await supabase
+        await adminSupabase
           .from("admin_users")
           .select(
             "user_id, email"
@@ -194,22 +211,27 @@ export default function AdminLogin() {
         adminError ||
         !adminUser
       ) {
+        console.error(
+          "Admin user verification error:",
+          adminError
+        );
+
         /*
           Normal customer account
-          admin panel-ku access
-          panna vida koodadhu.
+          admin panel access panna
+          vida koodadhu.
+
+          Admin session mattum logout.
         */
 
-        await supabase.auth
+        await adminSupabase.auth
           .signOut();
 
         setError(
           "This account does not have admin access."
         );
 
-        setIsLoading(
-          false
-        );
+        setIsLoading(false);
 
         return;
       }

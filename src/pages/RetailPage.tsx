@@ -80,6 +80,7 @@ type RetailProduct = {
   state: string;
   description: string;
   rating: number;
+  reviewCount: number;
   variants: RetailVariant[];
 };
 
@@ -186,6 +187,58 @@ export default function RetailPage() {
       return;
     }
 
+    const {
+      data: reviewsData,
+      error: reviewsError,
+    } = await supabase
+      .from("product_reviews")
+      .select("product_id, rating");
+
+    if (reviewsError) {
+      console.error(
+        "Product reviews load error:",
+        reviewsError
+      );
+    }
+
+    const reviews = reviewsData ?? [];
+
+    const getProductReviewStats = (
+      productId: string
+    ) => {
+      const numericProductId =
+        createNumericProductId(productId);
+
+      const productReviews = reviews.filter(
+        (review) =>
+          String(review.product_id) ===
+          String(numericProductId)
+      );
+
+      if (productReviews.length === 0) {
+        return {
+          rating: 0,
+          reviewCount: 0,
+        };
+      }
+
+      const totalRating =
+        productReviews.reduce(
+          (total, review) =>
+            total +
+            Number(review.rating ?? 0),
+          0
+        );
+
+      return {
+        rating:
+          totalRating /
+          productReviews.length,
+        reviewCount:
+          productReviews.length,
+      };
+    };
+
     const formattedProducts: RetailProduct[] =
       ((data ?? []) as ProductRow[]).map(
         (product) => ({
@@ -199,7 +252,14 @@ export default function RetailPage() {
           state: "",
           description:
             product.description ?? "",
-          rating: 0,
+          rating:
+            getProductReviewStats(
+              product.id
+            ).rating,
+          reviewCount:
+            getProductReviewStats(
+              product.id
+            ).reviewCount,
 
           variants:
             product.product_variants?.map(
@@ -639,7 +699,9 @@ export default function RetailPage() {
                               key={index}
                               className={
                                 index <
-                                product.rating
+                                Math.round(
+                                  product.rating
+                                )
                                   ? "product-star-active"
                                   : ""
                               }
@@ -647,6 +709,12 @@ export default function RetailPage() {
                               ★
                             </span>
                           )
+                        )}
+
+                        {product.reviewCount > 0 && (
+                          <span className="product-rating-count">
+                            {product.rating.toFixed(1)} ({product.reviewCount})
+                          </span>
                         )}
                       </div>
 

@@ -89,6 +89,16 @@ type ProductDetail = {
   variants: ProductVariant[];
 };
 
+type ProductReview = {
+  id: string;
+  product_id: string;
+  user_id: string;
+  customer_name: string | null;
+  rating: number;
+  review: string | null;
+  created_at: string;
+};
+
 const createNumericProductId = (
   productId: string
 ) => {
@@ -120,6 +130,9 @@ export default function ProductDetailPage({
 
   const [product, setProduct] =
     useState<ProductDetail | null>(null);
+
+  const [reviews, setReviews] =
+    useState<ProductReview[]>([]);
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -282,6 +295,54 @@ export default function ProductDetailPage({
     void loadProduct();
   }, [slug, mode]);
 
+  useEffect(() => {
+    const loadReviews = async () => {
+      if (!product) {
+        setReviews([]);
+        return;
+      }
+
+      const numericProductId =
+        createNumericProductId(product.id);
+
+      const { data, error } =
+        await supabase
+          .from("product_reviews")
+          .select(`
+            id,
+            product_id,
+            user_id,
+            customer_name,
+            rating,
+            review,
+            created_at
+          `)
+          .eq(
+            "product_id",
+            String(numericProductId)
+          )
+          .order("created_at", {
+            ascending: false,
+          });
+
+      if (error) {
+        console.error(
+          "Review load error:",
+          error
+        );
+
+        setReviews([]);
+        return;
+      }
+
+      setReviews(
+        (data ?? []) as ProductReview[]
+      );
+    };
+
+    void loadReviews();
+  }, [product]);
+
   const selectedVariant = useMemo(() => {
     if (!product) return null;
 
@@ -367,6 +428,17 @@ export default function ProductDetailPage({
     createNumericProductId(
       product.id
     );
+
+  const reviewCount = reviews.length;
+
+  const averageRating =
+    reviewCount > 0
+      ? reviews.reduce(
+          (total, item) =>
+            total + Number(item.rating),
+          0
+        ) / reviewCount
+      : 0;
 
   const wishlistActive =
     isInWishlist(
@@ -588,7 +660,9 @@ export default function ProductDetailPage({
                       key={star}
                       className={
                         star <=
-                        product.rating
+                        Math.round(
+                          averageRating
+                        )
                           ? "detail-star detail-star-active"
                           : "detail-star"
                       }
@@ -597,7 +671,15 @@ export default function ProductDetailPage({
                 )}
               </div>
 
-              <span>0 Reviews</span>
+              <span>
+                {reviewCount > 0
+                  ? `${averageRating.toFixed(1)} (${reviewCount} ${
+                      reviewCount === 1
+                        ? "Review"
+                        : "Reviews"
+                    })`
+                  : "0 Reviews"}
+              </span>
             </div>
 
             <div className="detail-price">
@@ -783,23 +865,87 @@ export default function ProductDetailPage({
               Customer Reviews
             </h2>
 
-            <span>0 Reviews</span>
+            <span>
+              {reviewCount}{" "}
+              {reviewCount === 1
+                ? "Review"
+                : "Reviews"}
+            </span>
           </div>
 
-          <div className="detail-empty-reviews">
-            <div className="detail-stars">
-              {[1, 2, 3, 4, 5].map(
-                (star) => (
-                  <FaStar
-                    key={star}
-                    className="detail-star"
-                  />
-                )
-              )}
+          {reviewCount === 0 ? (
+            <div className="detail-empty-reviews">
+              <div className="detail-stars">
+                {[1, 2, 3, 4, 5].map(
+                  (star) => (
+                    <FaStar
+                      key={star}
+                      className="detail-star"
+                    />
+                  )
+                )}
+              </div>
+
+              <p>No Reviews Yet</p>
             </div>
+          ) : (
+            <div className="detail-reviews-list">
+              {reviews.map((item) => (
+                <article
+                  className="detail-review-card"
+                  key={item.id}
+                >
+                  <div className="detail-review-top">
+                    <div className="detail-review-customer">
+                      <strong>
+                        {item.customer_name ||
+                          "VV Sarees Customer"}
+                      </strong>
 
-            <p>No Reviews Yet</p>
-          </div>
+                      <span className="detail-verified-review">
+                        ✓ Verified Purchase
+                      </span>
+                    </div>
+
+                    <span className="detail-review-date">
+                      {new Date(
+                        item.created_at
+                      ).toLocaleDateString(
+                        "en-IN",
+                        {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="detail-stars detail-review-stars">
+                    {[1, 2, 3, 4, 5].map(
+                      (star) => (
+                        <FaStar
+                          key={star}
+                          className={
+                            star <=
+                            Number(item.rating)
+                              ? "detail-star detail-star-active"
+                              : "detail-star"
+                          }
+                        />
+                      )
+                    )}
+                  </div>
+
+                  {item.review && (
+                    <p className="detail-review-text">
+                      {item.review}
+                    </p>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

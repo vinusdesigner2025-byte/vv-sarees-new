@@ -81,6 +81,7 @@ type WholesaleProduct = {
   state: string;
   description: string;
   rating: number;
+  reviewCount: number;
   wholesaleMinimum: number;
   variants: WholesaleVariant[];
 };
@@ -190,6 +191,57 @@ export default function WholesalePage() {
       return;
     }
 
+    const {
+      data: reviewsData,
+      error: reviewsError,
+    } = await supabase
+      .from("product_reviews")
+      .select("product_id, rating");
+
+    if (reviewsError) {
+      console.error(
+        "Wholesale reviews load error:",
+        reviewsError
+      );
+    }
+
+    const reviews = reviewsData ?? [];
+
+    const getProductReviewStats = (
+      productId: string
+    ) => {
+      const numericProductId =
+        createNumericProductId(productId);
+
+      const productReviews = reviews.filter(
+        (review) =>
+          String(review.product_id) ===
+          String(numericProductId)
+      );
+
+      if (productReviews.length === 0) {
+        return {
+          rating: 0,
+          reviewCount: 0,
+        };
+      }
+
+      const totalRating =
+        productReviews.reduce(
+          (total, review) =>
+            total + Number(review.rating ?? 0),
+          0
+        );
+
+      return {
+        rating:
+          totalRating /
+          productReviews.length,
+        reviewCount:
+          productReviews.length,
+      };
+    };
+
     const formattedProducts: WholesaleProduct[] =
       ((data ?? []) as ProductRow[]).map(
         (product) => ({
@@ -202,7 +254,12 @@ export default function WholesalePage() {
             product.state ?? "",
           description:
             product.description ?? "",
-          rating: 0,
+          rating:
+            getProductReviewStats(product.id)
+              .rating,
+          reviewCount:
+            getProductReviewStats(product.id)
+              .reviewCount,
           wholesaleMinimum: Number(
             product.wholesale_minimum ?? 1
           ),
@@ -662,7 +719,9 @@ export default function WholesalePage() {
                               key={index}
                               className={
                                 index <
-                                product.rating
+                                Math.round(
+                                  product.rating
+                                )
                                   ? "product-star-active"
                                   : ""
                               }
@@ -670,6 +729,14 @@ export default function WholesalePage() {
                               ★
                             </span>
                           )
+                        )}
+
+                        {product.reviewCount >
+                          0 && (
+                          <span className="product-rating-count">
+                            {product.rating.toFixed(1)} (
+                            {product.reviewCount})
+                          </span>
                         )}
                       </div>
 

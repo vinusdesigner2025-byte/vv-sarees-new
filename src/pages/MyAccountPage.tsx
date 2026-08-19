@@ -11,6 +11,9 @@ import {
   FiLogOut,
   FiMail,
   FiMapPin,
+  FiPackage,
+  FiTruck,
+  FiCreditCard,
   FiPhone,
   FiSave,
   FiUser,
@@ -35,6 +38,31 @@ type ProfileForm = {
   city: string;
   state: string;
   pincode: string;
+};
+
+
+type OrderItemRow = {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  product_name: string | null;
+  image_url: string | null;
+  unit_price: number | null;
+  quantity: number | null;
+  line_total: number | null;
+};
+
+type CustomerOrder = {
+  id: string;
+  order_number: string;
+  order_type: "retail" | "wholesale";
+  payment_method: string;
+  payment_status: string;
+  order_status: string;
+  grand_total: number;
+  total_quantity: number;
+  created_at: string;
+  items: OrderItemRow[];
 };
 
 
@@ -74,6 +102,16 @@ export default function MyAccountPage() {
     useState("");
 
   const [successMessage, setSuccessMessage] =
+    useState("");
+
+
+  const [orders, setOrders] =
+    useState<CustomerOrder[]>([]);
+
+  const [ordersLoading, setOrdersLoading] =
+    useState(true);
+
+  const [ordersError, setOrdersError] =
     useState("");
 
 
@@ -296,6 +334,147 @@ export default function MyAccountPage() {
     isLoggedIn,
     user?.id,
     user?.name,
+    user?.email,
+  ]);
+
+
+  /* =========================================
+     LOAD CUSTOMER ORDERS
+  ========================================= */
+
+  useEffect(() => {
+    if (
+      isAuthLoading ||
+      !isLoggedIn ||
+      !user?.email
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadOrders = async () => {
+      setOrdersLoading(true);
+      setOrdersError("");
+
+      const {
+        data: orderData,
+        error: orderError,
+      } = await supabase
+        .from("orders")
+        .select(`
+          id,
+          order_number,
+          order_type,
+          payment_method,
+          payment_status,
+          order_status,
+          grand_total,
+          total_quantity,
+          created_at
+        `)
+        .ilike("email", user.email)
+        .order("created_at", {
+          ascending: false,
+        });
+
+      if (cancelled) {
+        return;
+      }
+
+      if (orderError) {
+        console.error(
+          "My orders load error:",
+          orderError
+        );
+
+        setOrdersError(
+          "Unable to load your orders. Please try again."
+        );
+        setOrders([]);
+        setOrdersLoading(false);
+        return;
+      }
+
+      const rawOrders = orderData ?? [];
+
+      if (rawOrders.length === 0) {
+        setOrders([]);
+        setOrdersLoading(false);
+        return;
+      }
+
+      const orderIds = rawOrders.map(
+        (order) => order.id
+      );
+
+      const {
+        data: itemData,
+        error: itemError,
+      } = await supabase
+        .from("order_items")
+        .select(`
+          id,
+          order_id,
+          product_id,
+          product_name,
+          image_url,
+          unit_price,
+          quantity,
+          line_total
+        `)
+        .in("order_id", orderIds)
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (cancelled) {
+        return;
+      }
+
+      if (itemError) {
+        console.error(
+          "My order items load error:",
+          itemError
+        );
+      }
+
+      const items =
+        (itemData ?? []) as OrderItemRow[];
+
+      const formattedOrders: CustomerOrder[] =
+        rawOrders.map((order) => ({
+          id: order.id,
+          order_number: order.order_number,
+          order_type: order.order_type,
+          payment_method: order.payment_method,
+          payment_status: order.payment_status,
+          order_status: order.order_status,
+          grand_total: Number(
+            order.grand_total ?? 0
+          ),
+          total_quantity: Number(
+            order.total_quantity ?? 0
+          ),
+          created_at: order.created_at,
+          items: items.filter(
+            (item) =>
+              item.order_id === order.id
+          ),
+        }));
+
+      setOrders(formattedOrders);
+      setOrdersLoading(false);
+    };
+
+    void loadOrders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isAuthLoading,
+    isLoggedIn,
     user?.email,
   ]);
 
@@ -1155,6 +1334,200 @@ export default function MyAccountPage() {
 
             </div>
 
+          </section>
+
+
+          {/* =================================
+              MY ORDERS
+          ================================= */}
+
+          <section className="my-account-section my-account-orders-section">
+            <div className="my-account-section-title">
+              <div>
+                <span>Order History</span>
+                <h2>My Orders</h2>
+              </div>
+
+              <FiPackage />
+            </div>
+
+            {ordersLoading ? (
+              <div className="my-orders-empty">
+                Loading your orders...
+              </div>
+            ) : ordersError ? (
+              <div className="my-orders-error">
+                {ordersError}
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="my-orders-empty">
+                <FiPackage />
+                <h3>No Orders Yet</h3>
+                <p>
+                  Your VV Sarees purchases will
+                  appear here after you place an order.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/retail")}
+                >
+                  Start Shopping
+                </button>
+              </div>
+            ) : (
+              <div className="my-orders-list">
+                {orders.map((order) => (
+                  <article
+                    className="my-order-card"
+                    key={order.id}
+                  >
+                    <div className="my-order-header">
+                      <div>
+                        <span>Order Number</span>
+                        <strong>
+                          {order.order_number}
+                        </strong>
+                      </div>
+
+                      <div className="my-order-date">
+                        {new Date(
+                          order.created_at
+                        ).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="my-order-items">
+                      {order.items.map((item) => (
+                        <div
+                          className="my-order-item"
+                          key={item.id}
+                        >
+                          <div className="my-order-item-image">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={
+                                  item.product_name ??
+                                  "VV Sarees product"
+                                }
+                              />
+                            ) : (
+                              <FiPackage />
+                            )}
+                          </div>
+
+                          <div className="my-order-item-info">
+                            <h3>
+                              {item.product_name ??
+                                "VV Sarees Product"}
+                            </h3>
+
+                            <div className="my-order-item-meta">
+                              <span>
+                                Qty: {Number(
+                                  item.quantity ?? 0
+                                )}
+                              </span>
+
+                              <span>
+                                ₹{Number(
+                                  item.unit_price ?? 0
+                                ).toLocaleString(
+                                  "en-IN"
+                                )}
+                              </span>
+                            </div>
+                          </div>
+
+                          <strong className="my-order-line-total">
+                            ₹{Number(
+                              item.line_total ?? 0
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="my-order-summary">
+                      <div className="my-order-statuses">
+                        <div>
+                          <FiTruck />
+                          <span>Order</span>
+                          <strong
+                            className={`my-order-status-badge status-${order.order_status
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
+                            {order.order_status}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <FiCreditCard />
+                          <span>Payment</span>
+                          <strong>
+                            {order.payment_status}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <FiPackage />
+                          <span>Type</span>
+                          <strong>
+                            {order.order_type ===
+                            "wholesale"
+                              ? "Wholesale"
+                              : "Retail"}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="my-order-total">
+                        <span>Order Total</span>
+                        <strong>
+                          ₹{order.grand_total.toLocaleString(
+                            "en-IN"
+                          )}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div className="my-order-actions">
+                      <span>
+                        {order.total_quantity} item
+                        {order.total_quantity === 1
+                          ? ""
+                          : "s"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/track-order?order=${encodeURIComponent(
+                              order.order_number
+                            )}`
+                          )
+                        }
+                      >
+                        <FiTruck />
+                        Track Order
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
 
 

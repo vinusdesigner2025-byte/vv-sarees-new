@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 export default function ProtectedAdminRoute() {
   const location = useLocation();
@@ -23,87 +23,155 @@ export default function ProtectedAdminRoute() {
   useEffect(() => {
     let mounted = true;
 
-    const checkAdminAccess = async () => {
-      try {
-        setIsLoading(true);
+    const checkAdminAccess =
+      async () => {
+        try {
+          if (mounted) {
+            setIsLoading(true);
+          }
 
-        // 1. Get current Supabase user
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+          /* =========================
+             GET ADMIN USER
+          ========================= */
 
-        if (!mounted) return;
+          const {
+            data: {
+              user,
+            },
+            error: userError,
+          } =
+            await adminSupabase.auth
+              .getUser();
 
-        if (userError || !user) {
-          setIsAdmin(false);
-          return;
-        }
+          if (!mounted) {
+            return;
+          }
 
-        // 2. Check whether this user exists
-        //    inside public.admin_users
-        const {
-          data: adminUser,
-          error: adminError,
-        } = await supabase
-          .from("admin_users")
-          .select("user_id, email")
-          .eq("user_id", user.id)
-          .maybeSingle();
+          if (
+            userError ||
+            !user
+          ) {
+            setIsAdmin(false);
+            return;
+          }
 
-        if (!mounted) return;
+          /* =========================
+             VERIFY ADMIN_USERS TABLE
+          ========================= */
 
-        if (adminError) {
+          const {
+            data: adminUser,
+            error: adminError,
+          } =
+            await adminSupabase
+              .from("admin_users")
+              .select(
+                "user_id, email"
+              )
+              .eq(
+                "user_id",
+                user.id
+              )
+              .maybeSingle();
+
+          if (!mounted) {
+            return;
+          }
+
+          if (adminError) {
+            console.error(
+              "Admin access check error:",
+              adminError
+            );
+
+            setIsAdmin(false);
+            return;
+          }
+
+          if (!adminUser) {
+            /*
+              Admin session irukku
+              aana admin_users table-la
+              user illa.
+
+              ADMIN session mattum
+              logout.
+            */
+
+            await adminSupabase.auth
+              .signOut();
+
+            if (mounted) {
+              setIsAdmin(false);
+            }
+
+            return;
+          }
+
+          if (mounted) {
+            setIsAdmin(true);
+          }
+        } catch (error) {
           console.error(
-            "Admin access check error:",
-            adminError
+            "Protected admin route error:",
+            error
           );
 
-          setIsAdmin(false);
-          return;
+          if (mounted) {
+            setIsAdmin(false);
+          }
+        } finally {
+          if (mounted) {
+            setIsLoading(false);
+          }
         }
-
-        setIsAdmin(Boolean(adminUser));
-      } catch (error) {
-        console.error(
-          "Protected admin route error:",
-          error
-        );
-
-        if (mounted) {
-          setIsAdmin(false);
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+      };
 
     void checkAdminAccess();
 
-    // If login/logout changes, check again
+    /* =========================
+       ADMIN AUTH CHANGES ONLY
+    ========================= */
+
     const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      void checkAdminAccess();
-    });
+      data: {
+        subscription,
+      },
+    } =
+      adminSupabase.auth
+        .onAuthStateChange(() => {
+          void checkAdminAccess();
+        });
 
     return () => {
       mounted = false;
+
       subscription.unsubscribe();
     };
   }, []);
+
+  /* =========================
+     LOADING
+  ========================= */
 
   if (isLoading) {
     return (
       <div
         style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "sans-serif",
+          minHeight:
+            "100vh",
+
+          display:
+            "flex",
+
+          alignItems:
+            "center",
+
+          justifyContent:
+            "center",
+
+          fontFamily:
+            "sans-serif",
         }}
       >
         Checking admin access...
@@ -111,13 +179,18 @@ export default function ProtectedAdminRoute() {
     );
   }
 
+  /* =========================
+     NOT ADMIN
+  ========================= */
+
   if (!isAdmin) {
     return (
       <Navigate
         to="/admin/login"
         replace
         state={{
-          from: location.pathname,
+          from:
+            location.pathname,
         }}
       />
     );

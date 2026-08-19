@@ -13,6 +13,7 @@ import {
   FiPackage,
   FiSettings,
   FiShoppingCart,
+  FiStar,
   FiUsers,
   FiX,
 } from "react-icons/fi";
@@ -78,6 +79,11 @@ const sidebarSections: SidebarSection[] = [
         label: "Media Library",
         path: "/admin/media",
         icon: <FiFolder />,
+      },
+      {
+        label: "Reviews",
+        path: "/admin/reviews",
+        icon: <FiStar />,
       },
     ],
   },

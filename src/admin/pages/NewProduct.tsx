@@ -44,6 +44,31 @@ type ProductCategory = {
   slug: string;
 };
 
+type ProductDraftVariant = {
+  id: string;
+  colourName: string;
+  colourCode: string;
+  sku: string;
+  stock: string;
+};
+
+type ProductDraft = {
+  productName: string;
+  category: string;
+  state: string;
+  description: string;
+  retailPrice: string;
+  wholesalePrice: string;
+  wholesaleMinimum: string;
+  isFeatured: boolean;
+  isNewArrival: boolean;
+  status: string;
+  variants: ProductDraftVariant[];
+};
+
+const NEW_PRODUCT_DRAFT_KEY =
+  "vv-admin-new-product-draft";
+
 const INDIA_REGIONS = [
   "Andhra Pradesh",
   "Arunachal Pradesh",
@@ -168,6 +193,175 @@ export default function NewProduct() {
   const [variants, setVariants] = useState<
     ColourVariant[]
   >([createEmptyVariant()]);
+
+  const [isDraftLoaded, setIsDraftLoaded] =
+    useState(false);
+
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(
+        NEW_PRODUCT_DRAFT_KEY
+      );
+
+      if (savedDraft) {
+        const draft = JSON.parse(
+          savedDraft
+        ) as Partial<ProductDraft>;
+
+        setProductName(
+          typeof draft.productName === "string"
+            ? draft.productName
+            : ""
+        );
+
+        setCategory(
+          typeof draft.category === "string"
+            ? draft.category
+            : ""
+        );
+
+        setState(
+          typeof draft.state === "string"
+            ? draft.state
+            : ""
+        );
+
+        setDescription(
+          typeof draft.description === "string"
+            ? draft.description
+            : ""
+        );
+
+        setRetailPrice(
+          typeof draft.retailPrice === "string"
+            ? draft.retailPrice
+            : ""
+        );
+
+        setWholesalePrice(
+          typeof draft.wholesalePrice === "string"
+            ? draft.wholesalePrice
+            : ""
+        );
+
+        setWholesaleMinimum(
+          typeof draft.wholesaleMinimum === "string"
+            ? draft.wholesaleMinimum
+            : "5"
+        );
+
+        setIsFeatured(
+          typeof draft.isFeatured === "boolean"
+            ? draft.isFeatured
+            : false
+        );
+
+        setIsNewArrival(
+          typeof draft.isNewArrival === "boolean"
+            ? draft.isNewArrival
+            : false
+        );
+
+        setStatus(
+          typeof draft.status === "string"
+            ? draft.status
+            : "active"
+        );
+
+        if (
+          Array.isArray(draft.variants) &&
+          draft.variants.length > 0
+        ) {
+          setVariants(
+            draft.variants.map((variant) => ({
+              id:
+                typeof variant.id === "string"
+                  ? variant.id
+                  : crypto.randomUUID(),
+              colourName:
+                typeof variant.colourName ===
+                "string"
+                  ? variant.colourName
+                  : "",
+              colourCode:
+                typeof variant.colourCode ===
+                "string"
+                  ? variant.colourCode
+                  : "#7a3e18",
+              sku:
+                typeof variant.sku === "string"
+                  ? variant.sku
+                  : "",
+              stock:
+                typeof variant.stock === "string"
+                  ? variant.stock
+                  : "",
+              images: [],
+            }))
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        "New product draft restore error:",
+        error
+      );
+    } finally {
+      setIsDraftLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftLoaded || isSaving) {
+      return;
+    }
+
+    const draft: ProductDraft = {
+      productName,
+      category,
+      state,
+      description,
+      retailPrice,
+      wholesalePrice,
+      wholesaleMinimum,
+      isFeatured,
+      isNewArrival,
+      status,
+      variants: variants.map((variant) => ({
+        id: variant.id,
+        colourName: variant.colourName,
+        colourCode: variant.colourCode,
+        sku: variant.sku,
+        stock: variant.stock,
+      })),
+    };
+
+    try {
+      localStorage.setItem(
+        NEW_PRODUCT_DRAFT_KEY,
+        JSON.stringify(draft)
+      );
+    } catch (error) {
+      console.error(
+        "New product draft save error:",
+        error
+      );
+    }
+  }, [
+    isDraftLoaded,
+    isSaving,
+    productName,
+    category,
+    state,
+    description,
+    retailPrice,
+    wholesalePrice,
+    wholesaleMinimum,
+    isFeatured,
+    isNewArrival,
+    status,
+    variants,
+  ]);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -703,6 +897,10 @@ export default function NewProduct() {
             }
           );
         }
+      );
+
+      localStorage.removeItem(
+        NEW_PRODUCT_DRAFT_KEY
       );
 
       alert(

@@ -16,7 +16,7 @@ import {
 import ProductHeader from "../components/ProductHeader";
 import Footer from "../components/Footer";
 
-import aboutStory from "../assets/house of left.jpg";
+import aboutStory from "../assets/vv-founder.jpeg";
 import aboutJourney from "../assets/journey-screen.jpeg";
 
 import "./About.css";
@@ -113,10 +113,11 @@ export default function About() {
 
         <section className="about-story-section">
           <div className="about-container about-story-grid">
+
             <div className="about-story-image-wrap">
               <img
                 src={aboutStory}
-                alt="VV Sarees sourcing and weaving journey"
+                alt="VV Sarees"
                 className="about-story-image"
                 loading="lazy"
               />
@@ -126,11 +127,11 @@ export default function About() {
 
                 <div>
                   <strong>
-                    Handpicked Collections
+                    VV Sarees
                   </strong>
 
                   <span>
-                    Selected with care across India
+                    Tradition • Quality • Trust
                   </span>
                 </div>
               </div>
@@ -183,6 +184,7 @@ export default function About() {
 
         <section className="about-journey-section">
           <div className="about-container">
+
             <div className="about-section-heading">
               <span className="about-section-tag">
                 ACROSS INDIA
@@ -202,7 +204,9 @@ export default function About() {
             </div>
 
             <div className="about-journey-grid">
+
               <div className="about-journey-content">
+
                 <div className="about-journey-point">
                   <span className="about-point-icon">
                     <FiMapPin />
@@ -250,6 +254,7 @@ export default function About() {
                     </p>
                   </div>
                 </div>
+
               </div>
 
               <div className="about-journey-image-wrap">
@@ -274,6 +279,7 @@ export default function About() {
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
         </section>
@@ -284,12 +290,15 @@ export default function About() {
 
         <section className="about-values-section">
           <div className="about-container">
+
             <div className="about-section-heading">
               <span className="about-section-tag">
                 WHAT WE BELIEVE
               </span>
 
-              <h2>Our Values</h2>
+              <h2>
+                Our Values
+              </h2>
 
               <p>
                 The principles that guide every collection,
@@ -311,7 +320,9 @@ export default function About() {
                       <Icon />
                     </span>
 
-                    <h3>{value.title}</h3>
+                    <h3>
+                      {value.title}
+                    </h3>
 
                     <p>
                       {value.description}
@@ -320,6 +331,7 @@ export default function About() {
                 );
               })}
             </div>
+
           </div>
         </section>
 
@@ -329,6 +341,7 @@ export default function About() {
 
         <section className="about-why-section">
           <div className="about-container about-why-grid">
+
             <div className="about-why-content">
               <span className="about-section-tag">
                 WHY VV SAREES
@@ -353,7 +366,9 @@ export default function About() {
                   >
                     <FiCheckCircle />
 
-                    <span>{reason}</span>
+                    <span>
+                      {reason}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -389,6 +404,7 @@ export default function About() {
                 and genuine value.
               </p>
             </div>
+
           </div>
         </section>
 
@@ -398,6 +414,7 @@ export default function About() {
 
         <section className="about-cta-section">
           <div className="about-cta-content">
+
             <span className="about-section-tag">
               DISCOVER VV SAREES
             </span>
@@ -429,8 +446,10 @@ export default function About() {
                 Shop Wholesale
               </Link>
             </div>
+
           </div>
         </section>
+
       </main>
 
       <Footer />

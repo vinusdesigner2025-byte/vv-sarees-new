@@ -13,6 +13,8 @@ import HouseSlider from "./components/HouseSlider";
 import FinalCTA from "./components/FinalCTA";
 import Footer from "./components/Footer";
 
+import ReviewPopup from "./components/ReviewPopup";
+
 import WholesalePage from "./pages/WholesalePage";
 import RetailPage from "./pages/RetailPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
@@ -49,7 +51,7 @@ import Orders from "./admin/pages/Orders";
 import Customers from "./admin/pages/Customers";
 import MediaLibrary from "./admin/pages/MediaLibrary";
 import Settings from "./admin/pages/Settings";
-
+import Reviews from "./admin/pages/Reviews";
 
 /* =========================================
    HOME PAGE
@@ -69,7 +71,6 @@ function HomePage() {
     </>
   );
 }
-
 
 /* =========================================
    ADMIN COMING SOON
@@ -132,344 +133,326 @@ function AdminComingSoon({
   );
 }
 
-
 /* =========================================
-   APP ROUTES
+   APP
 ========================================= */
 
 export default function App() {
   return (
-    <Routes>
-
+    <>
       {/* =====================================
-          PUBLIC WEBSITE
+          GLOBAL CUSTOMER REVIEW POPUP
       ===================================== */}
 
-      <Route
-        path="/"
-        element={<HomePage />}
-      />
-
-      <Route
-        path="/wholesale"
-        element={<WholesalePage />}
-      />
-
-      <Route
-        path="/retail"
-        element={<RetailPage />}
-      />
-
+      <ReviewPopup />
 
       {/* =====================================
-          PRODUCT DETAILS
+          ROUTES
       ===================================== */}
 
-      <Route
-        path="/wholesale/product/:slug"
-        element={
-          <ProductDetailPage mode="wholesale" />
-        }
-      />
+      <Routes>
+        {/* =====================================
+            PUBLIC WEBSITE
+        ===================================== */}
 
-      <Route
-        path="/retail/product/:slug"
-        element={
-          <ProductDetailPage mode="retail" />
-        }
-      />
-
-
-      {/* =====================================
-          WISHLIST
-      ===================================== */}
-
-      <Route
-        path="/wholesale/wishlist"
-        element={<WholesaleWishlist />}
-      />
-
-      <Route
-        path="/retail/wishlist"
-        element={<RetailWishlist />}
-      />
-
-
-      {/* =====================================
-          CART
-      ===================================== */}
-
-      <Route
-        path="/wholesale/cart"
-        element={<WholesaleCart />}
-      />
-
-      <Route
-        path="/retail/cart"
-        element={<RetailCart />}
-      />
-
-
-      {/* =====================================
-          CHECKOUT
-      ===================================== */}
-
-      <Route
-        path="/wholesale/checkout"
-        element={
-          <CheckoutPage mode="wholesale" />
-        }
-      />
-
-      <Route
-        path="/retail/checkout"
-        element={
-          <CheckoutPage mode="retail" />
-        }
-      />
-
-      <Route
-        path="/order-success"
-        element={<OrderSuccessPage />}
-      />
-
-      <Route
-        path="/track-order"
-        element={<TrackOrderPage />}
-      />
-
-
-      {/* =====================================
-          CUSTOMER AUTHENTICATION
-      ===================================== */}
-
-      <Route
-        path="/login"
-        element={<LoginPage />}
-      />
-
-      <Route
-        path="/register"
-        element={<RegisterPage />}
-      />
-
-      <Route
-        path="/forgot-password"
-        element={<ForgotPasswordPage />}
-      />
-
-      <Route
-        path="/reset-password"
-        element={<ResetPasswordPage />}
-      />
-
-      <Route
-        path="/my-account"
-        element={<MyAccountPage />}
-      />
-
-
-      {/* =====================================
-          STATE PRODUCTS
-      ===================================== */}
-
-      <Route
-        path="/state/:state"
-        element={<StateProductsPage />}
-      />
-
-
-      {/* =====================================
-          INFORMATION PAGES
-      ===================================== */}
-
-      <Route
-        path="/policies"
-        element={<Policies />}
-      />
-
-      <Route
-        path="/about"
-        element={<About />}
-      />
-
-      <Route
-        path="/contact"
-        element={<Contact />}
-      />
-
-
-      {/* =====================================
-          ADMIN LOGIN
-      ===================================== */}
-
-      <Route
-        path="/admin/login"
-        element={<AdminLogin />}
-      />
-
-
-      {/* =====================================
-          PROTECTED ADMIN PANEL
-      ===================================== */}
-
-      <Route
-        element={<ProtectedAdminRoute />}
-      >
         <Route
-          path="/admin"
-          element={<AdminLayout />}
+          path="/"
+          element={<HomePage />}
+        />
+
+        <Route
+          path="/wholesale"
+          element={<WholesalePage />}
+        />
+
+        <Route
+          path="/retail"
+          element={<RetailPage />}
+        />
+
+        {/* =====================================
+            PRODUCT DETAILS
+        ===================================== */}
+
+        <Route
+          path="/wholesale/product/:slug"
+          element={
+            <ProductDetailPage mode="wholesale" />
+          }
+        />
+
+        <Route
+          path="/retail/product/:slug"
+          element={
+            <ProductDetailPage mode="retail" />
+          }
+        />
+
+        {/* =====================================
+            WISHLIST
+        ===================================== */}
+
+        <Route
+          path="/wholesale/wishlist"
+          element={<WholesaleWishlist />}
+        />
+
+        <Route
+          path="/retail/wishlist"
+          element={<RetailWishlist />}
+        />
+
+        {/* =====================================
+            CART
+        ===================================== */}
+
+        <Route
+          path="/wholesale/cart"
+          element={<WholesaleCart />}
+        />
+
+        <Route
+          path="/retail/cart"
+          element={<RetailCart />}
+        />
+
+        {/* =====================================
+            CHECKOUT
+        ===================================== */}
+
+        <Route
+          path="/wholesale/checkout"
+          element={
+            <CheckoutPage mode="wholesale" />
+          }
+        />
+
+        <Route
+          path="/retail/checkout"
+          element={
+            <CheckoutPage mode="retail" />
+          }
+        />
+
+        <Route
+          path="/order-success"
+          element={<OrderSuccessPage />}
+        />
+
+        <Route
+          path="/track-order"
+          element={<TrackOrderPage />}
+        />
+
+        {/* =====================================
+            CUSTOMER AUTHENTICATION
+        ===================================== */}
+
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
+
+        <Route
+          path="/register"
+          element={<RegisterPage />}
+        />
+
+        <Route
+          path="/forgot-password"
+          element={<ForgotPasswordPage />}
+        />
+
+        <Route
+          path="/reset-password"
+          element={<ResetPasswordPage />}
+        />
+
+        <Route
+          path="/my-account"
+          element={<MyAccountPage />}
+        />
+
+        {/* =====================================
+            STATE PRODUCTS
+        ===================================== */}
+
+        <Route
+          path="/state/:state"
+          element={<StateProductsPage />}
+        />
+
+        {/* =====================================
+            INFORMATION PAGES
+        ===================================== */}
+
+        <Route
+          path="/policies"
+          element={<Policies />}
+        />
+
+        <Route
+          path="/about"
+          element={<About />}
+        />
+
+        <Route
+          path="/contact"
+          element={<Contact />}
+        />
+
+        {/* =====================================
+            ADMIN LOGIN
+        ===================================== */}
+
+        <Route
+          path="/admin/login"
+          element={<AdminLogin />}
+        />
+
+        {/* =====================================
+            PROTECTED ADMIN PANEL
+        ===================================== */}
+
+        <Route
+          element={<ProtectedAdminRoute />}
         >
-
-          {/* Default Admin Route */}
-
           <Route
-            index
-            element={
-              <Navigate
-                to="dashboard"
-                replace
-              />
-            }
-          />
+            path="/admin"
+            element={<AdminLayout />}
+          >
+            {/* Default Admin Route */}
 
+            <Route
+              index
+              element={
+                <Navigate
+                  to="dashboard"
+                  replace
+                />
+              }
+            />
 
-          {/* Dashboard */}
+            {/* Dashboard */}
 
-          <Route
-            path="dashboard"
-            element={<Dashboard />}
-          />
+            <Route
+              path="dashboard"
+              element={<Dashboard />}
+            />
 
+            {/* Products */}
 
-          {/* Products */}
+            <Route
+              path="products"
+              element={<Products />}
+            />
 
-          <Route
-            path="products"
-            element={<Products />}
-          />
+            <Route
+              path="products/new"
+              element={<NewProduct />}
+            />
 
-          <Route
-            path="products/new"
-            element={<NewProduct />}
-          />
+            <Route
+              path="products/:id"
+              element={
+                <AdminComingSoon
+                  title="Product Details"
+                />
+              }
+            />
 
-          <Route
-            path="products/:id"
-            element={
-              <AdminComingSoon
-                title="Product Details"
-              />
-            }
-          />
+            <Route
+              path="products/:id/edit"
+              element={<EditProduct />}
+            />
 
-          <Route
-            path="products/:id/edit"
-            element={<EditProduct />}
-          />
+            {/* Categories */}
 
+            <Route
+              path="categories"
+              element={<Categories />}
+            />
 
-          {/* Categories */}
+            {/* Collections */}
 
-          <Route
-            path="categories"
-            element={<Categories />}
-          />
+            <Route
+              path="collections"
+              element={<Collections />}
+            />
 
+            {/* Orders */}
 
-          {/* Collections */}
+            <Route
+              path="orders"
+              element={<Orders />}
+            />
 
-          <Route
-            path="collections"
-            element={<Collections />}
-          />
+            {/* Customers */}
 
+            <Route
+              path="customers"
+              element={<Customers />}
+            />
 
-          {/* Orders */}
+            {/* Website Content */}
 
-          <Route
-            path="orders"
-            element={<Orders />}
-          />
+            <Route
+              path="website/home"
+              element={
+                <AdminComingSoon
+                  title="Home Content"
+                />
+              }
+            />
 
+            {/* Media Library */}
 
-          {/* Customers */}
+            <Route
+              path="media"
+              element={<MediaLibrary />}
+            />
 
-          <Route
-            path="customers"
-            element={<Customers />}
-          />
+            {/* Coupons */}
 
+            <Route
+              path="coupons"
+              element={
+                <AdminComingSoon
+                  title="Coupons"
+                />
+              }
+            />
 
-          {/* Website Content */}
+            {/* Reviews */}
 
-          <Route
-            path="website/home"
-            element={
-              <AdminComingSoon
-                title="Home Content"
-              />
-            }
-          />
+            <Route
+              path="reviews"
+              element={<Reviews />}
+            />
 
+            {/* Settings */}
 
-          {/* Media Library */}
-
-          <Route
-            path="media"
-            element={<MediaLibrary />}
-          />
-
-
-          {/* Coupons */}
-
-          <Route
-            path="coupons"
-            element={
-              <AdminComingSoon
-                title="Coupons"
-              />
-            }
-          />
-
-
-          {/* Reviews */}
-
-          <Route
-            path="reviews"
-            element={
-              <AdminComingSoon
-                title="Reviews"
-              />
-            }
-          />
-
-
-          {/* Settings */}
-
-          <Route
-            path="settings"
-            element={<Settings />}
-          />
-
+            <Route
+              path="settings"
+              element={<Settings />}
+            />
+          </Route>
         </Route>
-      </Route>
 
+        {/* =====================================
+            INVALID / UNKNOWN URL
+        ===================================== */}
 
-      {/* =====================================
-          INVALID / UNKNOWN URL
-      ===================================== */}
-
-      <Route
-        path="*"
-        element={
-          <Navigate
-            to="/"
-            replace
-          />
-        }
-      />
-
-    </Routes>
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
+        />
+      </Routes>
+    </>
   );
 }

@@ -8,7 +8,7 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 import "../css/AdminTopbar.css";
 
@@ -22,11 +22,18 @@ export default function AdminTopbar({
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await adminSupabase.auth.signOut();
 
-    navigate("/admin/login", {
-      replace: true,
-    });
+      navigate("/admin/login", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error(
+        "Admin logout error:",
+        error
+      );
+    }
   };
 
   return (
@@ -73,8 +80,13 @@ export default function AdminTopbar({
           </div>
 
           <div className="admin-profile-info">
-            <strong>Administrator</strong>
-            <span>VV Sarees</span>
+            <strong>
+              Administrator
+            </strong>
+
+            <span>
+              VV Sarees
+            </span>
           </div>
         </div>
 
@@ -83,6 +95,7 @@ export default function AdminTopbar({
           onClick={handleLogout}
           className="admin-notification-button"
           title="Logout"
+          aria-label="Logout admin"
         >
           <FiLogOut />
         </button>
