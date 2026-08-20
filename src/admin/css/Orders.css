@@ -898,3 +898,82 @@
     width: 100%;
   }
 }
+
+/* =========================================
+   DELETE ORDER
+========================================= */
+
+.order-delete-button {
+  min-height: 38px;
+  padding: 0 13px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  border: 1px solid #e3b7ae;
+  border-radius: 9px;
+
+  background: #fff4f1;
+  color: #a43e34;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.order-delete-button:hover:not(:disabled) {
+  background: #ffe8e3;
+  border-color: #d58e82;
+  transform: translateY(-1px);
+}
+
+.order-delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.order-drawer-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.order-drawer-delete {
+  width: 100%;
+  min-height: 43px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border: 1px solid #e3b7ae;
+  border-radius: 10px;
+
+  background: #fff4f1;
+  color: #a43e34;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.order-drawer-delete:hover:not(:disabled) {
+  background: #ffe8e3;
+  border-color: #d58e82;
+}
+
+.order-drawer-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

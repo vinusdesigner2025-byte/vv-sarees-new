@@ -12,6 +12,7 @@ import {
   FiPackage,
   FiSearch,
   FiTruck,
+  FiTrash2,
   FiX,
 } from "react-icons/fi";
 
@@ -243,6 +244,9 @@ export default function Orders() {
 
   const [isUpdating, setIsUpdating] =
     useState(false);
+
+  const [deletingOrderId, setDeletingOrderId] =
+    useState<string | null>(null);
 
   const [activeStage, setActiveStage] =
     useState<OrderStage>("new");
@@ -728,6 +732,89 @@ export default function Orders() {
     setActiveStage("delivered");
   };
 
+  const handleDeleteOrder = async (
+    order: Order
+  ) => {
+    if (deletingOrderId) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      `Delete order ${order.orderNumber}?\n\nThis will permanently remove the order and its items. This action cannot be undone.`
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setDeletingOrderId(order.id);
+
+    try {
+      /*
+        Delete child order items first.
+        This avoids foreign-key issues if cascade
+        delete is not enabled in Supabase.
+      */
+
+      const {
+        error: itemsDeleteError,
+      } = await supabase
+        .from("order_items")
+        .delete()
+        .eq("order_id", order.id);
+
+      if (itemsDeleteError) {
+        throw new Error(
+          `Order items delete aagala: ${itemsDeleteError.message}`
+        );
+      }
+
+      const {
+        error: orderDeleteError,
+      } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", order.id);
+
+      if (orderDeleteError) {
+        throw new Error(
+          `Order delete aagala: ${orderDeleteError.message}`
+        );
+      }
+
+      setOrders((currentOrders) =>
+        currentOrders.filter(
+          (currentOrder) =>
+            currentOrder.id !== order.id
+        )
+      );
+
+      setSelectedOrder(
+        (currentOrder) =>
+          currentOrder?.id === order.id
+            ? null
+            : currentOrder
+      );
+
+      window.alert(
+        `Order ${order.orderNumber} deleted successfully.`
+      );
+    } catch (error) {
+      console.error(
+        "Admin delete order error:",
+        error
+      );
+
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Order delete aagala. Please try again."
+      );
+    } finally {
+      setDeletingOrderId(null);
+    }
+  };
+
   const clearFilters = () => {
     setSearchTerm("");
     setOrderTypeFilter("all");
@@ -1063,6 +1150,27 @@ export default function Orders() {
                     >
                       <FiEye />
                       View Order
+                    </button>
+
+                    <button
+                      type="button"
+                      className="order-delete-button"
+                      onClick={() =>
+                        void handleDeleteOrder(
+                          order
+                        )
+                      }
+                      disabled={
+                        deletingOrderId ===
+                        order.id
+                      }
+                    >
+                      <FiTrash2 />
+
+                      {deletingOrderId ===
+                      order.id
+                        ? "Deleting..."
+                        : "Delete Order"}
                     </button>
 
                     {order.stage === "new" && (
@@ -1449,6 +1557,27 @@ export default function Orders() {
             </div>
 
             <footer className="order-drawer-footer">
+              <button
+                type="button"
+                className="order-drawer-delete"
+                onClick={() =>
+                  void handleDeleteOrder(
+                    selectedOrder
+                  )
+                }
+                disabled={
+                  deletingOrderId ===
+                  selectedOrder.id
+                }
+              >
+                <FiTrash2 />
+
+                {deletingOrderId ===
+                selectedOrder.id
+                  ? "Deleting Order..."
+                  : "Delete Order"}
+              </button>
+
               {selectedOrder.stage === "new" && (
                 <button
                   type="button"
