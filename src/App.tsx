@@ -32,6 +32,11 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MyAccountPage from "./pages/MyAccountPage";
 
+import WholesaleLoginPage from "./pages/WholesaleLoginPage";
+import WholesaleRegisterPage from "./pages/WholesaleRegisterPage";
+import WholesalePendingPage from "./pages/WholesalePendingPage";
+import ProtectedWholesaleRoute from "./components/ProtectedWholesaleRoute";
+
 import StateProductsPage from "./pages/StateProductsPage";
 import Policies from "./pages/Policies";
 import About from "./pages/About";
@@ -52,6 +57,7 @@ import Customers from "./admin/pages/Customers";
 import MediaLibrary from "./admin/pages/MediaLibrary";
 import Settings from "./admin/pages/Settings";
 import Reviews from "./admin/pages/Reviews";
+import WholesaleApplications from "./admin/pages/WholesaleApplications";
 
 /* =========================================
    HOME PAGE
@@ -160,10 +166,67 @@ export default function App() {
           element={<HomePage />}
         />
 
+        {/* =====================================
+            WHOLESALE AUTHENTICATION
+        ===================================== */}
+
         <Route
-          path="/wholesale"
-          element={<WholesalePage />}
+          path="/wholesale-login"
+          element={<WholesaleLoginPage />}
         />
+
+        <Route
+          path="/wholesale-register"
+          element={<WholesaleRegisterPage />}
+        />
+
+        <Route
+          path="/wholesale-pending"
+          element={<WholesalePendingPage />}
+        />
+
+        {/* =====================================
+            PROTECTED WHOLESALE AREA
+        ===================================== */}
+
+        <Route
+          element={
+            <ProtectedWholesaleRoute />
+          }
+        >
+          <Route
+            path="/wholesale"
+            element={<WholesalePage />}
+          />
+
+          <Route
+            path="/wholesale/product/:slug"
+            element={
+              <ProductDetailPage mode="wholesale" />
+            }
+          />
+
+          <Route
+            path="/wholesale/wishlist"
+            element={<WholesaleWishlist />}
+          />
+
+          <Route
+            path="/wholesale/cart"
+            element={<WholesaleCart />}
+          />
+
+          <Route
+            path="/wholesale/checkout"
+            element={
+              <CheckoutPage mode="wholesale" />
+            }
+          />
+        </Route>
+
+        {/* =====================================
+            RETAIL
+        ===================================== */}
 
         <Route
           path="/retail"
@@ -173,13 +236,6 @@ export default function App() {
         {/* =====================================
             PRODUCT DETAILS
         ===================================== */}
-
-        <Route
-          path="/wholesale/product/:slug"
-          element={
-            <ProductDetailPage mode="wholesale" />
-          }
-        />
 
         <Route
           path="/retail/product/:slug"
@@ -193,11 +249,6 @@ export default function App() {
         ===================================== */}
 
         <Route
-          path="/wholesale/wishlist"
-          element={<WholesaleWishlist />}
-        />
-
-        <Route
           path="/retail/wishlist"
           element={<RetailWishlist />}
         />
@@ -207,11 +258,6 @@ export default function App() {
         ===================================== */}
 
         <Route
-          path="/wholesale/cart"
-          element={<WholesaleCart />}
-        />
-
-        <Route
           path="/retail/cart"
           element={<RetailCart />}
         />
@@ -219,13 +265,6 @@ export default function App() {
         {/* =====================================
             CHECKOUT
         ===================================== */}
-
-        <Route
-          path="/wholesale/checkout"
-          element={
-            <CheckoutPage mode="wholesale" />
-          }
-        />
 
         <Route
           path="/retail/checkout"
@@ -392,6 +431,13 @@ export default function App() {
             <Route
               path="customers"
               element={<Customers />}
+            />
+
+            {/* Wholesale Applications */}
+
+            <Route
+              path="wholesale-applications"
+              element={<WholesaleApplications />}
             />
 
             {/* Website Content */}

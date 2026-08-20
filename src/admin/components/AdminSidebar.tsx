@@ -70,6 +70,11 @@ const sidebarSections: SidebarSection[] = [
         path: "/admin/customers",
         icon: <FiUsers />,
       },
+      {
+        label: "Wholesale Requests",
+        path: "/admin/wholesale-applications",
+        icon: <FiUsers />,
+      },
     ],
   },
   {

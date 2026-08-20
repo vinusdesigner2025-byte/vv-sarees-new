@@ -356,7 +356,7 @@ export default function WholesaleRetail() {
             </div>
 
             <Link
-              to="/wholesale"
+              to="/wholesale-register"
               className="card-button"
             >
               Explore Wholesale
