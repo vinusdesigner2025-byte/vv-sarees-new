@@ -537,8 +537,7 @@ export default function Orders() {
         "admin-order-action",
         {
           body: {
-            action:
-              actionMap[nextStage],
+            action: actionMap[nextStage],
             orderId,
           },
         }
@@ -551,7 +550,7 @@ export default function Orders() {
         );
 
         window.alert(
-          "We couldn't update this order. Please try again."
+          "We couldn't update this order. Please make sure you are signed in with the VV Sarees administrator account and try again."
         );
 
         return false;
@@ -566,26 +565,15 @@ export default function Orders() {
         return false;
       }
 
-      setOrders((currentOrders) =>
-        currentOrders.map((order) =>
-          order.id === orderId
-            ? {
-                ...order,
-                stage: nextStage,
-              }
-            : order
-        )
-      );
+      /*
+       * Reload from Supabase after the Edge Function succeeds.
+       * This makes the UI reflect the persisted database status
+       * instead of relying only on temporary React state.
+       */
+      await loadOrders();
 
-      setSelectedOrder(
-        (currentOrder) =>
-          currentOrder?.id === orderId
-            ? {
-                ...currentOrder,
-                stage: nextStage,
-              }
-            : currentOrder
-      );
+      setSelectedOrder(null);
+      setActiveStage(nextStage);
 
       return true;
     } catch (error) {
@@ -618,16 +606,10 @@ export default function Orders() {
 
     if (!shouldPack) return;
 
-    const updated =
-      await updateOrderStage(
-        selectedOrder.id,
-        "packed"
-      );
-
-    if (!updated) return;
-
-    setSelectedOrder(null);
-    setActiveStage("packed");
+    await updateOrderStage(
+      selectedOrder.id,
+      "packed"
+    );
   };
 
   const openDispatchModal = () => {
