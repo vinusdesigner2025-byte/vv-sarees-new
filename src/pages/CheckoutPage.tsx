@@ -118,6 +118,24 @@ type RazorpayVerifyResponse = {
   error?: string;
 };
 
+type CheckoutCreateResponse = {
+  success: boolean;
+  order?: {
+    id: string;
+    orderNumber: string;
+    orderType: "wholesale" | "retail";
+    customerName: string;
+    totalQuantity: number;
+    subtotal: number;
+    shippingCharge: number;
+    grandTotal: number;
+    paymentMethod: PaymentMethod;
+    paymentStatus: string;
+    orderStatus: string;
+  };
+  error?: string;
+};
+
 const PAYMENT_METHODS = {
   razorpay: true,
   cod: false,
@@ -176,28 +194,6 @@ const loadRazorpayScript = () => {
   );
 };
 
-const createOrderNumber = () => {
-  const now = new Date();
-
-  const datePart = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-  ].join("");
-
-  const timePart = [
-    String(now.getHours()).padStart(2, "0"),
-    String(now.getMinutes()).padStart(2, "0"),
-    String(now.getSeconds()).padStart(2, "0"),
-  ].join("");
-
-  const randomPart = Math.floor(
-    1000 + Math.random() * 9000
-  );
-
-  return `VV${datePart}${timePart}${randomPart}`;
-};
-
 const getErrorMessage = (error: unknown) => {
   if (
     typeof error === "object" &&
@@ -207,7 +203,7 @@ const getErrorMessage = (error: unknown) => {
     return String(error.message);
   }
 
-  return "Unknown error";
+  return "Something went wrong. Please try again.";
 };
 
 export default function CheckoutPage({
@@ -312,7 +308,7 @@ export default function CheckoutPage({
 
   const validateForm = () => {
     if (!formData.fullName.trim()) {
-      alert("Full name enter pannu.");
+      alert("Please enter your full name.");
       return false;
     }
 
@@ -322,23 +318,23 @@ export default function CheckoutPage({
       )
     ) {
       alert(
-        "Correct 10-digit phone number enter pannu."
+        "Please enter a valid 10-digit mobile number."
       );
       return false;
     }
 
     if (!formData.email.trim()) {
-      alert("Email address enter pannu.");
+      alert("Please enter your email address.");
       return false;
     }
 
     if (!formData.addressLine1.trim()) {
-      alert("Delivery address enter pannu.");
+      alert("Please enter your delivery address.");
       return false;
     }
 
     if (!formData.city.trim()) {
-      alert("City enter pannu.");
+      alert("Please enter your city.");
       return false;
     }
 
@@ -348,28 +344,28 @@ export default function CheckoutPage({
       )
     ) {
       alert(
-        "Correct 6-digit pincode enter pannu."
+        "Please enter a valid 6-digit pincode."
       );
       return false;
     }
 
     if (cartItems.length === 0) {
-      alert("Cart empty-a iruku.");
+      alert("Your cart is empty.");
       return false;
     }
 
     if (!minimumReached) {
       alert(
         isWholesale
-          ? "Wholesale checkout-ku minimum 5 sarees venum."
-          : "Cart-la minimum one product venum."
+          ? "Wholesale orders require a minimum of 5 sarees."
+          : "Please add at least one product to your cart."
       );
       return false;
     }
 
     if (hasOutOfStockItem) {
       alert(
-        "Out-of-stock item remove pannitu checkout pannu."
+        "Please remove unavailable items or adjust their quantities before checkout."
       );
       return false;
     }
@@ -397,6 +393,8 @@ export default function CheckoutPage({
       | null = null;
 
     let createdOrderNumber = "";
+    let createdGrandTotal = 0;
+    let createdTotalQuantity = 0;
     let gatewaySuccessReceived =
       false;
 
@@ -411,7 +409,7 @@ export default function CheckoutPage({
 
         if (!razorpayKeyId) {
           throw new Error(
-            "Razorpay Key ID configure aagala."
+            "Payment configuration is unavailable. Please try again later."
           );
         }
 
@@ -420,130 +418,104 @@ export default function CheckoutPage({
 
         if (!scriptLoaded) {
           throw new Error(
-            "Razorpay checkout load aagala. Internet connection check panni retry pannu."
+            "We could not load the secure payment window. Please check your internet connection and try again."
           );
         }
       }
 
-      const orderNumber =
-        createOrderNumber();
-
-      createdOrderNumber =
-        orderNumber;
-
+      /*
+       * IMPORTANT:
+       * Orders are now created by the secure Edge Function.
+       * The browser no longer inserts directly into orders/order_items.
+       * Product prices are re-read from the database on the server.
+       */
       const {
-        data: createdOrder,
-        error: orderError,
-      } = await supabase
-        .from("orders")
-        .insert({
-          order_number: orderNumber,
-          order_type: mode,
-
-          customer_name:
-            formData.fullName.trim(),
-
-          phone:
-            formData.phone.trim(),
-
-          email:
-            formData.email.trim(),
-
-          address_line_1:
-            formData.addressLine1.trim(),
-
-          address_line_2:
-            formData.addressLine2.trim(),
-
-          city:
-            formData.city.trim(),
-
-          state:
-            formData.state,
-
-          pincode:
-            formData.pincode.trim(),
-
-          delivery_note:
-            formData.deliveryNote.trim(),
-
-          payment_method:
+        data: checkoutData,
+        error: checkoutError,
+      } = await supabase.functions.invoke(
+        "create-checkout-order",
+        {
+          body: {
+            orderType: mode,
+            customerName:
+              formData.fullName.trim(),
+            phone:
+              formData.phone.trim(),
+            email:
+              formData.email.trim(),
+            addressLine1:
+              formData.addressLine1.trim(),
+            addressLine2:
+              formData.addressLine2.trim(),
+            city:
+              formData.city.trim(),
+            state:
+              formData.state,
+            pincode:
+              formData.pincode.trim(),
+            deliveryNote:
+              formData.deliveryNote.trim(),
             paymentMethod,
+            items: cartItems.map(
+  (item) => ({
+    productId:
+      String(item.id),
 
-          payment_status:
-            "pending",
+    slug:
+      item.slug,
 
-          order_status:
-            "pending",
+    quantity:
+      Number(item.quantity),
 
-          subtotal,
-          shipping_charge:
-            shippingCharge,
-          grand_total:
-            grandTotal,
-          total_quantity:
-            totalQuantity,
+    colour:
+      item.colour ?? "",
 
-          updated_at:
-            new Date().toISOString(),
-        })
-        .select(
-          "id, order_number"
-        )
-        .single();
+    imageUrl:
+      item.image ?? "",
+  })
+),
+          },
+        }
+      );
 
-      if (orderError) {
-        throw orderError;
+      if (checkoutError) {
+        throw checkoutError;
       }
 
-      if (!createdOrder?.id) {
+      const checkout =
+        checkoutData as
+          | CheckoutCreateResponse
+          | null;
+
+      if (
+        !checkout?.success ||
+        !checkout.order?.id ||
+        !checkout.order.orderNumber
+      ) {
         throw new Error(
-          "Order ID create aagala."
+          checkout?.error ??
+            "We could not create your order. Please try again."
         );
       }
 
+      const secureOrder = checkout.order;
+
+      const createdOrder = {
+        id: secureOrder.id,
+        order_number:
+          secureOrder.orderNumber,
+      };
+
       createdOrderId =
         createdOrder.id;
-
-      const orderItems =
-        cartItems.map((item) => ({
-          order_id:
-            createdOrder.id,
-
-          product_id:
-            String(item.id),
-
-          product_slug:
-            item.slug,
-
-          product_name:
-            item.name,
-
-          colour:
-            item.colour ?? "",
-
-          image_url:
-            item.image ?? "",
-
-          unit_price:
-            Number(item.price),
-
-          quantity:
-            Number(item.quantity),
-
-          line_total:
-            Number(item.price) *
-            Number(item.quantity),
-        }));
-
-      const { error: itemsError } =
-        await supabase
-          .from("order_items")
-          .insert(orderItems);
-
-      if (itemsError) {
-        throw itemsError;
-      }
+      createdOrderNumber =
+        createdOrder.order_number;
+      createdGrandTotal = Number(
+        secureOrder.grandTotal ?? 0
+      );
+      createdTotalQuantity = Number(
+        secureOrder.totalQuantity ?? 0
+      );
 
       if (
         paymentMethod ===
@@ -580,7 +552,7 @@ export default function CheckoutPage({
           !razorpayOrder.currency
         ) {
           throw new Error(
-            "Razorpay order create aagala."
+            "We could not initialize your payment. Please try again."
           );
         }
 
@@ -596,7 +568,7 @@ export default function CheckoutPage({
           !RazorpayConstructor
         ) {
           throw new Error(
-            "Razorpay checkout ready illa."
+            "The secure payment window is not ready. Please refresh the page and try again."
           );
         }
 
@@ -813,7 +785,7 @@ export default function CheckoutPage({
 
                           sub_total:
                             Number(
-                              subtotal
+                              secureOrder.subtotal
                             ),
 
                           length: 30,
@@ -856,7 +828,7 @@ export default function CheckoutPage({
                       ) {
                         finishWithError(
                           new Error(
-                            `Payment received, but verification complete aagala: ${getErrorMessage(
+                            `Your payment response was received, but verification could not be completed: ${getErrorMessage(
                               error
                             )}`
                           )
@@ -869,7 +841,7 @@ export default function CheckoutPage({
                       () => {
                         finishWithError(
                           new Error(
-                            "Payment cancelled."
+                            `Payment cancelled. Order ${createdOrder.order_number} has been saved and is awaiting payment.`
                           )
                         );
                       },
@@ -889,7 +861,7 @@ export default function CheckoutPage({
                 finishWithError(
                   new Error(
                     description ||
-                      "Payment failed. Please try again."
+                      `Payment was unsuccessful. Order ${createdOrder.order_number} has been saved and is awaiting payment.`
                   )
                 );
               }
@@ -916,8 +888,10 @@ export default function CheckoutPage({
             customerName:
               formData.fullName.trim(),
 
-            totalQuantity,
-            grandTotal,
+            totalQuantity:
+              createdTotalQuantity,
+            grandTotal:
+              createdGrandTotal,
             paymentMethod,
           },
         }
@@ -929,10 +903,9 @@ export default function CheckoutPage({
       );
 
       /*
-       * If Razorpay has already returned a
-       * successful payment response, never
-       * delete the order automatically.
-       * It may only need verification/reconciliation.
+       * Do not delete orders from the browser.
+       * Public UPDATE/DELETE is intentionally blocked by RLS.
+       * A payment-success response is kept for reconciliation.
        */
       if (
         gatewaySuccessReceived &&
@@ -940,7 +913,7 @@ export default function CheckoutPage({
         createdOrderNumber
       ) {
         setSubmitError(
-          `Payment response vandhuruku, aana verification complete aagala. Same payment-a thirumba panna vendam. Order ${createdOrderNumber}. ${getErrorMessage(
+          `Your payment response was received, but verification could not be completed. Please do not make another payment. Order reference: ${createdOrderNumber}. ${getErrorMessage(
             error
           )}`
         );
@@ -961,8 +934,10 @@ export default function CheckoutPage({
               customerName:
                 formData.fullName.trim(),
 
-              totalQuantity,
-              grandTotal,
+              totalQuantity:
+                createdTotalQuantity,
+              grandTotal:
+                createdGrandTotal,
               paymentMethod,
             },
           }
@@ -971,28 +946,14 @@ export default function CheckoutPage({
         return;
       }
 
-      if (createdOrderId) {
-        await supabase
-          .from("order_items")
-          .delete()
-          .eq(
-            "order_id",
-            createdOrderId
-          );
-
-        await supabase
-          .from("orders")
-          .delete()
-          .eq(
-            "id",
-            createdOrderId
-          );
-      }
-
       setSubmitError(
-        `Order place aagala: ${getErrorMessage(
-          error
-        )}`
+        createdOrderNumber
+          ? `Order ${createdOrderNumber} was created, but payment was not completed. ${getErrorMessage(
+              error
+            )}`
+          : `We could not complete your order. ${getErrorMessage(
+              error
+            )}`
       );
     } finally {
       setIsSubmitting(false);

@@ -119,10 +119,12 @@ type OrderRow = {
   order_status:
     | "pending"
     | "confirmed"
-    | "processing"
+    | "packed"
     | "shipped"
+    | "out_for_delivery"
     | "delivered"
-    | "cancelled";
+    | "cancelled"
+    | "returned";
   subtotal: number;
   shipping_charge: number;
   grand_total: number;
@@ -185,9 +187,19 @@ const formatDateTime = (
 const mapOrderStage = (
   status: OrderRow["order_status"]
 ): OrderStage => {
-  if (status === "processing") return "packed";
-  if (status === "shipped") return "shipped";
-  if (status === "delivered") return "delivered";
+  if (status === "packed") return "packed";
+
+  if (
+    status === "shipped" ||
+    status === "out_for_delivery"
+  ) {
+    return "shipped";
+  }
+
+  if (status === "delivered") {
+    return "delivered";
+  }
+
   return "new";
 };
 
@@ -326,7 +338,7 @@ export default function Orders() {
       );
 
       setLoadError(
-        `Orders load aagala: ${error.message}`
+        `We couldn't load the orders: ${error.message}`
       );
 
       setOrders([]);
@@ -502,59 +514,94 @@ export default function Orders() {
     orderId: string,
     nextStage: OrderStage
   ) => {
-    const statusMap: Record<
-      OrderStage,
-      OrderRow["order_status"]
+    const actionMap: Record<
+      Exclude<OrderStage, "new">,
+      "pack" | "ship" | "deliver"
     > = {
-      new: "pending",
-      packed: "processing",
-      shipped: "shipped",
-      delivered: "delivered",
+      packed: "pack",
+      shipped: "ship",
+      delivered: "deliver",
     };
 
-    setIsUpdating(true);
-
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        order_status:
-          statusMap[nextStage],
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq("id", orderId);
-
-    if (error) {
-      alert(
-        `Order update aagala: ${error.message}`
-      );
-      setIsUpdating(false);
+    if (nextStage === "new") {
       return false;
     }
 
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              stage: nextStage,
-            }
-          : order
-      )
-    );
+    setIsUpdating(true);
 
-    setSelectedOrder(
-      (currentOrder) =>
-        currentOrder?.id === orderId
-          ? {
-              ...currentOrder,
-              stage: nextStage,
-            }
-          : currentOrder
-    );
+    try {
+      const {
+        data,
+        error,
+      } = await supabase.functions.invoke(
+        "admin-order-action",
+        {
+          body: {
+            action:
+              actionMap[nextStage],
+            orderId,
+          },
+        }
+      );
 
-    setIsUpdating(false);
-    return true;
+      if (error) {
+        console.error(
+          "Admin order action error:",
+          error
+        );
+
+        window.alert(
+          "We couldn't update this order. Please try again."
+        );
+
+        return false;
+      }
+
+      if (!data?.success) {
+        window.alert(
+          data?.error ||
+            "We couldn't update this order. Please try again."
+        );
+
+        return false;
+      }
+
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                stage: nextStage,
+              }
+            : order
+        )
+      );
+
+      setSelectedOrder(
+        (currentOrder) =>
+          currentOrder?.id === orderId
+            ? {
+                ...currentOrder,
+                stage: nextStage,
+              }
+            : currentOrder
+      );
+
+      return true;
+    } catch (error) {
+      console.error(
+        "Admin order stage update failed:",
+        error
+      );
+
+      window.alert(
+        "We couldn't update this order. Please try again."
+      );
+
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handlePackOrder = async () => {
@@ -647,63 +694,91 @@ export default function Orders() {
       }
     } catch {
       alert(
-        "Valid tracking URL enter pannu. Example: https://..."
+        "Please enter a valid tracking URL, for example: https://..."
       );
       return;
     }
 
     setIsUpdating(true);
 
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        order_status: "shipped",
-        courier_name:
-          carrierName.trim(),
-        tracking_number:
-          trackingNumber.trim(),
-        tracking_url:
-          trackingUrl.trim(),
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        "id",
-        selectedOrder.id
+    try {
+      const {
+        data,
+        error,
+      } = await supabase.functions.invoke(
+        "admin-order-action",
+        {
+          body: {
+            action: "ship",
+            orderId:
+              selectedOrder.id,
+            courierName:
+              carrierName.trim(),
+            trackingNumber:
+              trackingNumber.trim(),
+            trackingUrl:
+              trackingUrl.trim(),
+          },
+        }
       );
 
-    if (error) {
-      alert(
-        `Dispatch update aagala: ${error.message}`
+      if (error) {
+        console.error(
+          "Admin dispatch action error:",
+          error
+        );
+
+        window.alert(
+          "We couldn't dispatch this order. Please try again."
+        );
+
+        return;
+      }
+
+      if (!data?.success) {
+        window.alert(
+          data?.error ||
+            "We couldn't dispatch this order. Please try again."
+        );
+
+        return;
+      }
+
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.id === selectedOrder.id
+            ? {
+                ...order,
+                stage: "shipped",
+                carrierName:
+                  carrierName.trim(),
+                trackingNumber:
+                  trackingNumber.trim(),
+                trackingUrl:
+                  trackingUrl.trim(),
+              }
+            : order
+        )
       );
+
+      setSelectedOrder(null);
+      setIsDispatchModalOpen(false);
+      setCarrierName("");
+      setTrackingNumber("");
+      setTrackingUrl("");
+      setActiveStage("shipped");
+    } catch (error) {
+      console.error(
+        "Admin dispatch failed:",
+        error
+      );
+
+      window.alert(
+        "We couldn't dispatch this order. Please try again."
+      );
+    } finally {
       setIsUpdating(false);
-      return;
     }
-
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        order.id === selectedOrder.id
-          ? {
-              ...order,
-              stage: "shipped",
-              carrierName:
-                carrierName.trim(),
-              trackingNumber:
-                trackingNumber.trim(),
-              trackingUrl:
-                trackingUrl.trim(),
-            }
-          : order
-      )
-    );
-
-    setSelectedOrder(null);
-    setIsDispatchModalOpen(false);
-    setCarrierName("");
-    setTrackingNumber("");
-    setTrackingUrl("");
-    setActiveStage("shipped");
-    setIsUpdating(false);
   };
 
   const handleDelivered = async () => {
@@ -750,36 +825,39 @@ export default function Orders() {
     setDeletingOrderId(order.id);
 
     try {
-      /*
-        Delete child order items first.
-        This avoids foreign-key issues if cascade
-        delete is not enabled in Supabase.
-      */
-
       const {
-        error: itemsDeleteError,
-      } = await supabase
-        .from("order_items")
-        .delete()
-        .eq("order_id", order.id);
+        data,
+        error,
+      } = await supabase.functions.invoke(
+        "admin-order-action",
+        {
+          body: {
+            action: "delete",
+            orderId: order.id,
+          },
+        }
+      );
 
-      if (itemsDeleteError) {
-        throw new Error(
-          `Order items delete aagala: ${itemsDeleteError.message}`
+      if (error) {
+        console.error(
+          "Admin delete action error:",
+          error
         );
+
+        window.alert(
+          "We couldn't delete the order. Please try again."
+        );
+
+        return;
       }
 
-      const {
-        error: orderDeleteError,
-      } = await supabase
-        .from("orders")
-        .delete()
-        .eq("id", order.id);
-
-      if (orderDeleteError) {
-        throw new Error(
-          `Order delete aagala: ${orderDeleteError.message}`
+      if (!data?.success) {
+        window.alert(
+          data?.error ||
+            "We couldn't delete the order. Please try again."
         );
+
+        return;
       }
 
       setOrders((currentOrders) =>
@@ -806,9 +884,7 @@ export default function Orders() {
       );
 
       window.alert(
-        error instanceof Error
-          ? error.message
-          : "Order delete aagala. Please try again."
+        "We couldn't delete the order. Please try again."
       );
     } finally {
       setDeletingOrderId(null);
@@ -951,7 +1027,7 @@ export default function Orders() {
             <h2>Loading orders...</h2>
 
             <p>
-              Supabase-la irundhu orders load aaguthu.
+              Fetching the latest orders...
             </p>
           </div>
         ) : orders.length === 0 ? (

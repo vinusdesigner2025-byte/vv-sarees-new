@@ -50,7 +50,6 @@ type TimelineStep = {
 };
 
 type TrackedOrder = {
-  id: string;
   orderId: string;
   customerName: string;
   orderType: OrderType;
@@ -60,39 +59,49 @@ type TrackedOrder = {
   trackingUrl: string;
   estimatedDelivery: string;
   status: OrderStatus;
+  statusMessage: string;
   orderDate: string;
   total: number;
   address: string;
   timeline: TimelineStep[];
 };
 
-type OrderRow = {
-  id: string;
-  order_number: string;
-  order_type: OrderType;
-  customer_name: string;
-  payment_method: string;
-  payment_status: string;
-  order_status: OrderStatus;
-  courier_name: string | null;
-  tracking_number: string | null;
-  tracking_url: string | null;
-  shiprocket_order_id: string | null;
-  shiprocket_shipment_id: string | null;
-  tracking_status: string | null;
-  created_at: string;
-  updated_at: string;
-  grand_total: number;
-  address_line_1: string;
-  address_line_2: string | null;
-  city: string;
-  state: string;
-  pincode: string;
+type TrackCheckoutOrderResponse = {
+  success?: boolean;
+  order?: {
+    orderNumber?: string;
+    orderType?: string;
+    customerName?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    status?: string;
+    statusLabel?: string;
+    statusMessage?: string;
+    totalQuantity?: number;
+    grandTotal?: number;
+    courierName?: string | null;
+    trackingNumber?: string | null;
+    trackingUrl?: string | null;
+    orderedAt?: string;
+    updatedAt?: string;
+    address?: string;
+  };
+  error?: string;
 };
 
 const formatDateTime = (
-  value: string
+  value?: string
 ) => {
+  if (!value) {
+    return "Waiting for update";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Waiting for update";
+  }
+
   return new Intl.DateTimeFormat(
     "en-IN",
     {
@@ -102,7 +111,7 @@ const formatDateTime = (
       hour: "2-digit",
       minute: "2-digit",
     }
-  ).format(new Date(value));
+  ).format(date);
 };
 
 const formatCurrency = (
@@ -118,36 +127,17 @@ const formatCurrency = (
   ).format(amount);
 };
 
-const formatPayment = (
-  method: string,
-  status: string
-) => {
-  if (status === "paid") {
-    return `${method.toUpperCase()} - Paid`;
-  }
-
-  if (method === "cod") {
-    return "Cash on Delivery";
-  }
-
-  return `${method.toUpperCase()} - Pending`;
+const normaliseOrderType = (
+  value: unknown
+): OrderType => {
+  return String(value)
+    .trim()
+    .toLowerCase() === "wholesale"
+    ? "wholesale"
+    : "retail";
 };
 
-
-type ShiprocketTrackResponse = {
-  success?: boolean;
-  order_id?: string;
-  shiprocket_order_id?: string | number | null;
-  shipment_id?: string | number | null;
-  status?: string | number | null;
-  awb_code?: string | null;
-  courier_name?: string | null;
-  tracking?: any;
-  shiprocket_order?: any;
-  error?: string;
-};
-
-const mapShiprocketStatus = (
+const normaliseStatus = (
   value: unknown
 ): OrderStatus => {
   const status = String(
@@ -156,108 +146,76 @@ const mapShiprocketStatus = (
     .trim()
     .toLowerCase();
 
-  if (
-    status.includes("cancel") ||
-    status.includes("rto")
-  ) {
-    return "cancelled";
+  if (status === "confirmed") {
+    return "confirmed";
   }
 
   if (
-    status.includes("deliver")
-  ) {
-    return "delivered";
-  }
-
-  if (
-    status.includes("ship") ||
-    status.includes("transit") ||
-    status.includes("out for delivery") ||
-    status.includes("pickup")
-  ) {
-    return "shipped";
-  }
-
-  if (
-    status.includes("pack") ||
-    status.includes("process") ||
-    status.includes("ready") ||
-    status.includes("manifest") ||
-    status.includes("awb")
+    status === "processing" ||
+    status === "packed"
   ) {
     return "processing";
   }
 
   if (
-    status.includes("new") ||
-    status.includes("confirm") ||
-    status.includes("pending")
+    status === "shipped" ||
+    status === "out_for_delivery"
   ) {
-    return "confirmed";
+    return "shipped";
+  }
+
+  if (status === "delivered") {
+    return "delivered";
+  }
+
+  if (
+    status === "cancelled" ||
+    status === "returned"
+  ) {
+    return "cancelled";
   }
 
   return "pending";
 };
 
-const getShiprocketTrackingUrl = (
-  response: ShiprocketTrackResponse
+const formatPayment = (
+  method: string,
+  status: string
 ) => {
-  const candidates = [
-    response?.tracking?.tracking_url,
-    response?.tracking?.track_url,
-    response?.tracking?.shipment_track_url,
-    response?.tracking?.tracking_data
-      ?.track_url,
-    response?.tracking?.tracking_data
-      ?.shipment_track_url,
-    response?.shiprocket_order
-      ?.last_mile_awb_track_url,
-  ];
+  const cleanMethod =
+    method.trim().toLowerCase();
 
-  const found = candidates.find(
-    (value) =>
-      typeof value === "string" &&
-      value.trim()
-  );
+  const cleanStatus =
+    status.trim().toLowerCase();
 
-  return typeof found === "string"
-    ? found.trim()
-    : "";
-};
+  if (cleanStatus === "paid") {
+    if (
+      cleanMethod === "upi" ||
+      cleanMethod === "prepaid"
+    ) {
+      return "Prepaid - Paid";
+    }
 
-const getShiprocketEstimatedDelivery = (
-  response: ShiprocketTrackResponse,
-  status: OrderStatus
-) => {
-  if (status === "delivered") {
-    return "Delivered";
+    return `${
+      cleanMethod
+        ? cleanMethod.toUpperCase()
+        : "Payment"
+    } - Paid`;
   }
 
-  const candidates = [
-    response?.tracking?.etd,
-    response?.tracking?.edd,
-    response?.tracking?.estimated_delivery,
-    response?.tracking?.tracking_data?.etd,
-    response?.tracking?.tracking_data?.edd,
-    response?.shiprocket_order?.etd_date,
-    response?.shiprocket_order?.shipments?.[0]
-      ?.etd,
-  ];
-
-  const found = candidates.find(
-    (value) =>
-      typeof value === "string" &&
-      value.trim() &&
-      !value.startsWith("0000-00-00")
-  );
-
-  if (typeof found === "string") {
-    return found;
+  if (cleanMethod === "cod") {
+    return "Cash on Delivery";
   }
 
-  return status === "shipped"
-    ? "3–5 Business Days"
-    : "Will be confirmed soon";
+  if (cleanMethod === "prepaid") {
+    return "Prepaid - Pending";
+  }
+
+  return `${
+    cleanMethod
+      ? cleanMethod.toUpperCase()
+      : "Payment"
+  } - Pending`;
 };
 
 const getStatusRank = (
@@ -279,24 +237,23 @@ const getStatusRank = (
 };
 
 const createTimeline = (
-  order: OrderRow
+  status: OrderStatus,
+  orderedAt?: string,
+  updatedAt?: string
 ): TimelineStep[] => {
-  if (
-    order.order_status ===
-    "cancelled"
-  ) {
+  if (status === "cancelled") {
     return [
       {
         title: "Order Placed",
         date: formatDateTime(
-          order.created_at
+          orderedAt
         ),
         status: "completed",
       },
       {
         title: "Order Cancelled",
         date: formatDateTime(
-          order.updated_at
+          updatedAt
         ),
         status: "current",
       },
@@ -304,9 +261,7 @@ const createTimeline = (
   }
 
   const currentRank =
-    getStatusRank(
-      order.order_status
-    );
+    getStatusRank(status);
 
   const steps = [
     {
@@ -328,44 +283,59 @@ const createTimeline = (
   ];
 
   return steps.map((step) => {
-    let status: TimelineStatus =
+    let stepStatus:
+      TimelineStatus =
       "pending";
 
-    if (step.rank < currentRank) {
-      status = "completed";
-    } else if (
-      step.rank === currentRank
+    if (
+      step.rank <
+      currentRank
     ) {
-      status = "current";
+      stepStatus =
+        "completed";
+    } else if (
+      step.rank ===
+      currentRank
+    ) {
+      stepStatus =
+        "current";
     }
 
-    let date = "";
+    let date =
+      "Waiting for update";
 
     if (step.rank === 0) {
       date = formatDateTime(
-        order.created_at
+        orderedAt
       );
     } else if (
-      step.rank <= currentRank
+      step.rank <=
+      currentRank
     ) {
       date = formatDateTime(
-        order.updated_at
+        updatedAt
       );
     }
 
     return {
       title: step.title,
-      date:
-        date ||
-        "Waiting for update",
-      status,
+      date,
+      status: stepStatus,
     };
   });
 };
 
 const getCurrentStatusText = (
-  status: OrderStatus
+  status: OrderStatus,
+  serverMessage?: string
 ) => {
+  if (
+    serverMessage &&
+    serverMessage.trim()
+  ) {
+    return serverMessage.trim();
+  }
+
   if (
     status === "pending" ||
     status === "confirmed"
@@ -379,7 +349,9 @@ const getCurrentStatusText = (
     return "Your sarees are being carefully packed.";
   }
 
-  if (status === "shipped") {
+  if (
+    status === "shipped"
+  ) {
     return "Your order has been shipped and is on the way.";
   }
 
@@ -392,367 +364,295 @@ const getCurrentStatusText = (
   return "This order has been cancelled.";
 };
 
+const getEstimatedDelivery = (
+  status: OrderStatus
+) => {
+  if (
+    status === "delivered"
+  ) {
+    return "Delivered";
+  }
+
+  if (
+    status === "shipped"
+  ) {
+    return "3-5 Business Days";
+  }
+
+  if (
+    status === "cancelled"
+  ) {
+    return "Not applicable";
+  }
+
+  return "Will be confirmed soon";
+};
+
+const getFunctionErrorMessage = (
+  error: unknown
+) => {
+  if (
+    error instanceof Error &&
+    error.message
+  ) {
+    const message =
+      error.message.trim();
+
+    if (
+      message.includes(
+        "non-2xx"
+      ) ||
+      message.includes(
+        "FunctionsHttpError"
+      )
+    ) {
+      return "We couldn't retrieve your order details. Please check the order number and try again.";
+    }
+
+    return message;
+  }
+
+  return "We couldn't retrieve your order details. Please try again.";
+};
+
 export default function TrackOrderPage() {
   const [searchParams] =
     useSearchParams();
 
   const queryOrderNumber =
-    searchParams.get("order") ?? "";
+    searchParams.get("order") ??
+    "";
 
   const [orderId, setOrderId] =
-    useState(queryOrderNumber);
+    useState(
+      queryOrderNumber
+    );
 
   const [
     searchedOrder,
     setSearchedOrder,
-  ] = useState<TrackedOrder | null>(
-    null
-  );
+  ] =
+    useState<TrackedOrder | null>(
+      null
+    );
 
   const [error, setError] =
     useState("");
 
-  const [isLoading, setIsLoading] =
-    useState(false);
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(false);
 
-  const handleTrackOrder = async (
-    suppliedOrderId?: string
-  ) => {
-    const cleanedOrderId = (
-      suppliedOrderId ?? orderId
-    )
-      .trim()
-      .toUpperCase();
+  const handleTrackOrder =
+    async (
+      suppliedOrderId?: string
+    ) => {
+      const cleanedOrderId =
+        (
+          suppliedOrderId ??
+          orderId
+        )
+          .trim()
+          .toUpperCase();
 
-    if (!cleanedOrderId) {
-      setError(
-        "Please enter your order ID."
-      );
-      setSearchedOrder(null);
-      return;
-    }
+      if (!cleanedOrderId) {
+        setError(
+          "Please enter your order ID."
+        );
+        setSearchedOrder(
+          null
+        );
+        return;
+      }
 
-    setIsLoading(true);
-    setError("");
-    setSearchedOrder(null);
-
-    const { data, error:
-      fetchError } =
-      await supabase
-        .from("orders")
-        .select(`
-          id,
-          order_number,
-          order_type,
-          customer_name,
-          payment_method,
-          payment_status,
-          order_status,
-          courier_name,
-          tracking_number,
-          tracking_url,
-          shiprocket_order_id,
-          shiprocket_shipment_id,
-          tracking_status,
-          created_at,
-          updated_at,
-          grand_total,
-          address_line_1,
-          address_line_2,
-          city,
-          state,
-          pincode
-        `)
-        .eq(
-          "order_number",
+      if (
+        !/^[A-Z0-9-]{4,60}$/.test(
           cleanedOrderId
         )
-        .maybeSingle();
-
-    if (fetchError) {
-      console.error(
-        "Track order error:",
-        fetchError
-      );
-
-      setError(
-        `Order load aagala: ${fetchError.message}`
-      );
-      setIsLoading(false);
-      return;
-    }
-
-    if (!data) {
-      setError(
-        "Order not found. Please check your order ID."
-      );
-      setIsLoading(false);
-      return;
-    }
-
-    let order =
-      data as OrderRow;
-
-    /*
-     * Ask Shiprocket for the latest status.
-     * If Shiprocket is temporarily unavailable,
-     * the page still shows the Supabase order.
-     */
-    let shiprocketTrack:
-      | ShiprocketTrackResponse
-      | null = null;
-
-    try {
-      const {
-        data: trackingData,
-        error: trackingError,
-      } = await supabase.functions.invoke(
-        "shiprocket-track-order",
-        {
-          body: {
-            order_id:
-              order.order_number,
-          },
-        }
-      );
-
-      if (trackingError) {
-        console.error(
-          "Shiprocket tracking error:",
-          trackingError
-        );
-      } else if (
-        trackingData?.success
       ) {
-        shiprocketTrack =
-          trackingData as ShiprocketTrackResponse;
-
-        const latestStatus =
-          mapShiprocketStatus(
-            shiprocketTrack.status
-          );
-
-        const latestCourier =
-          String(
-            shiprocketTrack.courier_name ??
-              ""
-          ).trim();
-
-        const latestAwb =
-          String(
-            shiprocketTrack.awb_code ??
-              ""
-          ).trim();
-
-        const latestTrackingUrl =
-          getShiprocketTrackingUrl(
-            shiprocketTrack
-          );
-
-        const updates = {
-          order_status:
-            latestStatus,
-
-          tracking_status:
-            shiprocketTrack.status != null
-              ? String(
-                  shiprocketTrack.status
-                )
-              : order.tracking_status,
-
-          shiprocket_order_id:
-            shiprocketTrack
-              .shiprocket_order_id != null
-              ? String(
-                  shiprocketTrack
-                    .shiprocket_order_id
-                )
-              : order.shiprocket_order_id,
-
-          shiprocket_shipment_id:
-            shiprocketTrack.shipment_id !=
-            null
-              ? String(
-                  shiprocketTrack
-                    .shipment_id
-                )
-              : order.shiprocket_shipment_id,
-
-          courier_name:
-            latestCourier ||
-            order.courier_name,
-
-          tracking_number:
-            latestAwb ||
-            order.tracking_number,
-
-          tracking_url:
-            latestTrackingUrl ||
-            order.tracking_url,
-
-          updated_at:
-            new Date().toISOString(),
-        };
-
-        const {
-          data: updatedOrder,
-          error: updateError,
-        } = await supabase
-          .from("orders")
-          .update(updates)
-          .eq("id", order.id)
-          .select(`
-            id,
-            order_number,
-            order_type,
-            customer_name,
-            payment_method,
-            payment_status,
-            order_status,
-            courier_name,
-            tracking_number,
-            tracking_url,
-            shiprocket_order_id,
-            shiprocket_shipment_id,
-            tracking_status,
-            created_at,
-            updated_at,
-            grand_total,
-            address_line_1,
-            address_line_2,
-            city,
-            state,
-            pincode
-          `)
-          .maybeSingle();
-
-        if (updateError) {
-          console.error(
-            "Tracking details save error:",
-            updateError
-          );
-        } else if (updatedOrder) {
-          order =
-            updatedOrder as OrderRow;
-        } else {
-          order = {
-            ...order,
-            ...updates,
-          };
-        }
+        setError(
+          "Please enter a valid order ID."
+        );
+        setSearchedOrder(
+          null
+        );
+        return;
       }
-    } catch (trackingError) {
-      console.error(
-        "Shiprocket tracking request failed:",
-        trackingError
+
+      setIsLoading(true);
+      setError("");
+      setSearchedOrder(
+        null
       );
-    }
 
-    const address = [
-      order.address_line_1,
-      order.address_line_2,
-      order.city,
-      order.state,
-      order.pincode,
-    ]
-      .filter(Boolean)
-      .join(", ");
+      try {
+        const {
+          data,
+          error:
+            functionError,
+        } =
+          await supabase.functions.invoke(
+            "track-checkout-order",
+            {
+              body: {
+                orderNumber:
+                  cleanedOrderId,
+              },
+            }
+          );
 
-    const liveStatus =
-      shiprocketTrack?.success
-        ? mapShiprocketStatus(
-            shiprocketTrack.status
+        if (
+          functionError
+        ) {
+          console.error(
+            "Track order function error:",
+            functionError
+          );
+
+          throw functionError;
+        }
+
+        const response =
+          data as
+            | TrackCheckoutOrderResponse
+            | null;
+
+        if (
+          !response?.success ||
+          !response.order
+        ) {
+          setError(
+            response?.error ||
+              "We couldn't find an order with that number. Please check the order ID and try again."
+          );
+          return;
+        }
+
+        const order =
+          response.order;
+
+        const status =
+          normaliseStatus(
+            order.status
+          );
+
+        const payment =
+          formatPayment(
+            String(
+              order.paymentMethod ??
+                ""
+            ),
+            String(
+              order.paymentStatus ??
+                ""
+            )
+          );
+
+        const courier =
+          String(
+            order.courierName ??
+              ""
+          ).trim() ||
+          "Not assigned yet";
+
+        const trackingNumber =
+          String(
+            order.trackingNumber ??
+              ""
+          ).trim() ||
+          "Not available yet";
+
+        const trackingUrl =
+          String(
+            order.trackingUrl ??
+              ""
+          ).trim();
+
+        const orderType =
+          normaliseOrderType(
+            order.orderType
+          );
+
+        const timeline =
+          createTimeline(
+            status,
+            order.orderedAt,
+            order.updatedAt
+          );
+
+        setSearchedOrder({
+          orderId:
+            String(
+              order.orderNumber ??
+                cleanedOrderId
+            ),
+          customerName:
+            String(
+              order.customerName ??
+                ""
+            ).trim() ||
+            "Customer",
+          orderType,
+          payment,
+          courier,
+          trackingNumber,
+          trackingUrl,
+          estimatedDelivery:
+            getEstimatedDelivery(
+              status
+            ),
+          status,
+          statusMessage:
+            getCurrentStatusText(
+              status,
+              order.statusMessage
+            ),
+          orderDate:
+            formatDateTime(
+              order.orderedAt
+            ),
+          total: Number(
+            order.grandTotal ??
+              0
+          ),
+          address:
+            String(
+              order.address ??
+                ""
+            ).trim() ||
+            "Delivery address is not available.",
+          timeline,
+        });
+
+        setOrderId(
+          String(
+            order.orderNumber ??
+              cleanedOrderId
           )
-        : order.order_status;
+        );
+      } catch (
+        trackError
+      ) {
+        console.error(
+          "Track order error:",
+          trackError
+        );
 
-    const liveCourier =
-      String(
-        shiprocketTrack?.courier_name ??
-          ""
-      ).trim() ||
-      order.courier_name ||
-      "Not assigned yet";
-
-    const liveTrackingNumber =
-      String(
-        shiprocketTrack?.awb_code ??
-          ""
-      ).trim() ||
-      order.tracking_number ||
-      "Not available yet";
-
-    const liveTrackingUrl =
-      (shiprocketTrack
-        ? getShiprocketTrackingUrl(
-            shiprocketTrack
+        setError(
+          getFunctionErrorMessage(
+            trackError
           )
-        : "") ||
-      order.tracking_url ||
-      "";
-
-    const estimatedDelivery =
-      shiprocketTrack
-        ? getShiprocketEstimatedDelivery(
-            shiprocketTrack,
-            liveStatus
-          )
-        : liveStatus === "delivered"
-          ? "Delivered"
-          : liveStatus === "shipped"
-            ? "3–5 Business Days"
-            : "Will be confirmed soon";
-
-    const orderForTimeline: OrderRow = {
-      ...order,
-      order_status:
-        liveStatus,
+        );
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setSearchedOrder({
-      id: order.id,
-      orderId:
-        order.order_number,
-      customerName:
-        order.customer_name,
-      orderType:
-        order.order_type,
-      payment:
-        formatPayment(
-          order.payment_method,
-          order.payment_status
-        ),
-      courier:
-        liveCourier,
-      trackingNumber:
-        liveTrackingNumber,
-      trackingUrl:
-        liveTrackingUrl,
-      estimatedDelivery,
-      status:
-        liveStatus,
-      orderDate:
-        formatDateTime(
-          order.created_at
-        ),
-      total: Number(
-        order.grand_total ?? 0
-      ),
-      address,
-      timeline:
-        createTimeline(
-          orderForTimeline
-        ),
-    });
-
-    setOrderId(
-      order.order_number
-    );
-
-    setIsLoading(false);
-  };
-
   useEffect(() => {
-    if (queryOrderNumber) {
+    if (
+      queryOrderNumber
+    ) {
       void handleTrackOrder(
         queryOrderNumber
       );
@@ -801,7 +701,8 @@ export default function TrackOrderPage() {
               placeholder="Enter Order ID"
               onKeyDown={(event) => {
                 if (
-                  event.key === "Enter"
+                  event.key ===
+                  "Enter"
                 ) {
                   void handleTrackOrder();
                 }
@@ -856,8 +757,8 @@ export default function TrackOrderPage() {
             </h2>
 
             <p>
-              Latest delivery status
-              load aaguthu.
+              Fetching the latest
+              delivery status...
             </p>
           </section>
         )}
@@ -871,7 +772,10 @@ export default function TrackOrderPage() {
 
               <div className="track-timeline">
                 {searchedOrder.timeline.map(
-                  (step, index) => (
+                  (
+                    step,
+                    index
+                  ) => (
                     <div
                       key={`${step.title}-${index}`}
                       className={`timeline-item ${step.status}`}
@@ -888,11 +792,15 @@ export default function TrackOrderPage() {
 
                       <div className="timeline-content">
                         <h3>
-                          {step.title}
+                          {
+                            step.title
+                          }
                         </h3>
 
                         <span>
-                          {step.date}
+                          {
+                            step.date
+                          }
                         </span>
                       </div>
                     </div>
@@ -907,7 +815,9 @@ export default function TrackOrderPage() {
               </h2>
 
               <div className="summary-row">
-                <span>Order ID</span>
+                <span>
+                  Order ID
+                </span>
 
                 <strong>
                   {
@@ -917,7 +827,9 @@ export default function TrackOrderPage() {
               </div>
 
               <div className="summary-row">
-                <span>Customer</span>
+                <span>
+                  Customer
+                </span>
 
                 <strong>
                   {
@@ -952,7 +864,9 @@ export default function TrackOrderPage() {
               </div>
 
               <div className="summary-row">
-                <span>Payment</span>
+                <span>
+                  Payment
+                </span>
 
                 <strong>
                   {
@@ -974,7 +888,9 @@ export default function TrackOrderPage() {
               </div>
 
               <div className="summary-row">
-                <span>Courier</span>
+                <span>
+                  Courier
+                </span>
 
                 <strong>
                   {
@@ -1002,7 +918,9 @@ export default function TrackOrderPage() {
                   </span>
 
                   <a
-                    href={searchedOrder.trackingUrl}
+                    href={
+                      searchedOrder.trackingUrl
+                    }
                     target="_blank"
                     rel="noreferrer"
                     className="track-package-link"
@@ -1048,9 +966,9 @@ export default function TrackOrderPage() {
                   </strong>
 
                   <span>
-                    {getCurrentStatusText(
-                      searchedOrder.status
-                    )}
+                    {
+                      searchedOrder.statusMessage
+                    }
                   </span>
                 </div>
               </div>
