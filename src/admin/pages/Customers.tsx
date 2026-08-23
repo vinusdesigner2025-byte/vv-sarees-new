@@ -13,7 +13,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 import "../css/Customers.css";
 
@@ -48,8 +48,27 @@ type CustomerFilter =
   | "all"
   | CustomerType;
 
+type ProfileRow = {
+  id: string;
+  full_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address_line?: string | null;
+  address_line_1?: string | null;
+  address_line_2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  customer_type?: string | null;
+  type?: string | null;
+  business_name?: string | null;
+  gst_number?: string | null;
+  created_at?: string | null;
+};
+
 type OrderRow = {
   id: string;
+  user_id?: string | null;
   order_number: string;
   order_type: CustomerType;
   customer_name: string;
@@ -72,21 +91,60 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat("en-IN", {
+const formatDate = (value?: string | null) => {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
+};
 
-const getCustomerKey = (order: OrderRow) => {
-  const email = order.email?.trim().toLowerCase();
+const normalizeEmail = (value?: string | null) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+const normalizePhone = (value?: string | null) =>
+  String(value ?? "")
+    .replace(/\D/g, "")
+    .trim();
+
+const getProfileKey = (profile: ProfileRow) => {
+  const email = normalizeEmail(profile.email);
+
+  if (profile.id) {
+    return `user:${profile.id}`;
+  }
 
   if (email) {
     return `email:${email}`;
   }
 
-  return `phone:${order.phone.trim()}`;
+  return `phone:${normalizePhone(profile.phone)}`;
+};
+
+const getOrderKey = (order: OrderRow) => {
+  if (order.user_id) {
+    return `user:${order.user_id}`;
+  }
+
+  const email = normalizeEmail(order.email);
+
+  if (email) {
+    return `email:${email}`;
+  }
+
+  return `phone:${normalizePhone(order.phone)}`;
 };
 
 export default function Customers() {
@@ -114,82 +172,381 @@ export default function Customers() {
     setIsLoading(true);
     setLoadError("");
 
-    const { data, error } = await supabase
-      .from("orders")
-      .select(`
-        id,
-        order_number,
-        order_type,
-        customer_name,
-        phone,
-        email,
-        grand_total,
-        order_status,
-        address_line_1,
-        address_line_2,
-        city,
-        state,
-        pincode,
-        created_at
-      `)
-      .neq("order_status", "cancelled")
-      .order("created_at", {
-        ascending: false,
+    try {
+      const [
+        profilesResult,
+        ordersResult,
+      ] = await Promise.all([
+        adminSupabase
+          .from("customer_profiles")
+          .select("*")
+          .order("created_at", {
+            ascending: false,
+          }),
+        adminSupabase
+          .from("orders")
+          .select(`
+            id,
+            user_id,
+            order_number,
+            order_type,
+            customer_name,
+            phone,
+            email,
+            grand_total,
+            order_status,
+            address_line_1,
+            address_line_2,
+            city,
+            state,
+            pincode,
+            created_at
+          `)
+          .neq(
+            "order_status",
+            "cancelled"
+          )
+          .order("created_at", {
+            ascending: false,
+          }),
+      ]);
+
+      if (profilesResult.error) {
+        throw profilesResult.error;
+      }
+
+      if (ordersResult.error) {
+        throw ordersResult.error;
+      }
+
+      const profiles =
+        (profilesResult.data ?? []) as ProfileRow[];
+
+      const orders =
+        (ordersResult.data ?? []) as OrderRow[];
+
+      const customerMap =
+        new Map<string, Customer>();
+
+      const profileKeyAliases =
+        new Map<string, string>();
+
+      profiles.forEach((profile) => {
+        const primaryKey =
+          getProfileKey(profile);
+
+        const email =
+          normalizeEmail(profile.email);
+
+        const phone =
+          normalizePhone(profile.phone);
+
+        const customerTypeRaw =
+          String(
+            profile.customer_type ??
+              profile.type ??
+              "retail"
+          )
+            .trim()
+            .toLowerCase();
+
+        const customerType: CustomerType =
+          customerTypeRaw === "wholesale"
+            ? "wholesale"
+            : "retail";
+
+        const addressLine1 =
+          String(
+            profile.address_line_1 ??
+              profile.address_line ??
+              ""
+          ).trim();
+
+        const customer: Customer = {
+          id: profile.id || primaryKey,
+          name:
+            String(
+              profile.full_name ??
+                ""
+            ).trim() ||
+            String(
+              profile.email ??
+                ""
+            ).trim() ||
+            "Unnamed Customer",
+          phone:
+            String(
+              profile.phone ??
+                ""
+            ).trim(),
+          email:
+            String(
+              profile.email ??
+                ""
+            ).trim(),
+          type: customerType,
+          businessName:
+            String(
+              profile.business_name ??
+                ""
+            ).trim(),
+          gstNumber:
+            String(
+              profile.gst_number ??
+                ""
+            ).trim(),
+          addressLine1,
+          addressLine2:
+            String(
+              profile.address_line_2 ??
+                ""
+            ).trim(),
+          city:
+            String(
+              profile.city ??
+                ""
+            ).trim(),
+          state:
+            String(
+              profile.state ??
+                ""
+            ).trim(),
+          pincode:
+            String(
+              profile.pincode ??
+                ""
+            ).trim(),
+          totalOrders: 0,
+          lifetimeSpend: 0,
+          lastOrderDate: "",
+          createdAt:
+            formatDate(
+              profile.created_at
+            ),
+        };
+
+        customerMap.set(
+          primaryKey,
+          customer
+        );
+
+        if (profile.id) {
+          profileKeyAliases.set(
+            `user:${profile.id}`,
+            primaryKey
+          );
+        }
+
+        if (email) {
+          profileKeyAliases.set(
+            `email:${email}`,
+            primaryKey
+          );
+        }
+
+        if (phone) {
+          profileKeyAliases.set(
+            `phone:${phone}`,
+            primaryKey
+          );
+        }
       });
 
-    if (error) {
-      console.error("Customers load error:", error);
-      setLoadError(`Customers load aagala: ${error.message}`);
-      setCustomers([]);
-      setIsLoading(false);
-      return;
-    }
+      orders.forEach((order) => {
+        const rawOrderKey =
+          getOrderKey(order);
 
-    const orders = (data ?? []) as OrderRow[];
-    const groupedCustomers = new Map<string, Customer>();
+        const email =
+          normalizeEmail(order.email);
 
-    orders.forEach((order) => {
-      const key = getCustomerKey(order);
-      const existingCustomer = groupedCustomers.get(key);
+        const phone =
+          normalizePhone(order.phone);
 
-      if (!existingCustomer) {
-        groupedCustomers.set(key, {
-          id: key,
-          name: order.customer_name || "Unnamed Customer",
-          phone: order.phone || "",
-          email: order.email || "",
-          type:
-            order.order_type === "wholesale"
-              ? "wholesale"
-              : "retail",
-          businessName: "",
-          gstNumber: "",
-          addressLine1: order.address_line_1 || "",
-          addressLine2: order.address_line_2 || "",
-          city: order.city || "",
-          state: order.state || "",
-          pincode: order.pincode || "",
-          totalOrders: 1,
-          lifetimeSpend: Number(order.grand_total ?? 0),
-          lastOrderDate: formatDate(order.created_at),
-          createdAt: formatDate(order.created_at),
-        });
+        const matchedKey =
+          profileKeyAliases.get(
+            rawOrderKey
+          ) ??
+          (email
+            ? profileKeyAliases.get(
+                `email:${email}`
+              )
+            : undefined) ??
+          (phone
+            ? profileKeyAliases.get(
+                `phone:${phone}`
+              )
+            : undefined) ??
+          rawOrderKey;
 
-        return;
-      }
+        const existingCustomer =
+          customerMap.get(matchedKey);
 
-      existingCustomer.totalOrders += 1;
-      existingCustomer.lifetimeSpend += Number(
-        order.grand_total ?? 0
+        if (!existingCustomer) {
+          const newCustomer: Customer = {
+            id:
+              order.user_id ||
+              matchedKey,
+            name:
+              order.customer_name ||
+              "Unnamed Customer",
+            phone:
+              order.phone || "",
+            email:
+              order.email || "",
+            type:
+              order.order_type ===
+              "wholesale"
+                ? "wholesale"
+                : "retail",
+            businessName: "",
+            gstNumber: "",
+            addressLine1:
+              order.address_line_1 ||
+              "",
+            addressLine2:
+              order.address_line_2 ||
+              "",
+            city:
+              order.city || "",
+            state:
+              order.state || "",
+            pincode:
+              order.pincode || "",
+            totalOrders: 1,
+            lifetimeSpend:
+              Number(
+                order.grand_total ??
+                  0
+              ),
+            lastOrderDate:
+              formatDate(
+                order.created_at
+              ),
+            createdAt:
+              formatDate(
+                order.created_at
+              ),
+          };
+
+          customerMap.set(
+            matchedKey,
+            newCustomer
+          );
+
+          return;
+        }
+
+        existingCustomer.totalOrders +=
+          1;
+
+        existingCustomer.lifetimeSpend +=
+          Number(
+            order.grand_total ?? 0
+          );
+
+        if (
+          !existingCustomer.lastOrderDate
+        ) {
+          existingCustomer.lastOrderDate =
+            formatDate(
+              order.created_at
+            );
+        }
+
+        if (
+          order.order_type ===
+          "wholesale"
+        ) {
+          existingCustomer.type =
+            "wholesale";
+        }
+
+        if (
+          !existingCustomer.name &&
+          order.customer_name
+        ) {
+          existingCustomer.name =
+            order.customer_name;
+        }
+
+        if (
+          !existingCustomer.phone &&
+          order.phone
+        ) {
+          existingCustomer.phone =
+            order.phone;
+        }
+
+        if (
+          !existingCustomer.email &&
+          order.email
+        ) {
+          existingCustomer.email =
+            order.email;
+        }
+
+        if (
+          !existingCustomer.addressLine1 &&
+          order.address_line_1
+        ) {
+          existingCustomer.addressLine1 =
+            order.address_line_1;
+        }
+
+        if (
+          !existingCustomer.addressLine2 &&
+          order.address_line_2
+        ) {
+          existingCustomer.addressLine2 =
+            order.address_line_2;
+        }
+
+        if (
+          !existingCustomer.city &&
+          order.city
+        ) {
+          existingCustomer.city =
+            order.city;
+        }
+
+        if (
+          !existingCustomer.state &&
+          order.state
+        ) {
+          existingCustomer.state =
+            order.state;
+        }
+
+        if (
+          !existingCustomer.pincode &&
+          order.pincode
+        ) {
+          existingCustomer.pincode =
+            order.pincode;
+        }
+      });
+
+      setCustomers(
+        Array.from(
+          customerMap.values()
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Customers load error:",
+        error
       );
 
-      if (order.order_type === "wholesale") {
-        existingCustomer.type = "wholesale";
-      }
-    });
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't load customers."
+      );
 
-    setCustomers(Array.from(groupedCustomers.values()));
-    setIsLoading(false);
+      setCustomers([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -396,7 +753,7 @@ export default function Customers() {
             <h2>Loading customers...</h2>
 
             <p>
-              Supabase-la irundhu customer details load aaguthu.
+              Customer details are loading.
             </p>
           </div>
         ) : customers.length === 0 ? (
