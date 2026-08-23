@@ -16,7 +16,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 import "../css/Orders.css";
 
@@ -285,11 +285,94 @@ export default function Orders() {
     useState("");
 
 
+  const invokeAdminOrderAction = async (
+    body: Record<string, unknown>
+  ) => {
+    const {
+      data: sessionData,
+      error: sessionError,
+    } =
+      await adminSupabase.auth
+        .getSession();
+
+    const accessToken =
+      sessionData.session?.access_token;
+
+    if (
+      sessionError ||
+      !accessToken
+    ) {
+      throw new Error(
+        "ADMIN_SESSION_MISSING"
+      );
+    }
+
+    const supabaseUrl =
+      import.meta.env.VITE_SUPABASE_URL;
+
+    const supabaseAnonKey =
+      import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (
+      !supabaseUrl ||
+      !supabaseAnonKey
+    ) {
+      throw new Error(
+        "SUPABASE_CONFIG_MISSING"
+      );
+    }
+
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/admin-order-action`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+          apikey:
+            supabaseAnonKey,
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+        body:
+          JSON.stringify(
+            body
+          ),
+      }
+    );
+
+    let result:
+      Record<string, unknown>;
+
+    try {
+      result =
+        await response.json();
+    } catch {
+      result = {
+        success: false,
+        error:
+          "Invalid server response.",
+      };
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        String(
+          result.error ??
+            "Admin order action failed."
+        )
+      );
+    }
+
+    return result;
+  };
+
+
   const loadOrders = async () => {
     setIsLoading(true);
     setLoadError("");
 
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
       .from("orders")
       .select(`
         id,
@@ -530,51 +613,26 @@ export default function Orders() {
     setIsUpdating(true);
 
     try {
-      const {
-        data,
-        error,
-      } = await supabase.functions.invoke(
-        "admin-order-action",
-        {
-          body: {
-            action: actionMap[nextStage],
-            orderId,
-          },
-        }
-      );
-
-      if (error) {
-        console.error(
-          "Admin order action error:",
-          error
-        );
-
-        window.alert(
-          "We couldn't update this order. Please make sure you are signed in with the VV Sarees administrator account and try again."
-        );
-
-        return false;
-      }
+      const data =
+        await invokeAdminOrderAction({
+          action:
+            actionMap[nextStage],
+          orderId,
+        });
 
       if (!data?.success) {
         window.alert(
-          data?.error ||
-            "We couldn't update this order. Please try again."
+          String(
+            data?.error ||
+              "We couldn't update this order. Please try again."
+          )
         );
-
         return false;
       }
 
-      /*
-       * Reload from Supabase after the Edge Function succeeds.
-       * This makes the UI reflect the persisted database status
-       * instead of relying only on temporary React state.
-       */
       await loadOrders();
-
       setSelectedOrder(null);
       setActiveStage(nextStage);
-
       return true;
     } catch (error) {
       console.error(
@@ -582,10 +640,22 @@ export default function Orders() {
         error
       );
 
-      window.alert(
-        "We couldn't update this order. Please try again."
-      );
+      if (
+        error instanceof Error &&
+        error.message ===
+          "ADMIN_SESSION_MISSING"
+      ) {
+        window.alert(
+          "Your administrator session has expired. Please sign in again."
+        );
+        return false;
+      }
 
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "We couldn't update this order. Please try again."
+      );
       return false;
     } finally {
       setIsUpdating(false);
@@ -684,38 +754,18 @@ export default function Orders() {
     setIsUpdating(true);
 
     try {
-      const {
-        data,
-        error,
-      } = await supabase.functions.invoke(
-        "admin-order-action",
-        {
-          body: {
-            action: "ship",
-            orderId:
-              selectedOrder.id,
-            courierName:
-              carrierName.trim(),
-            trackingNumber:
-              trackingNumber.trim(),
-            trackingUrl:
-              trackingUrl.trim(),
-          },
-        }
-      );
-
-      if (error) {
-        console.error(
-          "Admin dispatch action error:",
-          error
-        );
-
-        window.alert(
-          "We couldn't dispatch this order. Please try again."
-        );
-
-        return;
-      }
+      const data =
+        await invokeAdminOrderAction({
+          action: "ship",
+          orderId:
+            selectedOrder.id,
+          courierName:
+            carrierName.trim(),
+          trackingNumber:
+            trackingNumber.trim(),
+          trackingUrl:
+            trackingUrl.trim(),
+        });
 
       if (!data?.success) {
         window.alert(
@@ -807,31 +857,11 @@ export default function Orders() {
     setDeletingOrderId(order.id);
 
     try {
-      const {
-        data,
-        error,
-      } = await supabase.functions.invoke(
-        "admin-order-action",
-        {
-          body: {
-            action: "delete",
-            orderId: order.id,
-          },
-        }
-      );
-
-      if (error) {
-        console.error(
-          "Admin delete action error:",
-          error
-        );
-
-        window.alert(
-          "We couldn't delete the order. Please try again."
-        );
-
-        return;
-      }
+      const data =
+        await invokeAdminOrderAction({
+          action: "delete",
+          orderId: order.id,
+        });
 
       if (!data?.success) {
         window.alert(
