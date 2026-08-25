@@ -15,16 +15,18 @@ type AccessState =
   | "approved"
   | "denied";
 
-type VerifyResponse = {
-  success?: boolean;
-
-  error?: string;
-
-  customer?: {
-    applicationId?: string;
-    companyName?: string;
-  };
+type VerifyWholesaleCodeResponse = {
+  allowed: boolean;
+  application_id: string | null;
 };
+
+const normalizeAccessCode = (
+  value: string
+) =>
+  value
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
 
 export default function ProtectedWholesaleRoute() {
   const [
@@ -41,12 +43,12 @@ export default function ProtectedWholesaleRoute() {
     const verifyAccess =
       async () => {
         try {
-          const sessionToken =
-            sessionStorage.getItem(
-              "vv_wholesale_session"
+          const savedCode =
+            localStorage.getItem(
+              "vv-wholesale-access-code"
             );
 
-          if (!sessionToken) {
+          if (!savedCode) {
             if (mounted) {
               setAccessState(
                 "denied"
@@ -55,54 +57,46 @@ export default function ProtectedWholesaleRoute() {
 
             return;
           }
+
+          const normalizedCode =
+            normalizeAccessCode(
+              savedCode
+            );
 
           const {
             data,
             error,
-          } =
-            await supabase.functions
-              .invoke(
-                "wholesale-verify-session",
-                {
-                  body: {
-                    sessionToken,
-                  },
-                }
-              );
+          } = await supabase.rpc(
+            "verify_wholesale_access_code",
+            {
+              submitted_code:
+                normalizedCode,
+            }
+          );
 
           if (error) {
-            console.error(
-              "Wholesale session verify error:",
-              error
-            );
-
-            sessionStorage.removeItem(
-              "vv_wholesale_session"
-            );
-
-            sessionStorage.removeItem(
-              "vv_wholesale_company"
-            );
-
-            if (mounted) {
-              setAccessState(
-                "denied"
-              );
-            }
-
-            return;
+            throw error;
           }
 
           const result =
-            data as VerifyResponse;
+            Array.isArray(data)
+              ? (data[0] as
+                  | VerifyWholesaleCodeResponse
+                  | undefined)
+              : (data as
+                  | VerifyWholesaleCodeResponse
+                  | null);
 
-          if (!result?.success) {
-            sessionStorage.removeItem(
-              "vv_wholesale_session"
+          if (
+            !result?.allowed ||
+            !result.application_id
+          ) {
+            localStorage.removeItem(
+              "vv-wholesale-access-code"
             );
 
-            sessionStorage.removeItem(
-              "vv_wholesale_company"
+            localStorage.removeItem(
+              "vv-wholesale-application-id"
             );
 
             if (mounted) {
@@ -114,16 +108,15 @@ export default function ProtectedWholesaleRoute() {
             return;
           }
 
-          if (
-            result.customer
-              ?.companyName
-          ) {
-            sessionStorage.setItem(
-              "vv_wholesale_company",
-              result.customer
-                .companyName
-            );
-          }
+          localStorage.setItem(
+            "vv-wholesale-access-code",
+            normalizedCode
+          );
+
+          localStorage.setItem(
+            "vv-wholesale-application-id",
+            result.application_id
+          );
 
           if (mounted) {
             setAccessState(
@@ -134,14 +127,6 @@ export default function ProtectedWholesaleRoute() {
           console.error(
             "Wholesale route protection error:",
             error
-          );
-
-          sessionStorage.removeItem(
-            "vv_wholesale_session"
-          );
-
-          sessionStorage.removeItem(
-            "vv_wholesale_company"
           );
 
           if (mounted) {
