@@ -22,7 +22,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 import "../css/NewProduct.css";
 
@@ -58,6 +58,64 @@ type ProductCategory = {
   name: string;
   slug: string;
 };
+
+const PRODUCT_IMAGE_MAX_WIDTH = 1600;
+const PRODUCT_IMAGE_WEBP_QUALITY = 0.82;
+
+async function optimizeProductImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please choose a valid image file.");
+  }
+
+  const bitmap = await createImageBitmap(file);
+  let width = bitmap.width;
+  let height = bitmap.height;
+
+  if (width > PRODUCT_IMAGE_MAX_WIDTH) {
+    const scale = PRODUCT_IMAGE_MAX_WIDTH / width;
+    width = PRODUCT_IMAGE_MAX_WIDTH;
+    height = Math.round(bitmap.height * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    bitmap.close();
+    throw new Error("Unable to process image.");
+  }
+
+  context.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (result) => {
+        if (!result) {
+          reject(new Error("Image compression failed."));
+          return;
+        }
+        resolve(result);
+      },
+      "image/webp",
+      PRODUCT_IMAGE_WEBP_QUALITY
+    );
+  });
+
+  const baseName =
+    file.name
+      .replace(/\.[^/.]+$/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "product-image";
+
+  return new File([blob], `${baseName}.webp`, {
+    type: "image/webp",
+    lastModified: Date.now(),
+  });
+}
 
 const INDIA_REGIONS = [
   "Andhra Pradesh",
@@ -259,7 +317,7 @@ export default function EditProduct() {
           data,
           error,
         } =
-          await supabase
+          await adminSupabase
             .from("categories")
             .select(
               "id, name, slug"
@@ -323,7 +381,7 @@ export default function EditProduct() {
           data,
           error,
         } =
-          await supabase
+          await adminSupabase
             .from("products")
             .select(`
               id,
@@ -843,7 +901,7 @@ export default function EditProduct() {
           error:
             storageDeleteError,
         } =
-          await supabase.storage
+          await adminSupabase.storage
             .from(
               "product-images"
             )
@@ -862,7 +920,7 @@ export default function EditProduct() {
       const {
         error,
       } =
-        await supabase
+        await adminSupabase
           .from(
             "product_images"
           )
@@ -938,7 +996,7 @@ export default function EditProduct() {
           const {
             error,
           } =
-            await supabase
+            await adminSupabase
               .from(
                 "product_images"
               )
@@ -958,15 +1016,13 @@ export default function EditProduct() {
           continue;
         }
 
-        const extension =
-          image.file.name
-            .split(".")
-            .pop()
-            ?.toLowerCase() ||
-          "jpg";
+        const optimizedFile =
+          await optimizeProductImage(
+            image.file
+          );
 
         const fileName =
-          `${crypto.randomUUID()}.${extension}`;
+          `${crypto.randomUUID()}.webp`;
 
         const filePath = [
           productId,
@@ -978,19 +1034,19 @@ export default function EditProduct() {
           error:
             uploadError,
         } =
-          await supabase.storage
+          await adminSupabase.storage
             .from(
               "product-images"
             )
             .upload(
               filePath,
-              image.file,
+              optimizedFile,
               {
                 cacheControl:
-                  "3600",
+                  "31536000",
                 upsert: false,
                 contentType:
-                  image.file.type,
+                  "image/webp",
               }
             );
 
@@ -1004,7 +1060,7 @@ export default function EditProduct() {
           data:
             publicUrlData,
         } =
-          supabase.storage
+          adminSupabase.storage
             .from(
               "product-images"
             )
@@ -1016,7 +1072,7 @@ export default function EditProduct() {
           error:
             imageError,
         } =
-          await supabase
+          await adminSupabase
             .from(
               "product_images"
             )
@@ -1032,7 +1088,7 @@ export default function EditProduct() {
         if (
           imageError
         ) {
-          await supabase.storage
+          await adminSupabase.storage
             .from(
               "product-images"
             )
@@ -1068,7 +1124,7 @@ export default function EditProduct() {
           error:
             currentProductError,
         } =
-          await supabase
+          await adminSupabase
             .from(
               "products"
             )
@@ -1120,7 +1176,7 @@ export default function EditProduct() {
           error:
             productError,
         } =
-          await supabase
+          await adminSupabase
             .from(
               "products"
             )
@@ -1216,7 +1272,7 @@ export default function EditProduct() {
             error:
               variantDeleteError,
           } =
-            await supabase
+            await adminSupabase
               .from(
                 "product_variants"
               )
@@ -1249,7 +1305,7 @@ export default function EditProduct() {
               error:
                 variantUpdateError,
             } =
-              await supabase
+              await adminSupabase
                 .from(
                   "product_variants"
                 )
@@ -1285,7 +1341,7 @@ export default function EditProduct() {
               error:
                 variantInsertError,
             } =
-              await supabase
+              await adminSupabase
                 .from(
                   "product_variants"
                 )

@@ -14,7 +14,7 @@ import {
   FiTrash2,
 } from "react-icons/fi";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 import "../css/Products.css";
 
@@ -102,7 +102,7 @@ export default function Products() {
     setErrorMessage("");
 
     const { data, error } =
-      await supabase
+      await adminSupabase
         .from("products")
         .select(`
           id,
@@ -385,7 +385,7 @@ export default function Products() {
       }
 
       const { error } =
-        await supabase
+        await adminSupabase
           .from("products")
           .delete()
           .eq("id", productId);

@@ -15,7 +15,7 @@ import {
   FiUploadCloud,
   FiX,
 } from "react-icons/fi";
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 import "../css/Categories.css";
 
 type CategoryStatus = "active" | "hidden";
@@ -29,6 +29,19 @@ type Category = {
   imagePreview: string;
   imagePath: string;
   status: CategoryStatus;
+};
+
+
+
+type CategoryRow = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image_name: string | null;
+  image_url: string | null;
+  image_path: string | null;
+  status: CategoryStatus | null;
 };
 
 type CategoryFormState = {
@@ -89,21 +102,21 @@ export default function Categories() {
     setIsLoading(true);
     setErrorMessage("");
 
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
       .from("categories")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Categories fetch error:", error);
-      setErrorMessage(`Categories load aagala: ${error.message}`);
+      setErrorMessage(`Unable to load categories: ${error.message}`);
       setCategories([]);
       setIsLoading(false);
       return;
     }
 
     setCategories(
-      (data ?? []).map((row) => ({
+      ((data ?? []) as CategoryRow[]).map((row) => ({
         id: row.id,
         name: row.name,
         slug: row.slug,
@@ -196,13 +209,13 @@ export default function Categories() {
         file.type
       )
     ) {
-      alert("PNG, JPG or WEBP image mattum select pannu.");
+      alert("Please select a PNG, JPG, or WEBP image.");
       event.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image 5 MB-kulla irukanum.");
+      alert("Image must be 5 MB or smaller.");
       event.target.value = "";
       return;
     }
@@ -274,7 +287,7 @@ export default function Categories() {
           editingCategoryId ?? crypto.randomUUID();
         uploadedPath = `${folder}/${crypto.randomUUID()}.${extension}`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await adminSupabase.storage
           .from("category-images")
           .upload(uploadedPath, form.imageFile, {
             cacheControl: "3600",
@@ -284,7 +297,7 @@ export default function Categories() {
 
         if (uploadError) throw uploadError;
 
-        imageUrl = supabase.storage
+        imageUrl = adminSupabase.storage
           .from("category-images")
           .getPublicUrl(uploadedPath).data.publicUrl;
         imagePath = uploadedPath;
@@ -307,7 +320,7 @@ export default function Categories() {
           (category) => category.id === editingCategoryId
         );
 
-        const { error } = await supabase
+        const { error } = await adminSupabase
           .from("categories")
           .update(payload)
           .eq("id", editingCategoryId);
@@ -319,12 +332,12 @@ export default function Categories() {
           oldCategory?.imagePath &&
           oldCategory.imagePath !== uploadedPath
         ) {
-          await supabase.storage
+          await adminSupabase.storage
             .from("category-images")
             .remove([oldCategory.imagePath]);
         }
       } else {
-        const { error } = await supabase
+        const { error } = await adminSupabase
           .from("categories")
           .insert(payload);
 
@@ -345,13 +358,13 @@ export default function Categories() {
       console.error("Category save error:", error);
 
       if (uploadedPath) {
-        await supabase.storage
+        await adminSupabase.storage
           .from("category-images")
           .remove([uploadedPath]);
       }
 
       setErrorMessage(
-        `Category save aagala: ${getMessage(error)}`
+        `Unable to save category: ${getMessage(error)}`
       );
     } finally {
       setIsSaving(false);
@@ -370,19 +383,19 @@ export default function Categories() {
     setDeletingId(category.id);
     setErrorMessage("");
 
-    const { error } = await supabase
+    const { error } = await adminSupabase
       .from("categories")
       .delete()
       .eq("id", category.id);
 
     if (error) {
-      setErrorMessage(`Category delete aagala: ${error.message}`);
+      setErrorMessage(`Unable to delete category: ${error.message}`);
       setDeletingId(null);
       return;
     }
 
     if (category.imagePath) {
-      await supabase.storage
+      await adminSupabase.storage
         .from("category-images")
         .remove([category.imagePath]);
     }
@@ -478,7 +491,7 @@ export default function Categories() {
               <FiFolder />
             </div>
             <h2>Loading categories...</h2>
-            <p>Supabase-la irundhu categories load aaguthu.</p>
+            <p>Loading categories...</p>
           </div>
         ) : categories.length === 0 ? (
           <div className="categories-empty-state">

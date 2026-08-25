@@ -137,6 +137,64 @@ const getErrorMessage = (error: unknown) => {
   return "Unknown error";
 };
 
+
+const PRODUCT_IMAGE_MAX_DIMENSION = 1600;
+const PRODUCT_IMAGE_WEBP_QUALITY = 0.82;
+
+async function compressProductImage(file: File): Promise<File> {
+  const imageBitmap = await createImageBitmap(file);
+
+  try {
+    const scale = Math.min(
+      1,
+      PRODUCT_IMAGE_MAX_DIMENSION / Math.max(imageBitmap.width, imageBitmap.height)
+    );
+
+    const width = Math.max(1, Math.round(imageBitmap.width * scale));
+    const height = Math.max(1, Math.round(imageBitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Image compression initialize aagala.");
+    }
+
+    context.drawImage(imageBitmap, 0, 0, width, height);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error("Image compression aagala."));
+          }
+        },
+        "image/webp",
+        PRODUCT_IMAGE_WEBP_QUALITY
+      );
+    });
+
+    const originalBaseName =
+      file.name.replace(/\.[^/.]+$/, "") || "product-image";
+
+    return new File(
+      [blob],
+      `${originalBaseName}.webp`,
+      {
+        type: "image/webp",
+        lastModified: Date.now(),
+      }
+    );
+  } finally {
+    imageBitmap.close();
+  }
+}
+
 export default function NewProduct() {
   const navigate = useNavigate();
 
@@ -474,13 +532,14 @@ export default function NewProduct() {
     });
   };
 
-  const handleImageUpload = (
+  const handleImageUpload = async (
     variantId: string,
     event: ChangeEvent<HTMLInputElement>
   ) => {
-    const files = Array.from(
-      event.target.files ?? []
-    );
+    const input = event.currentTarget;
+    const files = Array.from(input.files ?? []);
+
+    input.value = "";
 
     if (files.length === 0) return;
 
@@ -497,8 +556,6 @@ export default function NewProduct() {
       alert(
         "JPG, PNG or WEBP image mattum upload pannu."
       );
-
-      event.target.value = "";
       return;
     }
 
@@ -512,34 +569,48 @@ export default function NewProduct() {
       alert(
         "Oru image maximum 10 MB-kulla irukanum."
       );
-
-      event.target.value = "";
       return;
     }
 
-    const newImages: VariantImage[] =
-      files.map((file) => ({
-        id: crypto.randomUUID(),
-        file,
-        preview:
-          URL.createObjectURL(file),
-      }));
+    try {
+      const compressedFiles = await Promise.all(
+        files.map((file) =>
+          compressProductImage(file)
+        )
+      );
 
-    setVariants((currentVariants) =>
-      currentVariants.map((variant) =>
-        variant.id === variantId
-          ? {
-              ...variant,
-              images: [
-                ...variant.images,
-                ...newImages,
-              ],
-            }
-          : variant
-      )
-    );
+      const newImages: VariantImage[] =
+        compressedFiles.map((file) => ({
+          id: crypto.randomUUID(),
+          file,
+          preview: URL.createObjectURL(file),
+        }));
 
-    event.target.value = "";
+      setVariants((currentVariants) =>
+        currentVariants.map((variant) =>
+          variant.id === variantId
+            ? {
+                ...variant,
+                images: [
+                  ...variant.images,
+                  ...newImages,
+                ],
+              }
+            : variant
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Product image compression error:",
+        error
+      );
+
+      alert(
+        `Image compress aagala: ${getErrorMessage(
+          error
+        )}`
+      );
+    }
   };
 
   const removeImage = (
@@ -814,15 +885,8 @@ export default function NewProduct() {
               imageIndex
             ];
 
-          const extension =
-            image.file.name
-              .split(".")
-              .pop()
-              ?.toLowerCase() ||
-            "jpg";
-
           const fileName =
-            `${crypto.randomUUID()}.${extension}`;
+            `${crypto.randomUUID()}.webp`;
 
           const filePath = [
             createdProductId,
@@ -845,7 +909,7 @@ export default function NewProduct() {
                   upsert: false,
 
                   contentType:
-                    image.file.type,
+                    "image/webp",
                 }
               );
 

@@ -70,14 +70,6 @@ export default function AdminLogin() {
             return;
           }
 
-          /* =========================
-             VERIFY ADMIN USER
-
-             IMPORTANT:
-             admin_users query-um
-             adminSupabase-la dhaan.
-          ========================= */
-
           const {
             data: adminUser,
             error: adminError,
@@ -101,16 +93,6 @@ export default function AdminLogin() {
             adminError ||
             !adminUser
           ) {
-            /*
-              Invalid admin session.
-
-              ADMIN session mattum
-              logout pannuvom.
-
-              Customer login
-              touch aagaadhu.
-            */
-
             await adminSupabase.auth
               .signOut();
 
@@ -160,9 +142,13 @@ export default function AdminLogin() {
         .toLowerCase();
 
     try {
-      /* =========================
-         ADMIN AUTH LOGIN
-      ========================= */
+      /*
+        Important:
+        clear any stale ADMIN auth session
+        before creating a fresh admin session.
+      */
+
+      await adminSupabase.auth.signOut();
 
       const {
         data,
@@ -181,9 +167,12 @@ export default function AdminLogin() {
         throw loginError;
       }
 
-      if (!data.user) {
+      if (
+        !data.user ||
+        !data.session
+      ) {
         throw new Error(
-          "Login user not found."
+          "Admin session could not be created."
         );
       }
 
@@ -216,14 +205,6 @@ export default function AdminLogin() {
           adminError
         );
 
-        /*
-          Normal customer account
-          admin panel access panna
-          vida koodadhu.
-
-          Admin session mattum logout.
-        */
-
         await adminSupabase.auth
           .signOut();
 
@@ -251,6 +232,9 @@ export default function AdminLogin() {
         "Admin login error:",
         loginError
       );
+
+      await adminSupabase.auth
+        .signOut();
 
       setError(
         "Invalid admin email or password."

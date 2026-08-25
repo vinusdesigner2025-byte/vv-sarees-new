@@ -21,9 +21,13 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase } from "../../lib/adminSupabase";
 
 import "../css/Collections.css";
+
+const COLLECTION_IMAGES_BUCKET = "collection-images";
+const MAX_IMAGE_WIDTH = 1600;
+const WEBP_QUALITY = 0.82;
 
 type CollectionStatus =
   | "active"
@@ -134,6 +138,66 @@ const getErrorMessage = (error: unknown) => {
   return "Unknown error";
 };
 
+const createSafeBaseName = (fileName: string): string =>
+  fileName
+    .replace(/\.[^/.]+$/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const optimizeImage = async (file: File): Promise<File> => {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please choose a valid image file.");
+  }
+
+  const imageBitmap = await createImageBitmap(file);
+
+  let width = imageBitmap.width;
+  let height = imageBitmap.height;
+
+  if (width > MAX_IMAGE_WIDTH) {
+    const scale = MAX_IMAGE_WIDTH / width;
+    width = MAX_IMAGE_WIDTH;
+    height = Math.round(imageBitmap.height * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    imageBitmap.close();
+    throw new Error("Unable to process image.");
+  }
+
+  context.drawImage(imageBitmap, 0, 0, width, height);
+  imageBitmap.close();
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (result) => {
+        if (!result) {
+          reject(new Error("Image compression failed."));
+          return;
+        }
+
+        resolve(result);
+      },
+      "image/webp",
+      WEBP_QUALITY
+    );
+  });
+
+  const baseName = createSafeBaseName(file.name) || "collection-image";
+
+  return new File([blob], `${baseName}.webp`, {
+    type: "image/webp",
+    lastModified: Date.now(),
+  });
+};
+
 export default function Collections() {
   const [collections, setCollections] =
     useState<Collection[]>([]);
@@ -174,7 +238,7 @@ export default function Collections() {
     setIsLoading(true);
     setErrorMessage("");
 
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
       .from("collections")
       .select(`
         id,
@@ -207,7 +271,7 @@ export default function Collections() {
       );
 
       setErrorMessage(
-        `Collections load aagala: ${error.message}`
+        `Unable to load collections: ${error.message}`
       );
 
       setCollections([]);
@@ -409,16 +473,16 @@ export default function Collections() {
       ].includes(file.type)
     ) {
       alert(
-        "PNG, JPG or WEBP image select pannu."
+        "Please select a PNG, JPG, or WEBP image."
       );
 
       event.target.value = "";
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 8 * 1024 * 1024) {
       alert(
-        "Image 5 MB-kulla irukanum."
+        "Original image must be 8 MB or smaller."
       );
 
       event.target.value = "";
@@ -549,32 +613,29 @@ export default function Collections() {
 
     try {
       if (form.imageFile) {
-        const extension =
-          form.imageFile.name
-            .split(".")
-            .pop()
-            ?.toLowerCase() ||
-          "jpg";
+        const optimizedFile = await optimizeImage(
+          form.imageFile
+        );
 
         const folderName =
           editingCollectionId ??
           crypto.randomUUID();
 
         uploadedImagePath =
-          `${folderName}/${crypto.randomUUID()}.${extension}`;
+          `${folderName}/${crypto.randomUUID()}.webp`;
 
         const { error: uploadError } =
-          await supabase.storage
-            .from("collection-images")
+          await adminSupabase.storage
+            .from(COLLECTION_IMAGES_BUCKET)
             .upload(
               uploadedImagePath,
-              form.imageFile,
+              optimizedFile,
               {
                 cacheControl:
-                  "3600",
+                  "31536000",
                 upsert: false,
                 contentType:
-                  form.imageFile.type,
+                  "image/webp",
               }
             );
 
@@ -584,8 +645,8 @@ export default function Collections() {
 
         const {
           data: publicUrlData,
-        } = supabase.storage
-          .from("collection-images")
+        } = adminSupabase.storage
+          .from(COLLECTION_IMAGES_BUCKET)
           .getPublicUrl(
             uploadedImagePath
           );
@@ -594,7 +655,7 @@ export default function Collections() {
           publicUrlData.publicUrl;
 
         imageNameToSave =
-          form.imageFile.name;
+          optimizedFile.name;
 
         imagePathToSave =
           uploadedImagePath;
@@ -647,7 +708,7 @@ export default function Collections() {
           );
 
         const { error: updateError } =
-          await supabase
+          await adminSupabase
             .from("collections")
             .update(payload)
             .eq(
@@ -665,15 +726,15 @@ export default function Collections() {
           existingCollection.imagePath !==
             uploadedImagePath
         ) {
-          await supabase.storage
-            .from("collection-images")
+          await adminSupabase.storage
+            .from(COLLECTION_IMAGES_BUCKET)
             .remove([
               existingCollection.imagePath,
             ]);
         }
       } else {
         const { error: insertError } =
-          await supabase
+          await adminSupabase
             .from("collections")
             .insert(payload);
 
@@ -704,15 +765,15 @@ export default function Collections() {
       );
 
       if (uploadedImagePath) {
-        await supabase.storage
-          .from("collection-images")
+        await adminSupabase.storage
+          .from(COLLECTION_IMAGES_BUCKET)
           .remove([
             uploadedImagePath,
           ]);
       }
 
       setErrorMessage(
-        `Collection save aagala: ${getErrorMessage(
+        `Unable to save collection: ${getErrorMessage(
           error
         )}`
       );
@@ -746,7 +807,7 @@ export default function Collections() {
     setDeletingId(collectionId);
     setErrorMessage("");
 
-    const { error } = await supabase
+    const { error } = await adminSupabase
       .from("collections")
       .delete()
       .eq("id", collectionId);
@@ -758,7 +819,7 @@ export default function Collections() {
       );
 
       setErrorMessage(
-        `Collection delete aagala: ${error.message}`
+        `Unable to delete collection: ${error.message}`
       );
 
       setDeletingId(null);
@@ -768,8 +829,8 @@ export default function Collections() {
     if (
       collectionToDelete.imagePath
     ) {
-      await supabase.storage
-        .from("collection-images")
+      await adminSupabase.storage
+        .from(COLLECTION_IMAGES_BUCKET)
         .remove([
           collectionToDelete.imagePath,
         ]);
@@ -1017,8 +1078,7 @@ export default function Collections() {
             </h2>
 
             <p>
-              Supabase-la irundhu
-              collections load aaguthu.
+              Loading collections...
             </p>
           </div>
         ) : collections.length === 0 ? (
@@ -1390,8 +1450,9 @@ export default function Collections() {
                       <small>
                         Landscape image
                         recommended. PNG,
-                        JPG or WEBP below
-                        5 MB.
+                        JPG or WEBP. Original
+                        image up to 8 MB.
+                        Auto-compressed to WebP.
                       </small>
 
                       <input
