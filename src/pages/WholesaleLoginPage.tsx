@@ -42,7 +42,9 @@ export default function WholesaleLoginPage() {
   ) => {
     event.preventDefault();
 
-    if (isChecking) return;
+    if (isChecking) {
+      return;
+    }
 
     const normalizedCode =
       normalizeAccessCode(accessCode);
@@ -51,6 +53,7 @@ export default function WholesaleLoginPage() {
       setErrorMessage(
         "Please enter your wholesale access code."
       );
+
       return;
     }
 
@@ -73,13 +76,14 @@ export default function WholesaleLoginPage() {
         throw error;
       }
 
-      const result = Array.isArray(data)
-        ? (data[0] as
-            | VerifyWholesaleCodeResponse
-            | undefined)
-        : (data as
-            | VerifyWholesaleCodeResponse
-            | null);
+      const result =
+        Array.isArray(data)
+          ? (data[0] as
+              | VerifyWholesaleCodeResponse
+              | undefined)
+          : (data as
+              | VerifyWholesaleCodeResponse
+              | null);
 
       if (
         !result?.allowed ||
@@ -88,17 +92,44 @@ export default function WholesaleLoginPage() {
         setErrorMessage(
           "Invalid or inactive wholesale access code."
         );
+
         return;
       }
 
-      localStorage.setItem(
+      /*
+       * IMPORTANT
+       *
+       * Wholesale access is valid only for
+       * the current browser session.
+       *
+       * Browser completely close pannina
+       * sessionStorage clear aagum.
+       *
+       * But customer's permanent unique
+       * code Supabase database-la remain aagum.
+       */
+
+      sessionStorage.setItem(
         "vv-wholesale-access-code",
         normalizedCode
       );
 
-      localStorage.setItem(
+      sessionStorage.setItem(
         "vv-wholesale-application-id",
         result.application_id
+      );
+
+      /*
+       * Previous localStorage implementation
+       * irundha clean panniduvom.
+       */
+
+      localStorage.removeItem(
+        "vv-wholesale-access-code"
+      );
+
+      localStorage.removeItem(
+        "vv-wholesale-application-id"
       );
 
       localStorage.removeItem(
@@ -132,7 +163,9 @@ export default function WholesaleLoginPage() {
   return (
     <main className="wholesale-auth-page">
       <section className="wholesale-auth-card">
+
         <div className="wholesale-auth-header">
+
           <span className="wholesale-auth-eyebrow">
             VV Sarees
           </span>
@@ -142,10 +175,11 @@ export default function WholesaleLoginPage() {
           </h1>
 
           <p>
-            Already approved? Enter
-            your permanent wholesale
-            access code to continue.
+            Already approved? Enter your
+            permanent wholesale access code
+            to continue.
           </p>
+
         </div>
 
         {errorMessage && (
@@ -158,7 +192,9 @@ export default function WholesaleLoginPage() {
           className="wholesale-auth-form"
           onSubmit={handleSubmit}
         >
+
           <div className="wholesale-auth-field">
+
             <label htmlFor="wholesale-access-code">
               Access Code
             </label>
@@ -167,7 +203,7 @@ export default function WholesaleLoginPage() {
               id="wholesale-access-code"
               type="text"
               value={accessCode}
-              placeholder="Example: VVW-8K4P2X"
+              placeholder="Example: VV-WH-485YQM"
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
@@ -181,11 +217,13 @@ export default function WholesaleLoginPage() {
               style={{
                 textTransform:
                   "uppercase",
+
                 letterSpacing:
                   "1.5px",
               }}
               required
             />
+
           </div>
 
           <button
@@ -197,14 +235,19 @@ export default function WholesaleLoginPage() {
               ? "Checking Access..."
               : "Continue to Wholesale"}
           </button>
+
         </form>
 
         <p className="wholesale-auth-footer-text">
+
           New wholesale customer?{" "}
+
           <Link to="/wholesale-register">
             Register your business
           </Link>
+
         </p>
+
       </section>
     </main>
   );

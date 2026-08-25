@@ -42,26 +42,51 @@ export default function ProtectedWholesaleRoute() {
 
     const verifyAccess =
       async () => {
-        try {
-          const savedCode =
-            localStorage.getItem(
-              "vv-wholesale-access-code"
+        /*
+         * Remove old permanent-access
+         * implementation.
+         */
+
+        localStorage.removeItem(
+          "vv-wholesale-access-code"
+        );
+
+        localStorage.removeItem(
+          "vv-wholesale-application-id"
+        );
+
+        /*
+         * Current browser session-la
+         * code irukka nu check pannuvom.
+         */
+
+        const savedCode =
+          sessionStorage.getItem(
+            "vv-wholesale-access-code"
+          );
+
+        if (!savedCode) {
+          if (mounted) {
+            setAccessState(
+              "denied"
             );
-
-          if (!savedCode) {
-            if (mounted) {
-              setAccessState(
-                "denied"
-              );
-            }
-
-            return;
           }
 
+          return;
+        }
+
+        try {
           const normalizedCode =
             normalizeAccessCode(
               savedCode
             );
+
+          /*
+           * Every protected access-kum
+           * Supabase database-la code
+           * still approved-ah irukka
+           * verify pannuvom.
+           */
 
           const {
             data,
@@ -87,15 +112,20 @@ export default function ProtectedWholesaleRoute() {
                   | VerifyWholesaleCodeResponse
                   | null);
 
+          /*
+           * Code revoked / rejected /
+           * invalid-na session remove.
+           */
+
           if (
             !result?.allowed ||
             !result.application_id
           ) {
-            localStorage.removeItem(
+            sessionStorage.removeItem(
               "vv-wholesale-access-code"
             );
 
-            localStorage.removeItem(
+            sessionStorage.removeItem(
               "vv-wholesale-application-id"
             );
 
@@ -108,12 +138,16 @@ export default function ProtectedWholesaleRoute() {
             return;
           }
 
-          localStorage.setItem(
+          /*
+           * Valid approved customer.
+           */
+
+          sessionStorage.setItem(
             "vv-wholesale-access-code",
             normalizedCode
           );
 
-          localStorage.setItem(
+          sessionStorage.setItem(
             "vv-wholesale-application-id",
             result.application_id
           );
@@ -127,6 +161,14 @@ export default function ProtectedWholesaleRoute() {
           console.error(
             "Wholesale route protection error:",
             error
+          );
+
+          sessionStorage.removeItem(
+            "vv-wholesale-access-code"
+          );
+
+          sessionStorage.removeItem(
+            "vv-wholesale-application-id"
           );
 
           if (mounted) {
