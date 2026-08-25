@@ -1,15 +1,10 @@
 import {
-  useEffect,
   useState,
-} from "react";
-
-import type {
-  FormEvent,
+  type FormEvent,
 } from "react";
 
 import {
   Link,
-  useLocation,
   useNavigate,
 } from "react-router-dom";
 
@@ -17,168 +12,102 @@ import { supabase } from "../lib/supabase";
 
 import "./WholesaleAuth.css";
 
-type LocationState = {
-  message?: string;
+type VerifyWholesaleCodeResponse = {
+  allowed: boolean;
+  application_id: string | null;
 };
 
-type VerifyResponse = {
-  success?: boolean;
-  message?: string;
-  error?: string;
-  sessionToken?: string;
-
-  customer?: {
-    applicationId?: string;
-    companyName?: string;
-    fullName?: string;
-  };
-};
+const normalizeAccessCode = (
+  value: string
+) =>
+  value
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
 
 export default function WholesaleLoginPage() {
   const navigate = useNavigate();
 
-  const location =
-    useLocation();
+  const [accessCode, setAccessCode] =
+    useState("");
 
-  const locationState =
-    location.state as
-      | LocationState
-      | null;
+  const [isChecking, setIsChecking] =
+    useState(false);
 
-  const [
-    accessCode,
-    setAccessCode,
-  ] = useState("");
-
-  const [
-    isSubmitting,
-    setIsSubmitting,
-  ] = useState(false);
-
-  const [
-    errorMessage,
-    setErrorMessage,
-  ] = useState("");
-
-  const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState(
-    locationState?.message ?? ""
-  );
-
-  useEffect(() => {
-    /*
-      If wholesale session already exists,
-      ProtectedWholesaleRoute will verify it.
-
-      Don't expose access code here.
-    */
-    const existingToken =
-      sessionStorage.getItem(
-        "vv_wholesale_session"
-      );
-
-    if (existingToken) {
-      navigate(
-        "/wholesale",
-        {
-          replace: true,
-        }
-      );
-    }
-  }, [navigate]);
+  const [errorMessage, setErrorMessage] =
+    useState("");
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
-    if (isSubmitting) {
-      return;
-    }
-
-    setErrorMessage("");
-    setSuccessMessage("");
+    if (isChecking) return;
 
     const normalizedCode =
-      accessCode
-        .trim()
-        .toUpperCase();
+      normalizeAccessCode(accessCode);
 
     if (!normalizedCode) {
       setErrorMessage(
         "Please enter your wholesale access code."
       );
-
       return;
     }
 
-    setIsSubmitting(true);
+    setErrorMessage("");
+    setIsChecking(true);
 
     try {
       const {
         data,
         error,
-      } =
-        await supabase.functions
-          .invoke(
-            "wholesale-verify-access",
-            {
-              body: {
-                accessCode:
-                  normalizedCode,
-              },
-            }
-          );
+      } = await supabase.rpc(
+        "verify_wholesale_access_code",
+        {
+          submitted_code:
+            normalizedCode,
+        }
+      );
 
       if (error) {
-        console.error(
-          "Wholesale access verification error:",
-          error
-        );
-
-        throw new Error(
-          "Unable to verify your wholesale access code."
-        );
+        throw error;
       }
 
-      const result =
-        data as VerifyResponse;
+      const result = Array.isArray(data)
+        ? (data[0] as
+            | VerifyWholesaleCodeResponse
+            | undefined)
+        : (data as
+            | VerifyWholesaleCodeResponse
+            | null);
 
       if (
-        !result?.success ||
-        !result.sessionToken
+        !result?.allowed ||
+        !result.application_id
       ) {
         setErrorMessage(
-          result?.error ||
-            "Invalid wholesale access code."
+          "Invalid or inactive wholesale access code."
         );
-
         return;
       }
 
-      /*
-        Store only signed session token.
-
-        Access code itself is NOT stored.
-      */
-
-      sessionStorage.setItem(
-        "vv_wholesale_session",
-        result.sessionToken
+      localStorage.setItem(
+        "vv-wholesale-access-code",
+        normalizedCode
       );
 
-      if (
-        result.customer
-          ?.companyName
-      ) {
-        sessionStorage.setItem(
-          "vv_wholesale_company",
-          result.customer
-            .companyName
-        );
-      }
+      localStorage.setItem(
+        "vv-wholesale-application-id",
+        result.application_id
+      );
+
+      localStorage.removeItem(
+        "vv-wholesale-pending-application"
+      );
+
+      localStorage.removeItem(
+        "vv-wholesale-pending-email"
+      );
 
       navigate(
         "/wholesale",
@@ -188,23 +117,15 @@ export default function WholesaleLoginPage() {
       );
     } catch (error) {
       console.error(
-        "Wholesale login error:",
+        "Wholesale access code verification error:",
         error
       );
 
-      if (
-        error instanceof Error
-      ) {
-        setErrorMessage(
-          error.message
-        );
-      } else {
-        setErrorMessage(
-          "Unable to verify wholesale access."
-        );
-      }
+      setErrorMessage(
+        "Unable to verify your access code. Please try again."
+      );
     } finally {
-      setIsSubmitting(false);
+      setIsChecking(false);
     }
   };
 
@@ -221,17 +142,11 @@ export default function WholesaleLoginPage() {
           </h1>
 
           <p>
-            Enter the access code provided
-            after your wholesale request
-            has been approved.
+            Already approved? Enter
+            your permanent wholesale
+            access code to continue.
           </p>
         </div>
-
-        {successMessage && (
-          <div className="wholesale-auth-success">
-            {successMessage}
-          </div>
-        )}
 
         {errorMessage && (
           <div className="wholesale-auth-error">
@@ -245,62 +160,49 @@ export default function WholesaleLoginPage() {
         >
           <div className="wholesale-auth-field">
             <label htmlFor="wholesale-access-code">
-              Wholesale Access Code
+              Access Code
             </label>
 
             <input
               id="wholesale-access-code"
               type="text"
               value={accessCode}
-              placeholder="Example: VV-WH-K7P2MX"
+              placeholder="Example: VVW-8K4P2X"
               autoComplete="off"
-              disabled={
-                isSubmitting
-              }
+              autoCapitalize="characters"
+              spellCheck={false}
+              disabled={isChecking}
               onChange={(event) =>
                 setAccessCode(
                   event.target.value
                     .toUpperCase()
                 )
               }
+              style={{
+                textTransform:
+                  "uppercase",
+                letterSpacing:
+                  "1.5px",
+              }}
+              required
             />
           </div>
 
           <button
             type="submit"
             className="wholesale-auth-submit"
-            disabled={
-              isSubmitting
-            }
+            disabled={isChecking}
           >
-            {isSubmitting
-              ? "Verifying Access..."
-              : "Enter Wholesale Store"}
+            {isChecking
+              ? "Checking Access..."
+              : "Continue to Wholesale"}
           </button>
         </form>
 
-        <div className="wholesale-auth-info">
-          <strong>
-            Don't have an access code?
-          </strong>
-
-          <p>
-            Submit a wholesale access
-            request. VV Sarees will review
-            your business details before
-            approval.
-          </p>
-        </div>
-
         <p className="wholesale-auth-footer-text">
+          New wholesale customer?{" "}
           <Link to="/wholesale-register">
-            Request Wholesale Access
-          </Link>
-        </p>
-
-        <p className="wholesale-auth-footer-text">
-          <Link to="/">
-            Back to VV Sarees
+            Register your business
           </Link>
         </p>
       </section>

@@ -4,306 +4,168 @@ import {
 } from "react";
 
 import {
-  Link,
-  useNavigate,
+  Navigate,
+  Outlet,
 } from "react-router-dom";
-
-import {
-  FiCheckCircle,
-  FiClock,
-  FiXCircle,
-} from "react-icons/fi";
 
 import { supabase } from "../lib/supabase";
 
-import "./WholesaleAuth.css";
+type AccessState =
+  | "checking"
+  | "allowed"
+  | "denied";
 
-type ApprovalStatus =
-  | "pending"
-  | "approved"
-  | "rejected";
-
-type StatusResponse = {
-  success?: boolean;
-
-  status?: ApprovalStatus;
-
-  rejectionReason?: string | null;
-
-  error?: string;
+type VerifyWholesaleCodeResponse = {
+  allowed: boolean;
+  application_id: string | null;
 };
 
-export default function WholesalePendingPage() {
-  const navigate =
-    useNavigate();
-
+export default function ProtectedWholesaleRoute() {
   const [
-    status,
-    setStatus,
+    accessState,
+    setAccessState,
   ] =
-    useState<ApprovalStatus>(
-      "pending"
-    );
-
-  const [
-    errorMessage,
-    setErrorMessage,
-  ] = useState("");
-
-  const [
-    rejectionReason,
-    setRejectionReason,
-  ] =
-    useState<string | null>(
-      null
+    useState<AccessState>(
+      "checking"
     );
 
   useEffect(() => {
     let mounted = true;
 
-    const applicationId =
-      localStorage.getItem(
-        "vv-wholesale-pending-application"
-      );
-
-    if (!applicationId) {
-      navigate(
-        "/wholesale-register",
-        {
-          replace: true,
-        }
-      );
-
-      return;
-    }
-
-    const checkStatus =
+    const verifySavedAccess =
       async () => {
+        const savedCode =
+          localStorage.getItem(
+            "vv-wholesale-access-code"
+          );
+
+        if (!savedCode) {
+          if (mounted) {
+            setAccessState(
+              "denied"
+            );
+          }
+
+          return;
+        }
+
         try {
           const {
             data,
             error,
-          } =
-            await supabase.functions
-              .invoke(
-                "wholesale-check-status",
-                {
-                  body: {
-                    applicationId,
-                  },
-                }
-              );
+          } = await supabase.rpc(
+            "verify_wholesale_access_code",
+            {
+              submitted_code:
+                savedCode
+                  .trim()
+                  .toUpperCase(),
+            }
+          );
 
           if (error) {
-            console.error(
-              "Wholesale status check error:",
-              error
-            );
-
-            return;
+            throw error;
           }
 
           const result =
-            data as StatusResponse;
-
-          if (
-            !result?.success ||
-            !result.status
-          ) {
-            return;
-          }
+            Array.isArray(data)
+              ? (data[0] as
+                  | VerifyWholesaleCodeResponse
+                  | undefined)
+              : (data as
+                  | VerifyWholesaleCodeResponse
+                  | null);
 
           if (!mounted) {
             return;
           }
 
-          setStatus(
-            result.status
-          );
-
           if (
-            result.status ===
-            "approved"
+            result?.allowed &&
+            result.application_id
           ) {
-            localStorage.removeItem(
-              "vv-wholesale-pending-application"
+            localStorage.setItem(
+              "vv-wholesale-application-id",
+              result.application_id
             );
 
-            navigate(
-              "/wholesale-login",
-              {
-                replace: true,
-
-                state: {
-                  message:
-                    "Your wholesale request has been approved. Enter the access code provided by VV Sarees.",
-                },
-              }
+            setAccessState(
+              "allowed"
             );
 
             return;
           }
 
-          if (
-            result.status ===
-            "rejected"
-          ) {
-            setRejectionReason(
-              result.rejectionReason ??
-                null
-            );
-          }
+          localStorage.removeItem(
+            "vv-wholesale-access-code"
+          );
+
+          localStorage.removeItem(
+            "vv-wholesale-application-id"
+          );
+
+          setAccessState(
+            "denied"
+          );
         } catch (error) {
           console.error(
-            "Wholesale pending page error:",
+            "Wholesale route verification error:",
             error
           );
 
           if (mounted) {
-            setErrorMessage(
-              "Unable to check approval status."
+            setAccessState(
+              "denied"
             );
           }
         }
       };
 
-    void checkStatus();
-
-    const interval =
-      window.setInterval(
-        () => {
-          void checkStatus();
-        },
-        5000
-      );
+    void verifySavedAccess();
 
     return () => {
       mounted = false;
-
-      window.clearInterval(
-        interval
-      );
     };
-  }, [navigate]);
+  }, []);
 
-  return (
-    <main className="wholesale-auth-page">
-      <section className="wholesale-auth-card">
-        <div className="wholesale-auth-header">
-          <span className="wholesale-auth-eyebrow">
-            VV Sarees
-          </span>
+  if (
+    accessState ===
+    "checking"
+  ) {
+    return (
+      <main className="wholesale-auth-page">
+        <section className="wholesale-auth-card">
+          <div className="wholesale-auth-header">
+            <span className="wholesale-auth-eyebrow">
+              VV Sarees
+            </span>
 
-          {status ===
-          "pending" ? (
-            <>
-              <div
-                style={{
-                  fontSize: "42px",
-                  marginBottom:
-                    "14px",
-                  color: "#8a5a35",
-                }}
-              >
-                <FiClock />
-              </div>
-
-              <h1>
-                Request Pending
-              </h1>
-
-              <p>
-                Your wholesale
-                application has been
-                submitted successfully.
-                We are waiting for admin
-                approval.
-              </p>
-            </>
-          ) : (
-            <>
-              <div
-                style={{
-                  fontSize: "42px",
-                  marginBottom:
-                    "14px",
-                  color: "#a5443a",
-                }}
-              >
-                <FiXCircle />
-              </div>
-
-              <h1>
-                Request Not Approved
-              </h1>
-
-              <p>
-                Your wholesale request
-                was not approved.
-              </p>
-            </>
-          )}
-        </div>
-
-        {status ===
-          "pending" && (
-          <div className="wholesale-auth-info">
-            <strong>
-              Checking approval
-              automatically
-            </strong>
+            <h1>
+              Verifying Access
+            </h1>
 
             <p>
-              This page will
-              automatically continue
-              once VV Sarees approves
-              your wholesale request.
-              You don't need to refresh
-              the page.
+              Please wait while we
+              verify your wholesale
+              access.
             </p>
           </div>
-        )}
+        </section>
+      </main>
+    );
+  }
 
-        {status ===
-          "rejected" && (
-          <div className="wholesale-auth-error">
-            {rejectionReason ||
-              "Please contact VV Sarees for more information."}
-          </div>
-        )}
+  if (
+    accessState ===
+    "denied"
+  ) {
+    return (
+      <Navigate
+        to="/wholesale-register"
+        replace
+      />
+    );
+  }
 
-        {errorMessage && (
-          <div className="wholesale-auth-error">
-            {errorMessage}
-          </div>
-        )}
-
-        {status ===
-          "pending" && (
-          <div
-            style={{
-              marginTop: "22px",
-              textAlign: "center",
-              fontSize: "12px",
-              color: "#8b7565",
-            }}
-          >
-            <FiCheckCircle
-              style={{
-                marginRight: "6px",
-              }}
-            />
-            Application submitted
-            successfully
-          </div>
-        )}
-
-        <p className="wholesale-auth-footer-text">
-          <Link to="/">
-            Back to VV Sarees
-          </Link>
-        </p>
-      </section>
-    </main>
-  );
+  return <Outlet />;
 }

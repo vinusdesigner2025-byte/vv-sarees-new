@@ -7,6 +7,7 @@ import type {
 } from "react";
 
 import {
+  Link,
   useNavigate,
 } from "react-router-dom";
 
@@ -577,6 +578,40 @@ if (!address.trim()) {
               : "Submit Wholesale Application"}
           </button>
         </form>
+
+        <div
+          style={{
+            marginTop: "22px",
+            paddingTop: "20px",
+            borderTop: "1px solid rgba(110, 61, 25, 0.12)",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              margin: "0 0 10px",
+              color: "#8b7565",
+              fontSize: "12px",
+            }}
+          >
+            Already approved for wholesale access?
+          </p>
+
+          <Link
+            to="/wholesale-login"
+            className="wholesale-auth-submit"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textDecoration: "none",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            Enter Access Code
+          </Link>
+        </div>
       </section>
     </main>
   );
