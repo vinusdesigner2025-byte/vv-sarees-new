@@ -3,7 +3,10 @@ import {
   useRef,
 } from "react";
 
-import { Link } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
 
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -20,11 +23,20 @@ import {
   FiTruck,
 } from "react-icons/fi";
 
+import { useAuth } from "../context/AuthContext";
+
 import "./WholesaleRetail.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function WholesaleRetail() {
+  const navigate = useNavigate();
+
+  const {
+    isLoggedIn,
+    isAuthLoading,
+  } = useAuth();
+
   const sectionRef =
     useRef<HTMLElement>(null);
 
@@ -264,6 +276,30 @@ export default function WholesaleRetail() {
     return () => context.revert();
   }, []);
 
+  const handleWholesaleClick = () => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      navigate(
+        "/login",
+        {
+          state: {
+            redirectTo:
+              "/wholesale-login",
+          },
+        }
+      );
+
+      return;
+    }
+
+    navigate(
+      "/wholesale-login"
+    );
+  };
+
   return (
     <section
       ref={sectionRef}
@@ -271,9 +307,10 @@ export default function WholesaleRetail() {
       id="collections"
       aria-labelledby="shopping-experience-title"
     >
-
       <div className="shop-grid">
-        {/* Wholesale */}
+        {/* =========================
+            WHOLESALE
+        ========================= */}
 
         <article className="shop-card shop-card-wholesale shop-card-left">
           <div
@@ -300,7 +337,9 @@ export default function WholesaleRetail() {
                 FOR BUSINESS
               </span>
 
-              <h2>Wholesale Sarees</h2>
+              <h2>
+                Wholesale Sarees
+              </h2>
 
               <span className="heading-line" />
             </div>
@@ -318,7 +357,9 @@ export default function WholesaleRetail() {
                 <FiBox />
               </span>
 
-              <span>Bulk Orders</span>
+              <span>
+                Bulk Orders
+              </span>
             </div>
 
             <div className="feature-row">
@@ -326,7 +367,9 @@ export default function WholesaleRetail() {
                 <FiTruck />
               </span>
 
-              <span>PAN India Supply</span>
+              <span>
+                PAN India Supply
+              </span>
             </div>
 
             <div className="feature-row">
@@ -334,7 +377,9 @@ export default function WholesaleRetail() {
                 <FiTag />
               </span>
 
-              <span>Wholesale Pricing</span>
+              <span>
+                Wholesale Pricing
+              </span>
             </div>
 
             <div className="feature-row">
@@ -342,30 +387,42 @@ export default function WholesaleRetail() {
                 <FiAward />
               </span>
 
-              <span>Premium Collections</span>
+              <span>
+                Premium Collections
+              </span>
             </div>
           </div>
 
           <div className="card-footer">
             <div className="order-note">
-              <strong>Minimum Order </strong>
+              <strong>
+                Minimum Order{" "}
+              </strong>
 
               <span>
                 Any 5 Sarees · Mix &amp; Match
               </span>
             </div>
 
-            <Link
-              to="/wholesale-register"
+            <button
+              type="button"
               className="card-button"
+              onClick={
+                handleWholesaleClick
+              }
+              disabled={
+                isAuthLoading
+              }
             >
               Explore Wholesale
               <FiArrowRight />
-            </Link>
+            </button>
           </div>
         </article>
 
-        {/* Retail */}
+        {/* =========================
+            RETAIL
+        ========================= */}
 
         <article className="shop-card shop-card-retail shop-card-right">
           <div
@@ -392,7 +449,9 @@ export default function WholesaleRetail() {
                 FOR YOU
               </span>
 
-              <h2>Retail Sarees</h2>
+              <h2>
+                Retail Sarees
+              </h2>
 
               <span className="heading-line" />
             </div>
@@ -410,7 +469,9 @@ export default function WholesaleRetail() {
                 <FiStar />
               </span>
 
-              <span>Silk Sarees</span>
+              <span>
+                Silk Sarees
+              </span>
             </div>
 
             <div className="feature-row">
@@ -418,7 +479,9 @@ export default function WholesaleRetail() {
                 <FiLayers />
               </span>
 
-              <span>Cotton Sarees</span>
+              <span>
+                Cotton Sarees
+              </span>
             </div>
 
             <div className="feature-row">
@@ -426,7 +489,9 @@ export default function WholesaleRetail() {
                 <FiHeart />
               </span>
 
-              <span>Designer Sarees</span>
+              <span>
+                Designer Sarees
+              </span>
             </div>
 
             <div className="feature-row">
@@ -434,15 +499,21 @@ export default function WholesaleRetail() {
                 <FiAward />
               </span>
 
-              <span>Ready to Wear</span>
+              <span>
+                Ready to Wear
+              </span>
             </div>
           </div>
 
           <div className="card-footer">
             <div className="order-note">
-              <strong>Retail Orders</strong>
+              <strong>
+                Retail Orders
+              </strong>
 
-              <span>No Minimum Order</span>
+              <span>
+                No Minimum Order
+              </span>
             </div>
 
             <Link
