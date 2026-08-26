@@ -19,7 +19,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { supabase } from "../../lib/supabase";
+import { adminSupabase as supabase } from "../../lib/adminSupabase";
 
 import "../css/NewProduct.css";
 
