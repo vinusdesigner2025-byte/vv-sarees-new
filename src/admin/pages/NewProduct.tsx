@@ -781,6 +781,38 @@ export default function NewProduct() {
       [];
 
     try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      console.log("ADMIN USER:", user);
+      console.log("ADMIN USER ERROR:", userError);
+
+      const {
+        data: adminCheck,
+        error: adminCheckError,
+      } = await supabase.rpc("is_admin");
+
+      console.log("LIVE IS ADMIN:", adminCheck);
+      console.log("LIVE IS ADMIN ERROR:", adminCheckError);
+
+      if (userError || !user) {
+        throw new Error(
+          "Admin session missing. Please logout and login again."
+        );
+      }
+
+      if (adminCheckError) {
+        throw adminCheckError;
+      }
+
+      if (adminCheck !== true) {
+        throw new Error(
+          `Admin permission failed. Logged user: ${user.email ?? user.id}`
+        );
+      }
+
       const slugBase =
         createSlug(productName) ||
         "product";
