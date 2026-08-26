@@ -14,6 +14,7 @@ import FinalCTA from "./components/FinalCTA";
 import Footer from "./components/Footer";
 
 import ReviewPopup from "./components/ReviewPopup";
+import SeoManager from "./components/SeoManager";
 
 import WholesalePage from "./pages/WholesalePage";
 import RetailPage from "./pages/RetailPage";
@@ -146,6 +147,12 @@ function AdminComingSoon({
 export default function App() {
   return (
     <>
+      {/* =====================================
+          SEO MANAGER
+      ===================================== */}
+
+      <SeoManager />
+
       {/* =====================================
           GLOBAL CUSTOMER REVIEW POPUP
       ===================================== */}
