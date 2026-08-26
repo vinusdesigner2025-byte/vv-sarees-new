@@ -92,22 +92,15 @@
 }
 
 .order-stage-tab-text small {
-  margin-top: 5px;
-  color: #9b7c66;
-  font-size: 8px;
+  margin-top: 6px;
+  color: #4a2812;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .order-stage-count {
-  min-width: 27px;
-  height: 27px;
-  padding: 0 7px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: #f3e7dc;
-  color: #754420;
-  font-size: 9px;
-  font-weight: 800;
+  display: none;
 }
 
 .orders-content-card {
