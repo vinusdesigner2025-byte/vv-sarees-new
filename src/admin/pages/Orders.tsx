@@ -977,12 +977,8 @@ export default function Orders() {
                 <strong>{tab.label}</strong>
 
                 <small>
-                  {stageCounts[tab.value]} orders
+                  {stageCounts[tab.value]}
                 </small>
-              </span>
-
-              <span className="order-stage-count">
-                {stageCounts[tab.value]}
               </span>
             </button>
           );
