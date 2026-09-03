@@ -6,15 +6,22 @@
 
   overflow: hidden;
 
+  /*
+    Section viewport-ku keezha irundha
+    browser unnecessary rendering panna vendaam.
+  */
+  content-visibility: auto;
+  contain-intrinsic-size: 900px;
+
   background:
     radial-gradient(
       circle at 8% 12%,
-      rgba(218, 168, 87, 0.16),
+      rgba(218, 168, 87, 0.14),
       transparent 30%
     ),
     radial-gradient(
       circle at 92% 84%,
-      rgba(118, 55, 14, 0.1),
+      rgba(118, 55, 14, 0.08),
       transparent 34%
     ),
     #f8efe3;
@@ -73,6 +80,8 @@
   place-items: center;
   flex-shrink: 0;
 
+  position: relative;
+
   border: 1px solid rgba(157, 96, 40, 0.18);
   border-radius: 50%;
 
@@ -93,10 +102,7 @@
   font-size: 30px;
 
   box-shadow:
-    0 18px 38px rgba(65, 31, 9, 0.12),
-    0 0 24px rgba(214, 163, 82, 0.1);
-
-  position: relative;
+    0 12px 26px rgba(65, 31, 9, 0.1);
 }
 
 .state-heading-accent span {
@@ -126,6 +132,11 @@
   margin-top: 16px;
 
   overflow: hidden;
+
+  /*
+    animation outside section affect panna vendaam
+  */
+  contain: paint;
 }
 
 .state-track {
@@ -135,7 +146,12 @@
   align-items: center;
   flex-wrap: nowrap;
 
+  /*
+    Only moving layer-ku GPU hint
+  */
   will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }
 
 .state-group {
@@ -151,7 +167,7 @@
 .state-track-left {
   animation:
     stateMoveLeft
-    28s
+    30s
     linear
     infinite;
 }
@@ -159,7 +175,7 @@
 .state-track-right {
   animation:
     stateMoveRight
-    30s
+    32s
     linear
     infinite;
 }
@@ -174,15 +190,19 @@
 
 .state-edge {
   position: absolute;
-  top: -12px;
-  bottom: -12px;
+  top: 0;
+  bottom: 0;
   z-index: 5;
 
-  width: 95px;
+  width: 85px;
 
   pointer-events: none;
 
-  backdrop-filter: blur(1.5px);
+  /*
+    backdrop-filter removed.
+    Idhu continuous animation kooda
+    GPU-ku expensive.
+  */
 }
 
 .state-edge-left {
@@ -191,8 +211,8 @@
   background:
     linear-gradient(
       90deg,
-      #f8efe3 5%,
-      rgba(248, 239, 227, 0.78) 42%,
+      #f8efe3 8%,
+      rgba(248, 239, 227, 0.82) 42%,
       transparent
     );
 }
@@ -203,8 +223,8 @@
   background:
     linear-gradient(
       270deg,
-      #f8efe3 5%,
-      rgba(248, 239, 227, 0.78) 42%,
+      #f8efe3 8%,
+      rgba(248, 239, 227, 0.82) 42%,
       transparent
     );
 }
@@ -232,15 +252,15 @@
   text-decoration: none;
 
   box-shadow:
-    0 18px 40px rgba(65, 31, 9, 0.13),
-    0 0 20px rgba(214, 163, 82, 0.08);
+    0 12px 28px rgba(65, 31, 9, 0.11);
 
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 
   transition:
-    transform 0.38s ease,
-    border-color 0.38s ease,
-    box-shadow 0.38s ease;
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .state-card img {
@@ -255,31 +275,41 @@
   object-fit: cover;
   object-position: center;
 
+  backface-visibility: hidden;
+
   transition:
-    transform 0.6s ease,
-    filter 0.4s ease;
+    transform 0.45s ease,
+    filter 0.3s ease;
 }
+
+/* Heavy blur filter remove pannitu gradient use pannrom */
 
 .state-card-glow {
   position: absolute;
-  right: -50px;
-  bottom: -60px;
+
+  right: -40px;
+  bottom: -45px;
   z-index: 2;
 
-  width: 150px;
-  height: 150px;
+  width: 130px;
+  height: 130px;
 
   border-radius: 50%;
 
   background:
-    rgba(207, 143, 58, 0.2);
+    radial-gradient(
+      circle,
+      rgba(207, 143, 58, 0.28),
+      rgba(207, 143, 58, 0.08) 48%,
+      transparent 72%
+    );
 
-  filter: blur(42px);
   opacity: 0;
 
   pointer-events: none;
 
-  transition: opacity 0.4s ease;
+  transition:
+    opacity 0.3s ease;
 }
 
 .state-card::after {
@@ -294,41 +324,45 @@
   background:
     linear-gradient(
       115deg,
-      transparent 30%,
-      rgba(255, 255, 255, 0.2) 48%,
-      transparent 66%
+      transparent 34%,
+      rgba(255, 255, 255, 0.18) 49%,
+      transparent 64%
     );
 
-  transform: translateX(-130%);
+  transform:
+    translate3d(-130%, 0, 0);
 
   pointer-events: none;
 
-  transition: transform 0.85s ease;
+  transition:
+    transform 0.65s ease;
 }
 
 .state-card:hover {
   transform:
-    translateY(-8px)
-    scale(1.018);
+    translate3d(0, -6px, 0)
+    scale(1.012);
 
   border-color:
-    rgba(160, 99, 42, 0.36);
+    rgba(160, 99, 42, 0.34);
 
   box-shadow:
-    0 30px 58px rgba(65, 31, 9, 0.19),
-    0 0 30px rgba(214, 163, 82, 0.15);
+    0 20px 40px rgba(65, 31, 9, 0.15);
 }
 
 .state-card:hover img {
-  transform: scale(1.035);
+  transform:
+    translate3d(0, 0, 0)
+    scale(1.025);
 
   filter:
-    saturate(1.04)
-    contrast(1.02);
+    saturate(1.025)
+    contrast(1.01);
 }
 
 .state-card:hover::after {
-  transform: translateX(130%);
+  transform:
+    translate3d(130%, 0, 0);
 }
 
 .state-card:hover .state-card-glow {
@@ -341,21 +375,25 @@
 
 @keyframes stateMoveLeft {
   from {
-    transform: translateX(0);
+    transform:
+      translate3d(0, 0, 0);
   }
 
   to {
-    transform: translateX(-50%);
+    transform:
+      translate3d(-50%, 0, 0);
   }
 }
 
 @keyframes stateMoveRight {
   from {
-    transform: translateX(-50%);
+    transform:
+      translate3d(-50%, 0, 0);
   }
 
   to {
-    transform: translateX(0);
+    transform:
+      translate3d(0, 0, 0);
   }
 }
 
@@ -366,6 +404,7 @@
 @media (max-width: 900px) {
   .state-section {
     padding: 48px 0 58px;
+    contain-intrinsic-size: 760px;
   }
 
   .state-heading {
@@ -373,7 +412,8 @@
   }
 
   .state-heading h2 {
-    font-size: clamp(40px, 6vw, 56px);
+    font-size:
+      clamp(40px, 6vw, 56px);
   }
 
   .state-heading-accent {
@@ -400,7 +440,7 @@
   }
 
   .state-edge {
-    width: 55px;
+    width: 50px;
   }
 }
 
@@ -411,10 +451,14 @@
 @media (max-width: 700px) {
   .state-section {
     padding: 34px 0 44px;
+
+    contain-intrinsic-size: 580px;
   }
 
   .state-heading {
-    width: calc(100% - 24px);
+    width:
+      calc(100% - 24px);
+
     margin-bottom: 22px;
 
     align-items: center;
@@ -429,7 +473,9 @@
   .state-heading h2 {
     margin-top: 7px;
 
-    font-size: clamp(30px, 8.8vw, 40px);
+    font-size:
+      clamp(30px, 8.8vw, 40px);
+
     line-height: 0.92;
     letter-spacing: -0.45px;
   }
@@ -441,8 +487,8 @@
     font-size: 18px;
 
     box-shadow:
-      0 11px 23px rgba(65, 31, 9, 0.1),
-      0 0 15px rgba(214, 163, 82, 0.07);
+      0 8px 18px
+      rgba(65, 31, 9, 0.09);
   }
 
   .state-heading-accent span {
@@ -464,33 +510,41 @@
     border-radius: 13px;
 
     box-shadow:
-      0 10px 22px rgba(65, 31, 9, 0.11),
-      0 0 12px rgba(214, 163, 82, 0.06);
+      0 7px 16px
+      rgba(65, 31, 9, 0.09);
   }
 
+  /*
+    Mobile-la konjam slow movement.
+    GPU load lower.
+  */
+
   .state-track-left {
-    animation-duration: 21s;
+    animation-duration: 28s;
   }
 
   .state-track-right {
-    animation-duration: 23s;
+    animation-duration: 30s;
   }
 
   .state-edge {
-    width: 23px;
-
-    backdrop-filter: blur(1px);
+    width: 22px;
   }
 
+  /*
+    Mobile-la hover effects unnecessary.
+  */
+
   .state-card:hover {
-    transform: none;
+    transform:
+      translate3d(0, 0, 0);
 
     border-color:
       rgba(160, 99, 42, 0.2);
 
     box-shadow:
-      0 10px 22px rgba(65, 31, 9, 0.11),
-      0 0 12px rgba(214, 163, 82, 0.06);
+      0 7px 16px
+      rgba(65, 31, 9, 0.09);
   }
 
   .state-card:hover img {
@@ -510,7 +564,8 @@
 
 @media (max-width: 380px) {
   .state-heading {
-    width: calc(100% - 18px);
+    width:
+      calc(100% - 18px);
   }
 
   .state-heading h2 {
@@ -538,10 +593,13 @@
    REDUCED MOTION
 ========================= */
 
-@media (prefers-reduced-motion: reduce) {
+@media (
+  prefers-reduced-motion: reduce
+) {
   .state-track-left,
   .state-track-right {
     animation: none;
+    transform: none;
   }
 
   .state-card,

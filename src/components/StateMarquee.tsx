@@ -1,6 +1,4 @@
-import {
-  useMemo,
-} from "react";
+import { useMemo } from "react";
 
 import { Link } from "react-router-dom";
 
@@ -81,9 +79,15 @@ function StateCard({
         src={image}
         alt={`${name} saree collection`}
         loading="lazy"
+        decoding="async"
+        fetchPriority="low"
+        draggable={false}
       />
 
-      <span className="state-card-glow" />
+      <span
+        className="state-card-glow"
+        aria-hidden="true"
+      />
     </Link>
   );
 }
@@ -122,6 +126,15 @@ export default function StateMarquee() {
 
   const stateItems =
     useMemo<StateItem[]>(() => {
+      /*
+       * Important:
+       * Supabase media load aagura varaikkum
+       * heavy fallback PNG images-ai render panna vendaam.
+       */
+      if (loading) {
+        return [];
+      }
+
       const rows =
         (media as WebsiteMediaRow[])
           .filter(
@@ -145,16 +158,31 @@ export default function StateMarquee() {
               row.title?.trim() ||
               row.slot_key ||
               "State",
+
             image:
               row.image_url ?? "",
+
             href:
               `/state/${row.slot_key}`,
           }));
 
-      return rows.length > 0
-        ? rows
-        : fallbackStates;
-    }, [media]);
+      /*
+       * Database-la states irundha
+       * local heavy fallback use aagathu.
+       */
+      if (rows.length > 0) {
+        return rows;
+      }
+
+      /*
+       * Supabase load complete aana apramum
+       * rows illa na mattum fallback.
+       */
+      return fallbackStates;
+    }, [
+      media,
+      loading,
+    ]);
 
   const middleIndex =
     Math.ceil(
@@ -204,49 +232,44 @@ export default function StateMarquee() {
         </div>
       </div>
 
-      <div className="state-marquee">
-        <div className="state-edge state-edge-left" />
-        <div className="state-edge state-edge-right" />
+      {!loading &&
+        stateItems.length > 0 && (
+          <>
+            <div className="state-marquee">
+              <div className="state-edge state-edge-left" />
+              <div className="state-edge state-edge-right" />
 
-        <div className="state-track state-track-left">
-          <StateGroup
-            states={topStates}
-            prefix="top-original"
-          />
+              <div className="state-track state-track-left">
+                <StateGroup
+                  states={topStates}
+                  prefix="top-original"
+                />
 
-          <StateGroup
-            states={topStates}
-            prefix="top-copy"
-          />
-        </div>
-      </div>
+                <StateGroup
+                  states={topStates}
+                  prefix="top-copy"
+                />
+              </div>
+            </div>
 
-      <div className="state-marquee">
-        <div className="state-edge state-edge-left" />
-        <div className="state-edge state-edge-right" />
+            <div className="state-marquee">
+              <div className="state-edge state-edge-left" />
+              <div className="state-edge state-edge-right" />
 
-        <div className="state-track state-track-right">
-          <StateGroup
-            states={safeBottomStates}
-            prefix="bottom-original"
-          />
+              <div className="state-track state-track-right">
+                <StateGroup
+                  states={safeBottomStates}
+                  prefix="bottom-original"
+                />
 
-          <StateGroup
-            states={safeBottomStates}
-            prefix="bottom-copy"
-          />
-        </div>
-      </div>
-
-      {loading && (
-        <span
-          style={{
-            display: "none",
-          }}
-        >
-          Loading state images
-        </span>
-      )}
+                <StateGroup
+                  states={safeBottomStates}
+                  prefix="bottom-copy"
+                />
+              </div>
+            </div>
+          </>
+        )}
     </section>
   );
 }

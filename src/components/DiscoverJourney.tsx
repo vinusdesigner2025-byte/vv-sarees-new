@@ -18,10 +18,23 @@ type WebsiteMediaRow = {
 };
 
 export default function DiscoverJourney() {
-  const { media } = useWebsiteMedia();
+  const {
+    media,
+    loading,
+  } = useWebsiteMedia();
 
   const journeyImage = useMemo(() => {
-    const row = (media as WebsiteMediaRow[]).find(
+    /*
+     * Media loading time-la heavy local fallback
+     * image-ai browser load panna vendaam.
+     */
+    if (loading) {
+      return "";
+    }
+
+    const row = (
+      media as WebsiteMediaRow[]
+    ).find(
       (item) =>
         item.section === "journey" &&
         item.slot_key === "journey-image" &&
@@ -29,11 +42,23 @@ export default function DiscoverJourney() {
         Boolean(item.image_url)
     );
 
-    return row?.image_url ?? journeyFallback;
-  }, [media]);
+    /*
+     * Supabase load complete aana apram
+     * database image illana mattum fallback.
+     */
+    return (
+      row?.image_url ??
+      journeyFallback
+    );
+  }, [
+    media,
+    loading,
+  ]);
 
   const youtubeUrl = useMemo(() => {
-    const settingsRow = (media as WebsiteMediaRow[]).find(
+    const settingsRow = (
+      media as WebsiteMediaRow[]
+    ).find(
       (item) =>
         item.section === "site-settings" &&
         item.slot_key === "contact-social"
@@ -54,29 +79,54 @@ export default function DiscoverJourney() {
     >
       <div className="discover-journey-inner">
 
-        {/* MOBILE HEADING */}
+        {/* =========================
+            MOBILE HEADING
+        ========================= */}
 
         <div className="journey-mobile-heading">
-          <span>From Our Travels</span>
+          <span>
+            From Our Travels
+          </span>
 
-          <h2>Discover Our Journey</h2>
+          <h2>
+            Discover Our Journey
+          </h2>
         </div>
 
-        {/* IMAGE */}
+        {/* =========================
+            IMAGE
+        ========================= */}
 
         <Link
           to="/journey"
           className="discover-journey-media"
           aria-label="View the VV Sarees journey"
         >
-          <img
-            src={journeyImage}
-            alt="VV Sarees journey across India"
-            loading="lazy"
-          />
+          {journeyImage ? (
+            <img
+              src={journeyImage}
+              alt="VV Sarees journey across India"
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              draggable={false}
+            />
+          ) : (
+            <div
+              aria-hidden="true"
+              style={{
+                width: "100%",
+                height: "100%",
+                minHeight: "260px",
+                background: "#ead7be",
+              }}
+            />
+          )}
         </Link>
 
-        {/* CONTENT */}
+        {/* =========================
+            CONTENT
+        ========================= */}
 
         <div className="discover-journey-content">
           <span className="discover-journey-eyebrow">
@@ -90,19 +140,25 @@ export default function DiscoverJourney() {
           </h2>
 
           <p className="journey-desktop-description">
-            Every journey begins with a passion for discovering
-            something extraordinary. Across India, we meet skilled
-            weavers, explore traditional weaving villages, and
-            carefully handpick premium sarees that celebrate heritage
-            and craftsmanship. Join us behind the scenes and
-            experience the stories, dedication, and timeless artistry
-            that make every VV Sarees collection truly special.
+            Every journey begins with a passion for
+            discovering something extraordinary.
+            Across India, we meet skilled weavers,
+            explore traditional weaving villages,
+            and carefully handpick premium sarees
+            that celebrate heritage and
+            craftsmanship. Join us behind the
+            scenes and experience the stories,
+            dedication, and timeless artistry
+            that make every VV Sarees collection
+            truly special.
           </p>
 
           <p className="journey-mobile-description">
-            Travel with us across India as we meet skilled weavers,
-            discover timeless traditions and handpick sarees filled
-            with heritage and craftsmanship.
+            Travel with us across India as we
+            meet skilled weavers, discover
+            timeless traditions and handpick
+            sarees filled with heritage and
+            craftsmanship.
           </p>
 
           {youtubeUrl ? (
@@ -112,16 +168,26 @@ export default function DiscoverJourney() {
               rel="noopener noreferrer"
               className="discover-journey-button"
             >
-              <span>Watch Our Journey</span>
-              <FiArrowUpRight aria-hidden="true" />
+              <span>
+                Watch Our Journey
+              </span>
+
+              <FiArrowUpRight
+                aria-hidden="true"
+              />
             </a>
           ) : (
             <Link
               to="/journey"
               className="discover-journey-button"
             >
-              <span>Watch Our Journey</span>
-              <FiArrowUpRight aria-hidden="true" />
+              <span>
+                Watch Our Journey
+              </span>
+
+              <FiArrowUpRight
+                aria-hidden="true"
+              />
             </Link>
           )}
         </div>

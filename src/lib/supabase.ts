@@ -12,36 +12,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-/*
-  CUSTOMER SUPABASE CLIENT
-
-  Website customer login / Google login /
-  customer account-ku mattum use pannuvom.
-
-  Admin session idhoda mix aaga koodadhu.
-*/
 export const supabase = createClient(
   supabaseUrl,
   supabaseAnonKey,
   {
     auth: {
       persistSession: true,
-
       autoRefreshToken: true,
-
       detectSessionInUrl: true,
-
-      /*
-        Customer-ku separate storage key.
-
-        Admin client:
-        vv-sarees-admin-auth
-
-        Customer client:
-        vv-sarees-customer-auth
-      */
-      storageKey:
-        "vv-sarees-customer-auth",
+      storageKey: "vv-sarees-customer-auth",
     },
   }
 );

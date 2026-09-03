@@ -754,7 +754,7 @@ export default function Policies() {
 
               <span>
                 <FiMapPin />
-                Chennai, Tamil Nadu, India
+                Madurai, Tamil Nadu, India
               </span>
             </div>
           </section>

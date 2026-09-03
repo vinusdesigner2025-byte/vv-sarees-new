@@ -13,7 +13,7 @@ import {
 
 import { useWebsiteMedia } from "../context/WebsiteMediaContext";
 
-import heroFallback from "../assets/vv sarees hero.png";
+import heroFallback from "../assets/vv-sarees-hero.webp";
 
 import "./Hero.css";
 

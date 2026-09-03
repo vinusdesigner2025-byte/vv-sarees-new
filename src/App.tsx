@@ -1,8 +1,18 @@
 import {
+  lazy,
+  Suspense,
+} from "react";
+
+import {
   Navigate,
   Route,
   Routes,
 } from "react-router-dom";
+
+/* =========================================
+   HOME PAGE COMPONENTS
+   Initial home load-ku ivanga mattum eager.
+========================================= */
 
 import Header from "./components/Header";
 import Hero from "./components/Hero";
@@ -16,49 +26,186 @@ import Footer from "./components/Footer";
 import ReviewPopup from "./components/ReviewPopup";
 import SeoManager from "./components/SeoManager";
 
-import WholesalePage from "./pages/WholesalePage";
-import RetailPage from "./pages/RetailPage";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import WholesaleWishlist from "./pages/WholesaleWishlist";
-import RetailWishlist from "./pages/RetailWishlist";
-import WholesaleCart from "./pages/WholesaleCart";
-import RetailCart from "./pages/RetailCart";
-import CheckoutPage from "./pages/CheckoutPage";
-import OrderSuccessPage from "./pages/OrderSuccessPage";
-import TrackOrderPage from "./pages/TrackOrderPage";
+/* =========================================
+   LAZY LOADED PUBLIC PAGES
+========================================= */
 
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import MyAccountPage from "./pages/MyAccountPage";
+const WholesalePage = lazy(
+  () => import("./pages/WholesalePage")
+);
 
-import WholesaleLoginPage from "./pages/WholesaleLoginPage";
-import WholesaleRegisterPage from "./pages/WholesaleRegisterPage";
-import WholesalePendingPage from "./pages/WholesalePendingPage";
-import ProtectedWholesaleRoute from "./components/ProtectedWholesaleRoute";
+const RetailPage = lazy(
+  () => import("./pages/RetailPage")
+);
 
-import StateProductsPage from "./pages/StateProductsPage";
-import Policies from "./pages/Policies";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
+const ProductDetailPage = lazy(
+  () => import("./pages/ProductDetailPage")
+);
 
-import ProtectedAdminRoute from "./admin/components/ProtectedAdminRoute";
-import AdminLayout from "./admin/layout/AdminLayout";
+const WholesaleWishlist = lazy(
+  () => import("./pages/WholesaleWishlist")
+);
 
-import AdminLogin from "./admin/pages/AdminLogin";
-import Dashboard from "./admin/pages/Dashboard";
-import Products from "./admin/pages/Products";
-import NewProduct from "./admin/pages/NewProduct";
-import EditProduct from "./admin/pages/EditProduct";
-import Categories from "./admin/pages/Categories";
-import Collections from "./admin/pages/Collections";
-import Orders from "./admin/pages/Orders";
-import Customers from "./admin/pages/Customers";
-import MediaLibrary from "./admin/pages/MediaLibrary";
-import Settings from "./admin/pages/Settings";
-import Reviews from "./admin/pages/Reviews";
-import WholesaleApplications from "./admin/pages/WholesaleApplications";
+const RetailWishlist = lazy(
+  () => import("./pages/RetailWishlist")
+);
+
+const WholesaleCart = lazy(
+  () => import("./pages/WholesaleCart")
+);
+
+const RetailCart = lazy(
+  () => import("./pages/RetailCart")
+);
+
+const CheckoutPage = lazy(
+  () => import("./pages/CheckoutPage")
+);
+
+const OrderSuccessPage = lazy(
+  () => import("./pages/OrderSuccessPage")
+);
+
+const TrackOrderPage = lazy(
+  () => import("./pages/TrackOrderPage")
+);
+
+/* =========================================
+   CUSTOMER AUTH
+========================================= */
+
+const LoginPage = lazy(
+  () => import("./pages/LoginPage")
+);
+
+const RegisterPage = lazy(
+  () => import("./pages/RegisterPage")
+);
+
+const ForgotPasswordPage = lazy(
+  () => import("./pages/ForgotPasswordPage")
+);
+
+const ResetPasswordPage = lazy(
+  () => import("./pages/ResetPasswordPage")
+);
+
+const MyAccountPage = lazy(
+  () => import("./pages/MyAccountPage")
+);
+
+/* =========================================
+   WHOLESALE AUTH
+========================================= */
+
+const WholesaleLoginPage = lazy(
+  () => import("./pages/WholesaleLoginPage")
+);
+
+const WholesaleRegisterPage = lazy(
+  () => import("./pages/WholesaleRegisterPage")
+);
+
+const WholesalePendingPage = lazy(
+  () => import("./pages/WholesalePendingPage")
+);
+
+const ProtectedWholesaleRoute = lazy(
+  () =>
+    import(
+      "./components/ProtectedWholesaleRoute"
+    )
+);
+
+/* =========================================
+   INFORMATION / STATE PAGES
+========================================= */
+
+const StateProductsPage = lazy(
+  () => import("./pages/StateProductsPage")
+);
+
+const Policies = lazy(
+  () => import("./pages/Policies")
+);
+
+const About = lazy(
+  () => import("./pages/About")
+);
+
+const Contact = lazy(
+  () => import("./pages/Contact")
+);
+
+/* =========================================
+   ADMIN
+========================================= */
+
+const ProtectedAdminRoute = lazy(
+  () =>
+    import(
+      "./admin/components/ProtectedAdminRoute"
+    )
+);
+
+const AdminLayout = lazy(
+  () => import("./admin/layout/AdminLayout")
+);
+
+const AdminLogin = lazy(
+  () => import("./admin/pages/AdminLogin")
+);
+
+const Dashboard = lazy(
+  () => import("./admin/pages/Dashboard")
+);
+
+const Products = lazy(
+  () => import("./admin/pages/Products")
+);
+
+const NewProduct = lazy(
+  () => import("./admin/pages/NewProduct")
+);
+
+const EditProduct = lazy(
+  () => import("./admin/pages/EditProduct")
+);
+
+const Categories = lazy(
+  () => import("./admin/pages/Categories")
+);
+
+const Collections = lazy(
+  () => import("./admin/pages/Collections")
+);
+
+const Orders = lazy(
+  () => import("./admin/pages/Orders")
+);
+
+const Customers = lazy(
+  () => import("./admin/pages/Customers")
+);
+
+const MediaLibrary = lazy(
+  () => import("./admin/pages/MediaLibrary")
+);
+
+const Settings = lazy(
+  () => import("./admin/pages/Settings")
+);
+
+const Reviews = lazy(
+  () => import("./admin/pages/Reviews")
+);
+
+const WholesaleApplications = lazy(
+  () =>
+    import(
+      "./admin/pages/WholesaleApplications"
+    )
+);
 
 /* =========================================
    HOME PAGE
@@ -76,6 +223,30 @@ function HomePage() {
       <FinalCTA />
       <Footer />
     </>
+  );
+}
+
+/* =========================================
+   ROUTE LOADER
+========================================= */
+
+function RouteLoader() {
+  return (
+    <div
+      style={{
+        minHeight: "40vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 20px",
+        color: "#6e3d19",
+        fontFamily:
+          '"Cormorant Garamond", Georgia, serif',
+        fontSize: "18px",
+      }}
+    >
+      Loading...
+    </div>
   );
 }
 
@@ -147,365 +318,325 @@ function AdminComingSoon({
 export default function App() {
   return (
     <>
-      {/* =====================================
-          SEO MANAGER
-      ===================================== */}
-
       <SeoManager />
-
-      {/* =====================================
-          GLOBAL CUSTOMER REVIEW POPUP
-      ===================================== */}
 
       <ReviewPopup />
 
-      {/* =====================================
-          ROUTES
-      ===================================== */}
+      <Suspense fallback={<RouteLoader />}>
+        <Routes>
+          {/* =====================================
+              HOME
+          ===================================== */}
 
-      <Routes>
-        {/* =====================================
-            PUBLIC WEBSITE
-        ===================================== */}
-
-        <Route
-          path="/"
-          element={<HomePage />}
-        />
-
-        {/* =====================================
-            WHOLESALE AUTHENTICATION
-        ===================================== */}
-
-        <Route
-          path="/wholesale-login"
-          element={<WholesaleLoginPage />}
-        />
-
-        <Route
-          path="/wholesale-register"
-          element={<WholesaleRegisterPage />}
-        />
-
-        <Route
-          path="/wholesale-pending"
-          element={<WholesalePendingPage />}
-        />
-
-        {/* =====================================
-            PROTECTED WHOLESALE AREA
-        ===================================== */}
-
-        <Route
-          element={
-            <ProtectedWholesaleRoute />
-          }
-        >
           <Route
-            path="/wholesale"
-            element={<WholesalePage />}
+            path="/"
+            element={<HomePage />}
+          />
+
+          {/* =====================================
+              WHOLESALE AUTHENTICATION
+          ===================================== */}
+
+          <Route
+            path="/wholesale-login"
+            element={<WholesaleLoginPage />}
           />
 
           <Route
-            path="/wholesale/product/:slug"
+            path="/wholesale-register"
+            element={<WholesaleRegisterPage />}
+          />
+
+          <Route
+            path="/wholesale-pending"
+            element={<WholesalePendingPage />}
+          />
+
+          {/* =====================================
+              PROTECTED WHOLESALE AREA
+          ===================================== */}
+
+          <Route
             element={
-              <ProductDetailPage mode="wholesale" />
+              <ProtectedWholesaleRoute />
             }
-          />
-
-          <Route
-            path="/wholesale/wishlist"
-            element={<WholesaleWishlist />}
-          />
-
-          <Route
-            path="/wholesale/cart"
-            element={<WholesaleCart />}
-          />
-
-          <Route
-            path="/wholesale/checkout"
-            element={
-              <CheckoutPage mode="wholesale" />
-            }
-          />
-        </Route>
-
-        {/* =====================================
-            RETAIL
-        ===================================== */}
-
-        <Route
-          path="/retail"
-          element={<RetailPage />}
-        />
-
-        {/* =====================================
-            PRODUCT DETAILS
-        ===================================== */}
-
-        <Route
-          path="/retail/product/:slug"
-          element={
-            <ProductDetailPage mode="retail" />
-          }
-        />
-
-        {/* =====================================
-            WISHLIST
-        ===================================== */}
-
-        <Route
-          path="/retail/wishlist"
-          element={<RetailWishlist />}
-        />
-
-        {/* =====================================
-            CART
-        ===================================== */}
-
-        <Route
-          path="/retail/cart"
-          element={<RetailCart />}
-        />
-
-        {/* =====================================
-            CHECKOUT
-        ===================================== */}
-
-        <Route
-          path="/retail/checkout"
-          element={
-            <CheckoutPage mode="retail" />
-          }
-        />
-
-        <Route
-          path="/order-success"
-          element={<OrderSuccessPage />}
-        />
-
-        <Route
-          path="/track-order"
-          element={<TrackOrderPage />}
-        />
-
-        {/* =====================================
-            CUSTOMER AUTHENTICATION
-        ===================================== */}
-
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
-
-        <Route
-          path="/register"
-          element={<RegisterPage />}
-        />
-
-        <Route
-          path="/forgot-password"
-          element={<ForgotPasswordPage />}
-        />
-
-        <Route
-          path="/reset-password"
-          element={<ResetPasswordPage />}
-        />
-
-        <Route
-          path="/my-account"
-          element={<MyAccountPage />}
-        />
-
-        {/* =====================================
-            STATE PRODUCTS
-        ===================================== */}
-
-        <Route
-          path="/state/:state"
-          element={<StateProductsPage />}
-        />
-
-        {/* =====================================
-            INFORMATION PAGES
-        ===================================== */}
-
-        <Route
-          path="/policies"
-          element={<Policies />}
-        />
-
-        <Route
-          path="/about"
-          element={<About />}
-        />
-
-        <Route
-          path="/contact"
-          element={<Contact />}
-        />
-
-        {/* =====================================
-            ADMIN LOGIN
-        ===================================== */}
-
-        <Route
-          path="/admin/login"
-          element={<AdminLogin />}
-        />
-
-        {/* =====================================
-            PROTECTED ADMIN PANEL
-        ===================================== */}
-
-        <Route
-          element={<ProtectedAdminRoute />}
-        >
-          <Route
-            path="/admin"
-            element={<AdminLayout />}
           >
-            {/* Default Admin Route */}
+            <Route
+              path="/wholesale"
+              element={<WholesalePage />}
+            />
 
             <Route
-              index
+              path="/wholesale/product/:slug"
               element={
-                <Navigate
-                  to="dashboard"
-                  replace
-                />
-              }
-            />
-
-            {/* Dashboard */}
-
-            <Route
-              path="dashboard"
-              element={<Dashboard />}
-            />
-
-            {/* Products */}
-
-            <Route
-              path="products"
-              element={<Products />}
-            />
-
-            <Route
-              path="products/new"
-              element={<NewProduct />}
-            />
-
-            <Route
-              path="products/:id"
-              element={
-                <AdminComingSoon
-                  title="Product Details"
+                <ProductDetailPage
+                  mode="wholesale"
                 />
               }
             />
 
             <Route
-              path="products/:id/edit"
-              element={<EditProduct />}
+              path="/wholesale/wishlist"
+              element={<WholesaleWishlist />}
             />
 
-            {/* Categories */}
-
             <Route
-              path="categories"
-              element={<Categories />}
+              path="/wholesale/cart"
+              element={<WholesaleCart />}
             />
 
-            {/* Collections */}
-
             <Route
-              path="collections"
-              element={<Collections />}
-            />
-
-            {/* Orders */}
-
-            <Route
-              path="orders"
-              element={<Orders />}
-            />
-
-            {/* Customers */}
-
-            <Route
-              path="customers"
-              element={<Customers />}
-            />
-
-            {/* Wholesale Applications */}
-
-            <Route
-              path="wholesale-applications"
-              element={<WholesaleApplications />}
-            />
-
-            {/* Website Content */}
-
-            <Route
-              path="website/home"
+              path="/wholesale/checkout"
               element={
-                <AdminComingSoon
-                  title="Home Content"
+                <CheckoutPage
+                  mode="wholesale"
                 />
               }
-            />
-
-            {/* Media Library */}
-
-            <Route
-              path="media"
-              element={<MediaLibrary />}
-            />
-
-            {/* Coupons */}
-
-            <Route
-              path="coupons"
-              element={
-                <AdminComingSoon
-                  title="Coupons"
-                />
-              }
-            />
-
-            {/* Reviews */}
-
-            <Route
-              path="reviews"
-              element={<Reviews />}
-            />
-
-            {/* Settings */}
-
-            <Route
-              path="settings"
-              element={<Settings />}
             />
           </Route>
-        </Route>
 
-        {/* =====================================
-            INVALID / UNKNOWN URL
-        ===================================== */}
+          {/* =====================================
+              RETAIL
+          ===================================== */}
 
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/"
-              replace
-            />
-          }
-        />
-      </Routes>
+          <Route
+            path="/retail"
+            element={<RetailPage />}
+          />
+
+          <Route
+            path="/retail/product/:slug"
+            element={
+              <ProductDetailPage
+                mode="retail"
+              />
+            }
+          />
+
+          <Route
+            path="/retail/wishlist"
+            element={<RetailWishlist />}
+          />
+
+          <Route
+            path="/retail/cart"
+            element={<RetailCart />}
+          />
+
+          <Route
+            path="/retail/checkout"
+            element={
+              <CheckoutPage mode="retail" />
+            }
+          />
+
+          {/* =====================================
+              ORDER
+          ===================================== */}
+
+          <Route
+            path="/order-success"
+            element={<OrderSuccessPage />}
+          />
+
+          <Route
+            path="/track-order"
+            element={<TrackOrderPage />}
+          />
+
+          {/* =====================================
+              CUSTOMER AUTHENTICATION
+          ===================================== */}
+
+          <Route
+            path="/login"
+            element={<LoginPage />}
+          />
+
+          <Route
+            path="/register"
+            element={<RegisterPage />}
+          />
+
+          <Route
+            path="/forgot-password"
+            element={<ForgotPasswordPage />}
+          />
+
+          <Route
+            path="/reset-password"
+            element={<ResetPasswordPage />}
+          />
+
+          <Route
+            path="/my-account"
+            element={<MyAccountPage />}
+          />
+
+          {/* =====================================
+              STATE PRODUCTS
+          ===================================== */}
+
+          <Route
+            path="/state/:state"
+            element={<StateProductsPage />}
+          />
+
+          {/* =====================================
+              INFORMATION PAGES
+          ===================================== */}
+
+          <Route
+            path="/policies"
+            element={<Policies />}
+          />
+
+          <Route
+            path="/about"
+            element={<About />}
+          />
+
+          <Route
+            path="/contact"
+            element={<Contact />}
+          />
+
+          {/* =====================================
+              ADMIN LOGIN
+          ===================================== */}
+
+          <Route
+            path="/admin/login"
+            element={<AdminLogin />}
+          />
+
+          {/* =====================================
+              PROTECTED ADMIN
+          ===================================== */}
+
+          <Route
+            element={<ProtectedAdminRoute />}
+          >
+            <Route
+              path="/admin"
+              element={<AdminLayout />}
+            >
+              <Route
+                index
+                element={
+                  <Navigate
+                    to="dashboard"
+                    replace
+                  />
+                }
+              />
+
+              <Route
+                path="dashboard"
+                element={<Dashboard />}
+              />
+
+              <Route
+                path="products"
+                element={<Products />}
+              />
+
+              <Route
+                path="products/new"
+                element={<NewProduct />}
+              />
+
+              <Route
+                path="products/:id"
+                element={
+                  <AdminComingSoon
+                    title="Product Details"
+                  />
+                }
+              />
+
+              <Route
+                path="products/:id/edit"
+                element={<EditProduct />}
+              />
+
+              <Route
+                path="categories"
+                element={<Categories />}
+              />
+
+              <Route
+                path="collections"
+                element={<Collections />}
+              />
+
+              <Route
+                path="orders"
+                element={<Orders />}
+              />
+
+              <Route
+                path="customers"
+                element={<Customers />}
+              />
+
+              <Route
+                path="wholesale-applications"
+                element={
+                  <WholesaleApplications />
+                }
+              />
+
+              <Route
+                path="website/home"
+                element={
+                  <AdminComingSoon
+                    title="Home Content"
+                  />
+                }
+              />
+
+              <Route
+                path="media"
+                element={<MediaLibrary />}
+              />
+
+              <Route
+                path="coupons"
+                element={
+                  <AdminComingSoon
+                    title="Coupons"
+                  />
+                }
+              />
+
+              <Route
+                path="reviews"
+                element={<Reviews />}
+              />
+
+              <Route
+                path="settings"
+                element={<Settings />}
+              />
+            </Route>
+          </Route>
+
+          {/* =====================================
+              UNKNOWN URL
+          ===================================== */}
+
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/"
+                replace
+              />
+            }
+          />
+        </Routes>
+      </Suspense>
     </>
   );
 }
