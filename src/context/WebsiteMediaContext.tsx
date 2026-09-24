@@ -4,17 +4,28 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
-import { getWebsiteMedia } from "../data/websiteMedia";
+import {
+  getWebsiteMedia,
+} from "../data/websiteMedia";
+
+/* =========================================
+   TYPES
+========================================= */
 
 type WebsiteMediaContextType = {
   media: any[];
   loading: boolean;
   refreshMedia: () => Promise<void>;
 };
+
+/* =========================================
+   CONTEXT
+========================================= */
 
 const WebsiteMediaContext =
   createContext<WebsiteMediaContextType>({
@@ -23,39 +34,131 @@ const WebsiteMediaContext =
     refreshMedia: async () => {},
   });
 
-const CACHE_KEY = "vv-website-media-cache";
-const CACHE_TIME_KEY = "vv-website-media-cache-time";
+/* =========================================
+   CACHE SETTINGS
+========================================= */
 
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const CACHE_KEY =
+  "vv-website-media-cache";
 
-function getCachedMedia(): any[] | null {
+const CACHE_TIME_KEY =
+  "vv-website-media-cache-time";
+
+/*
+  10 minutes.
+
+  Fresh cache irundha Supabase request
+  thirumba panna maatom.
+*/
+const CACHE_DURATION =
+  10 * 60 * 1000;
+
+/* =========================================
+   IN-MEMORY REQUEST DEDUPE
+
+   Same time-la multiple components/provider
+   remount aana duplicate request avoid pannum.
+========================================= */
+
+let pendingMediaRequest:
+  Promise<any[]> | null = null;
+
+/* =========================================
+   READ CACHE
+========================================= */
+
+function getCachedMedia():
+  | any[]
+  | null {
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    const cachedTime = localStorage.getItem(
-      CACHE_TIME_KEY
+    const cached =
+      localStorage.getItem(
+        CACHE_KEY
+      );
+
+    const cachedTime =
+      localStorage.getItem(
+        CACHE_TIME_KEY
+      );
+
+    if (
+      !cached ||
+      !cachedTime
+    ) {
+      return null;
+    }
+
+    const timestamp =
+      Number(cachedTime);
+
+    /*
+      Invalid timestamp-na cache discard.
+    */
+    if (
+      !Number.isFinite(
+        timestamp
+      )
+    ) {
+      localStorage.removeItem(
+        CACHE_KEY
+      );
+
+      localStorage.removeItem(
+        CACHE_TIME_KEY
+      );
+
+      return null;
+    }
+
+    const age =
+      Date.now() -
+      timestamp;
+
+    /*
+      Cache expired.
+    */
+    if (
+      age >
+      CACHE_DURATION
+    ) {
+      localStorage.removeItem(
+        CACHE_KEY
+      );
+
+      localStorage.removeItem(
+        CACHE_TIME_KEY
+      );
+
+      return null;
+    }
+
+    const parsed =
+      JSON.parse(cached);
+
+    return Array.isArray(
+      parsed
+    )
+      ? parsed
+      : null;
+  } catch (
+    error
+  ) {
+    console.warn(
+      "Website media cache read failed:",
+      error
     );
 
-    if (!cached || !cachedTime) {
-      return null;
-    }
-
-    const age = Date.now() - Number(cachedTime);
-
-    if (age > CACHE_DURATION) {
-      localStorage.removeItem(CACHE_KEY);
-      localStorage.removeItem(CACHE_TIME_KEY);
-      return null;
-    }
-
-    const parsed = JSON.parse(cached);
-
-    return Array.isArray(parsed) ? parsed : null;
-  } catch {
     return null;
   }
 }
 
-function saveMediaToCache(data: any[]) {
+/* =========================================
+   SAVE CACHE
+========================================= */
+
+function saveMediaToCache(
+  data: any[]
+) {
   try {
     localStorage.setItem(
       CACHE_KEY,
@@ -66,88 +169,262 @@ function saveMediaToCache(data: any[]) {
       CACHE_TIME_KEY,
       String(Date.now())
     );
+  } catch (
+    error
+  ) {
+    /*
+      Website should still work even if
+      storage is unavailable/full.
+    */
+    console.warn(
+      "Website media cache save failed:",
+      error
+    );
+  }
+}
+
+/* =========================================
+   CLEAR CACHE
+========================================= */
+
+function clearMediaCache() {
+  try {
+    localStorage.removeItem(
+      CACHE_KEY
+    );
+
+    localStorage.removeItem(
+      CACHE_TIME_KEY
+    );
   } catch {
     // Ignore storage errors
   }
 }
+
+/* =========================================
+   FETCH MEDIA
+
+   Duplicate simultaneous requests prevented.
+========================================= */
+
+async function fetchWebsiteMediaOnce():
+  Promise<any[]> {
+  if (
+    pendingMediaRequest
+  ) {
+    return pendingMediaRequest;
+  }
+
+  pendingMediaRequest =
+    (async () => {
+      try {
+        const data =
+          await getWebsiteMedia();
+
+        return Array.isArray(
+          data
+        )
+          ? data
+          : [];
+      } finally {
+        /*
+          Allow future refresh request.
+        */
+        pendingMediaRequest =
+          null;
+      }
+    })();
+
+  return pendingMediaRequest;
+}
+
+/* =========================================
+   PROVIDER
+========================================= */
 
 export function WebsiteMediaProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const cachedMedia = useMemo(
-    () => getCachedMedia(),
-    []
+  /*
+    Cache read only ONCE.
+  */
+  const initialCachedMedia =
+    useMemo(
+      () =>
+        getCachedMedia(),
+      []
+    );
+
+  const [
+    media,
+    setMedia,
+  ] = useState<any[]>(
+    initialCachedMedia ??
+      []
   );
 
-  const [media, setMedia] = useState<any[]>(
-    cachedMedia ?? []
+  const [
+    loading,
+    setLoading,
+  ] = useState(
+    !initialCachedMedia
   );
 
-  const [loading, setLoading] = useState(
-    !cachedMedia
-  );
+  /*
+    Prevent async request finishing after
+    provider unmount from changing state.
+  */
+  const mountedRef =
+    useRef(true);
 
-  const loadMedia = useCallback(
-    async (showLoader = false) => {
-      try {
-        if (showLoader) {
+  /* =====================================
+     LOAD FROM SERVER
+  ===================================== */
+
+  const loadMedia =
+    useCallback(
+      async (
+        showLoader = true
+      ) => {
+        if (
+          showLoader &&
+          mountedRef.current
+        ) {
           setLoading(true);
         }
 
-        const data =
-          (await getWebsiteMedia()) ?? [];
+        try {
+          const data =
+            await fetchWebsiteMediaOnce();
 
-        setMedia(data);
-        saveMediaToCache(data);
-      } catch (error) {
-        console.error(
-          "Failed to load website media:",
+          if (
+            !mountedRef.current
+          ) {
+            return;
+          }
+
+          setMedia(data);
+
+          saveMediaToCache(
+            data
+          );
+        } catch (
           error
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+        ) {
+          console.error(
+            "Failed to load website media:",
+            error
+          );
+        } finally {
+          if (
+            mountedRef.current
+          ) {
+            setLoading(false);
+          }
+        }
+      },
+      []
+    );
 
-  const refreshMedia = useCallback(async () => {
-    localStorage.removeItem(CACHE_KEY);
-    localStorage.removeItem(CACHE_TIME_KEY);
+  /* =====================================
+     FIRST APP LOAD
 
-    await loadMedia(true);
-  }, [loadMedia]);
+     IMPORTANT:
+
+     Fresh cache irundha:
+     → NO Supabase request.
+
+     Cache illa / expired:
+     → fetch from server.
+  ===================================== */
 
   useEffect(() => {
-    if (cachedMedia) {
-      // Cached content immediately visible.
-      // Refresh silently in background.
-      loadMedia(false);
-    } else {
-      loadMedia(true);
-    }
-  }, [cachedMedia, loadMedia]);
+    mountedRef.current =
+      true;
 
-  const contextValue = useMemo(
-    () => ({
-      media,
-      loading,
-      refreshMedia,
-    }),
-    [media, loading, refreshMedia]
-  );
+    /*
+      Cache already fresh.
+      Nothing else to do.
+    */
+    if (
+      initialCachedMedia
+    ) {
+      setLoading(false);
+
+      return () => {
+        mountedRef.current =
+          false;
+      };
+    }
+
+    void loadMedia(
+      true
+    );
+
+    return () => {
+      mountedRef.current =
+        false;
+    };
+  }, [
+    initialCachedMedia,
+    loadMedia,
+  ]);
+
+  /* =====================================
+     MANUAL REFRESH
+
+     Admin/media update aana apram use pannalaam.
+  ===================================== */
+
+  const refreshMedia =
+    useCallback(
+      async () => {
+        clearMediaCache();
+
+        await loadMedia(
+          true
+        );
+      },
+      [loadMedia]
+    );
+
+  /* =====================================
+     CONTEXT VALUE
+  ===================================== */
+
+  const contextValue =
+    useMemo(
+      () => ({
+        media,
+        loading,
+        refreshMedia,
+      }),
+      [
+        media,
+        loading,
+        refreshMedia,
+      ]
+    );
 
   return (
     <WebsiteMediaContext.Provider
-      value={contextValue}
+      value={
+        contextValue
+      }
     >
       {children}
     </WebsiteMediaContext.Provider>
   );
 }
 
+/* =========================================
+   HOOK
+========================================= */
+
 export function useWebsiteMedia() {
-  return useContext(WebsiteMediaContext);
+  return useContext(
+    WebsiteMediaContext
+  );
 }

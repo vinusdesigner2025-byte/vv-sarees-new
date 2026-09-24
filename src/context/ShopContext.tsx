@@ -1,10 +1,15 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+
+/* =========================================
+   TYPES
+========================================= */
 
 export type ShopMode =
   | "wholesale"
@@ -87,6 +92,10 @@ type ShopContextValue = {
     number;
 };
 
+/* =========================================
+   CONTEXT
+========================================= */
+
 const ShopContext =
   createContext<
     ShopContextValue | null
@@ -96,238 +105,480 @@ type ShopProviderProps = {
   children: ReactNode;
 };
 
+/* =========================================
+   HELPERS
+
+   Convert IDs to string so:
+   123 and "123" are treated as same product.
+========================================= */
+
+const getProductKey = (
+  productId: ProductId
+) => String(productId);
+
+/* =========================================
+   PROVIDER
+========================================= */
+
 export function ShopProvider({
   children,
 }: ShopProviderProps) {
   const [
     wholesaleWishlist,
     setWholesaleWishlist,
-  ] =
-    useState<
-      ShopProduct[]
-    >([]);
+  ] = useState<
+    ShopProduct[]
+  >([]);
 
   const [
     retailWishlist,
     setRetailWishlist,
-  ] =
-    useState<
-      ShopProduct[]
-    >([]);
+  ] = useState<
+    ShopProduct[]
+  >([]);
 
   const [
     wholesaleCart,
     setWholesaleCart,
-  ] =
-    useState<
-      CartItem[]
-    >([]);
+  ] = useState<
+    CartItem[]
+  >([]);
 
   const [
     retailCart,
     setRetailCart,
-  ] =
-    useState<
-      CartItem[]
-    >([]);
+  ] = useState<
+    CartItem[]
+  >([]);
 
-  const addToWishlist = (
-    product:
-      ShopProduct,
-    mode:
-      ShopMode
-  ) => {
-    const setter =
-      mode ===
-      "wholesale"
-        ? setWholesaleWishlist
-        : setRetailWishlist;
+  /* =====================================
+     WISHLIST SETS
 
-    setter(
-      (current) => {
-        const alreadyExists =
-          current.some(
+     Earlier:
+     Every product card used .some()
+
+     Now:
+     Set.has() → very fast.
+  ===================================== */
+
+  const wholesaleWishlistIds =
+    useMemo(
+      () =>
+        new Set(
+          wholesaleWishlist.map(
             (item) =>
-              item.id ===
-              product.id
+              getProductKey(
+                item.id
+              )
+          )
+        ),
+      [wholesaleWishlist]
+    );
+
+  const retailWishlistIds =
+    useMemo(
+      () =>
+        new Set(
+          retailWishlist.map(
+            (item) =>
+              getProductKey(
+                item.id
+              )
+          )
+        ),
+      [retailWishlist]
+    );
+
+  /* =====================================
+     ADD / TOGGLE WISHLIST
+  ===================================== */
+
+  const addToWishlist =
+    useCallback(
+      (
+        product:
+          ShopProduct,
+        mode:
+          ShopMode
+      ) => {
+        const setter =
+          mode ===
+          "wholesale"
+            ? setWholesaleWishlist
+            : setRetailWishlist;
+
+        const productKey =
+          getProductKey(
+            product.id
           );
 
-        if (
-          alreadyExists
-        ) {
-          return current.filter(
-            (item) =>
-              item.id !==
-              product.id
-          );
-        }
+        setter(
+          (current) => {
+            const index =
+              current.findIndex(
+                (item) =>
+                  getProductKey(
+                    item.id
+                  ) ===
+                  productKey
+              );
 
-        return [
-          ...current,
-          product,
-        ];
-      }
-    );
-  };
-
-  const removeFromWishlist = (
-    productId:
-      ProductId,
-    mode:
-      ShopMode
-  ) => {
-    const setter =
-      mode ===
-      "wholesale"
-        ? setWholesaleWishlist
-        : setRetailWishlist;
-
-    setter(
-      (current) =>
-        current.filter(
-          (item) =>
-            item.id !==
-            productId
-        )
-    );
-  };
-
-  const addToCart = (
-    product:
-      ShopProduct,
-    mode:
-      ShopMode
-  ) => {
-    const setter =
-      mode ===
-      "wholesale"
-        ? setWholesaleCart
-        : setRetailCart;
-
-    setter(
-      (current) => {
-        const existingItem =
-          current.find(
-            (item) =>
-              item.id ===
-              product.id
-          );
-
-        if (
-          existingItem
-        ) {
-          return current.map(
-            (item) =>
-              item.id ===
-              product.id
-                ? {
-                    ...item,
-                    quantity:
-                      Math.min(
-                        item.quantity +
-                          1,
-                        item.stock
-                      ),
-                  }
-                : item
-          );
-        }
-
-        return [
-          ...current,
-          {
-            ...product,
-            quantity: 1,
-          },
-        ];
-      }
-    );
-  };
-
-  const removeFromCart = (
-    productId:
-      ProductId,
-    mode:
-      ShopMode
-  ) => {
-    const setter =
-      mode ===
-      "wholesale"
-        ? setWholesaleCart
-        : setRetailCart;
-
-    setter(
-      (current) =>
-        current.filter(
-          (item) =>
-            item.id !==
-            productId
-        )
-    );
-  };
-
-  const updateCartQuantity = (
-    productId:
-      ProductId,
-    quantity:
-      number,
-    mode:
-      ShopMode
-  ) => {
-    const setter =
-      mode ===
-      "wholesale"
-        ? setWholesaleCart
-        : setRetailCart;
-
-    setter(
-      (current) =>
-        current.map(
-          (item) => {
+            /*
+              Already exists:
+              remove from wishlist.
+            */
             if (
-              item.id !==
-              productId
+              index !== -1
             ) {
-              return item;
+              return current.filter(
+                (_, itemIndex) =>
+                  itemIndex !==
+                  index
+              );
             }
 
-            const safeQuantity =
-              Math.max(
-                1,
+            /*
+              Add new product.
+            */
+            return [
+              ...current,
+              product,
+            ];
+          }
+        );
+      },
+      []
+    );
+
+  /* =====================================
+     REMOVE WISHLIST
+  ===================================== */
+
+  const removeFromWishlist =
+    useCallback(
+      (
+        productId:
+          ProductId,
+        mode:
+          ShopMode
+      ) => {
+        const setter =
+          mode ===
+          "wholesale"
+            ? setWholesaleWishlist
+            : setRetailWishlist;
+
+        const productKey =
+          getProductKey(
+            productId
+          );
+
+        setter(
+          (current) =>
+            current.filter(
+              (item) =>
+                getProductKey(
+                  item.id
+                ) !==
+                productKey
+            )
+        );
+      },
+      []
+    );
+
+  /* =====================================
+     ADD TO CART
+  ===================================== */
+
+  const addToCart =
+    useCallback(
+      (
+        product:
+          ShopProduct,
+        mode:
+          ShopMode
+      ) => {
+        const setter =
+          mode ===
+          "wholesale"
+            ? setWholesaleCart
+            : setRetailCart;
+
+        const productKey =
+          getProductKey(
+            product.id
+          );
+
+        setter(
+          (current) => {
+            const existingIndex =
+              current.findIndex(
+                (item) =>
+                  getProductKey(
+                    item.id
+                  ) ===
+                  productKey
+              );
+
+            /*
+              Existing product:
+              increase quantity safely.
+            */
+            if (
+              existingIndex !==
+              -1
+            ) {
+              const existingItem =
+                current[
+                  existingIndex
+                ];
+
+              const stock =
+                Math.max(
+                  0,
+                  Number(
+                    existingItem.stock ??
+                      0
+                  )
+                );
+
+              /*
+                No stock:
+                don't change cart.
+              */
+              if (
+                stock <= 0
+              ) {
+                return current;
+              }
+
+              const nextQuantity =
                 Math.min(
-                  quantity,
-                  item.stock
+                  existingItem.quantity +
+                    1,
+                  stock
+                );
+
+              /*
+                Already at maximum stock.
+                Avoid creating new array.
+              */
+              if (
+                nextQuantity ===
+                existingItem.quantity
+              ) {
+                return current;
+              }
+
+              return current.map(
+                (
+                  item,
+                  index
+                ) =>
+                  index ===
+                  existingIndex
+                    ? {
+                        ...item,
+                        quantity:
+                          nextQuantity,
+                      }
+                    : item
+              );
+            }
+
+            /*
+              New product:
+              don't add if out of stock.
+            */
+            const stock =
+              Math.max(
+                0,
+                Number(
+                  product.stock ??
+                    0
                 )
               );
 
-            return {
-              ...item,
-              quantity:
-                safeQuantity,
-            };
+            if (
+              stock <= 0
+            ) {
+              return current;
+            }
+
+            return [
+              ...current,
+              {
+                ...product,
+                quantity: 1,
+              },
+            ];
           }
-        )
+        );
+      },
+      []
     );
-  };
 
-  const isInWishlist = (
-    productId:
-      ProductId,
-    mode:
-      ShopMode
-  ) => {
-    const wishlist =
-      mode ===
-      "wholesale"
-        ? wholesaleWishlist
-        : retailWishlist;
+  /* =====================================
+     REMOVE CART ITEM
+  ===================================== */
 
-    return wishlist.some(
-      (item) =>
-        item.id ===
-        productId
+  const removeFromCart =
+    useCallback(
+      (
+        productId:
+          ProductId,
+        mode:
+          ShopMode
+      ) => {
+        const setter =
+          mode ===
+          "wholesale"
+            ? setWholesaleCart
+            : setRetailCart;
+
+        const productKey =
+          getProductKey(
+            productId
+          );
+
+        setter(
+          (current) =>
+            current.filter(
+              (item) =>
+                getProductKey(
+                  item.id
+                ) !==
+                productKey
+            )
+        );
+      },
+      []
     );
-  };
+
+  /* =====================================
+     UPDATE CART QUANTITY
+  ===================================== */
+
+  const updateCartQuantity =
+    useCallback(
+      (
+        productId:
+          ProductId,
+        quantity:
+          number,
+        mode:
+          ShopMode
+      ) => {
+        const setter =
+          mode ===
+          "wholesale"
+            ? setWholesaleCart
+            : setRetailCart;
+
+        const productKey =
+          getProductKey(
+            productId
+          );
+
+        setter(
+          (current) =>
+            current.map(
+              (item) => {
+                if (
+                  getProductKey(
+                    item.id
+                  ) !==
+                  productKey
+                ) {
+                  return item;
+                }
+
+                const stock =
+                  Math.max(
+                    1,
+                    Number(
+                      item.stock ??
+                        1
+                    )
+                  );
+
+                const requestedQuantity =
+                  Number.isFinite(
+                    quantity
+                  )
+                    ? quantity
+                    : 1;
+
+                const safeQuantity =
+                  Math.max(
+                    1,
+                    Math.min(
+                      requestedQuantity,
+                      stock
+                    )
+                  );
+
+                /*
+                  Quantity same-na old object
+                  return pannuvom.
+                */
+                if (
+                  safeQuantity ===
+                  item.quantity
+                ) {
+                  return item;
+                }
+
+                return {
+                  ...item,
+                  quantity:
+                    safeQuantity,
+                };
+              }
+            )
+        );
+      },
+      []
+    );
+
+  /* =====================================
+     WISHLIST LOOKUP
+
+     Set.has() instead of Array.some().
+  ===================================== */
+
+  const isInWishlist =
+    useCallback(
+      (
+        productId:
+          ProductId,
+        mode:
+          ShopMode
+      ) => {
+        const key =
+          getProductKey(
+            productId
+          );
+
+        return mode ===
+          "wholesale"
+          ? wholesaleWishlistIds.has(
+              key
+            )
+          : retailWishlistIds.has(
+              key
+            );
+      },
+      [
+        wholesaleWishlistIds,
+        retailWishlistIds,
+      ]
+    );
+
+  /* =====================================
+     COUNTS
+  ===================================== */
 
   const wholesaleWishlistCount =
     wholesaleWishlist.length;
@@ -335,23 +586,32 @@ export function ShopProvider({
   const retailWishlistCount =
     retailWishlist.length;
 
+  /*
+    Preserve your existing behaviour:
+    cartCount = number of different products,
+    not total quantity.
+  */
   const wholesaleCartCount =
-    useMemo(
-      () =>
-        wholesaleCart.length,
-      [wholesaleCart]
-    );
+    wholesaleCart.length;
 
   const retailCartCount =
-    useMemo(
-      () =>
-        retailCart.length,
-      [retailCart]
-    );
+    retailCart.length;
 
-  return (
-    <ShopContext.Provider
-      value={{
+  /* =====================================
+     MEMOIZED CONTEXT VALUE
+
+     Earlier object was recreated on every
+     provider render.
+
+     Now it changes only when actual shop
+     state/functions change.
+  ===================================== */
+
+  const contextValue =
+    useMemo<
+      ShopContextValue
+    >(
+      () => ({
         wholesaleWishlist,
         retailWishlist,
 
@@ -363,20 +623,60 @@ export function ShopProvider({
 
         addToCart,
         removeFromCart,
+
         updateCartQuantity,
 
         isInWishlist,
 
         wholesaleWishlistCount,
         retailWishlistCount,
+
         wholesaleCartCount,
         retailCartCount,
-      }}
+      }),
+      [
+        wholesaleWishlist,
+        retailWishlist,
+
+        wholesaleCart,
+        retailCart,
+
+        addToWishlist,
+        removeFromWishlist,
+
+        addToCart,
+        removeFromCart,
+
+        updateCartQuantity,
+
+        isInWishlist,
+
+        wholesaleWishlistCount,
+        retailWishlistCount,
+
+        wholesaleCartCount,
+        retailCartCount,
+      ]
+    );
+
+  /* =====================================
+     PROVIDER
+  ===================================== */
+
+  return (
+    <ShopContext.Provider
+      value={
+        contextValue
+      }
     >
       {children}
     </ShopContext.Provider>
   );
 }
+
+/* =========================================
+   HOOK
+========================================= */
 
 export function useShop() {
   const context =

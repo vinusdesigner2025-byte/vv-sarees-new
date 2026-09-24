@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -31,8 +32,11 @@ import { supabase } from "../lib/supabase";
 
 import "./ProductPages.css";
 
+/* =====================================================
+   TYPES
+   ===================================================== */
+
 type ProductImageRow = {
-  id: string;
   image_url: string;
   display_order: number;
 };
@@ -40,9 +44,8 @@ type ProductImageRow = {
 type ProductVariantRow = {
   id: string;
   colour_name: string;
-  colour_code: string;
-  sku: string;
   stock: number;
+
   product_images:
     | ProductImageRow[]
     | null;
@@ -57,7 +60,7 @@ type ProductRow = {
   description: string | null;
   wholesale_price: number;
   wholesale_minimum: number;
-  status: string;
+
   product_variants:
     | ProductVariantRow[]
     | null;
@@ -66,10 +69,8 @@ type ProductRow = {
 type WholesaleVariant = {
   id: string;
   colorName: string;
-  colorCode: string;
   price: number;
   stock: number;
-  sku: string;
   images: string[];
 };
 
@@ -80,11 +81,37 @@ type WholesaleProduct = {
   category: string;
   state: string;
   description: string;
+
   rating: number;
   reviewCount: number;
+
   wholesaleMinimum: number;
+
   variants: WholesaleVariant[];
+
+  /*
+    PRE-CALCULATED VALUES
+
+    Filter / sorting time-la same calculations
+    thirumba thirumba panna thevai illa.
+  */
+  lowestPrice: number;
+  totalStock: number;
+  highestStock: number;
+
+  searchableText: string;
+  categoryValue: string;
+  stateValue: string;
 };
+
+type ReviewRow = {
+  product_id: string | number;
+  rating: number;
+};
+
+/* =====================================================
+   HELPERS
+   ===================================================== */
 
 const createNumericProductId = (
   productId: string
@@ -101,8 +128,55 @@ const createNumericProductId = (
     );
 };
 
+const normalizeFilterValue = (
+  value: string
+) => {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(
+      /[^a-z0-9\s-]/g,
+      ""
+    )
+    .replace(
+      /\s+/g,
+      "-"
+    )
+    .replace(
+      /-+/g,
+      "-"
+    );
+};
+
+const splitIntoChunks = <T,>(
+  values: T[],
+  size: number
+): T[][] => {
+  const chunks: T[][] = [];
+
+  for (
+    let index = 0;
+    index < values.length;
+    index += size
+  ) {
+    chunks.push(
+      values.slice(
+        index,
+        index + size
+      )
+    );
+  }
+
+  return chunks;
+};
+
+/* =====================================================
+   WHOLESALE PAGE
+   ===================================================== */
+
 export default function WholesalePage() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn } =
+    useAuth();
 
   const {
     addToWishlist,
@@ -132,8 +206,19 @@ export default function WholesalePage() {
     setIsLoginPopupOpen,
   ] = useState(false);
 
-  const [pendingAction, setPendingAction] =
-    useState<(() => void) | null>(null);
+  const [
+    pendingAction,
+    setPendingAction,
+  ] = useState<
+    (() => void) | null
+  >(null);
+
+  /*
+    Prevent old Supabase responses from
+    replacing newer data.
+  */
+  const requestIdRef =
+    useRef(0);
 
   const searchTerm =
     searchParams
@@ -141,351 +226,708 @@ export default function WholesalePage() {
       ?.trim()
       .toLowerCase() ?? "";
 
-  const loadProducts = async () => {
-    setIsLoading(true);
-    setLoadError("");
+  /* =====================================================
+     LOAD REVIEWS SEPARATELY
+     ===================================================== */
 
-    const { data, error } =
-      await supabase
-        .from("products")
-        .select(`
-          id,
-          slug,
-          name,
-          category,
-          state,
-          description,
-          wholesale_price,
-          wholesale_minimum,
-          status,
-          product_variants (
-            id,
-            colour_name,
-            colour_code,
-            sku,
-            stock,
-            product_images (
-              id,
-              image_url,
-              display_order
-            )
-          )
-        `)
-        .eq("status", "active")
-        .order("created_at", {
-          ascending: false,
-        });
-
-    if (error) {
-      console.error(
-        "Wholesale products load error:",
-        error
-      );
-
-      setLoadError(
-        `Products load aagala: ${error.message}`
-      );
-
-      setProducts([]);
-      setIsLoading(false);
+  const loadReviewStats = async (
+    loadedProducts: WholesaleProduct[],
+    requestId: number
+  ) => {
+    if (
+      loadedProducts.length === 0
+    ) {
       return;
     }
 
-    const {
-      data: reviewsData,
-      error: reviewsError,
-    } = await supabase
-      .from("product_reviews")
-      .select("product_id, rating");
-
-    if (reviewsError) {
-      console.error(
-        "Wholesale reviews load error:",
-        reviewsError
-      );
-    }
-
-    const reviews = reviewsData ?? [];
-
-    const getProductReviewStats = (
-      productId: string
-    ) => {
-      const numericProductId =
-        createNumericProductId(productId);
-
-      const productReviews = reviews.filter(
-        (review) =>
-          String(review.product_id) ===
-          String(numericProductId)
+    /*
+      Only request reviews belonging to
+      products currently in Wholesale page.
+    */
+    const productIds =
+      loadedProducts.map(
+        (product) =>
+          createNumericProductId(
+            product.id
+          )
       );
 
-      if (productReviews.length === 0) {
-        return {
-          rating: 0,
-          reviewCount: 0,
-        };
-      }
+    /*
+      Avoid one very long Supabase URL
+      if product count increases later.
+    */
+    const chunks =
+      splitIntoChunks(
+        productIds,
+        60
+      );
 
-      const totalRating =
-        productReviews.reduce(
-          (total, review) =>
-            total + Number(review.rating ?? 0),
-          0
+    try {
+      const results =
+        await Promise.all(
+          chunks.map(
+            (chunk) =>
+              supabase
+                .from(
+                  "product_reviews"
+                )
+                .select(
+                  "product_id, rating"
+                )
+                .in(
+                  "product_id",
+                  chunk
+                )
+          )
         );
 
-      return {
-        rating:
-          totalRating /
-          productReviews.length,
-        reviewCount:
-          productReviews.length,
-      };
-    };
+      /*
+        User already refreshed / left page.
+      */
+      if (
+        requestId !==
+        requestIdRef.current
+      ) {
+        return;
+      }
 
-    const formattedProducts: WholesaleProduct[] =
-      ((data ?? []) as ProductRow[]).map(
-        (product) => ({
-          id: product.id,
-          slug: product.slug,
-          name: product.name,
-          category:
-            product.category ?? "",
-          state:
-            product.state ?? "",
-          description:
-            product.description ?? "",
-          rating:
-            getProductReviewStats(product.id)
-              .rating,
-          reviewCount:
-            getProductReviewStats(product.id)
-              .reviewCount,
-          wholesaleMinimum: Number(
-            product.wholesale_minimum ?? 1
-          ),
+      const reviews: ReviewRow[] =
+        [];
 
-          variants:
-            product.product_variants?.map(
-              (variant) => {
-                const sortedImages = [
-                  ...(variant.product_images ??
-                    []),
-                ].sort(
-                  (
-                    firstImage,
-                    secondImage
-                  ) =>
-                    Number(
-                      firstImage.display_order ??
-                        0
-                    ) -
-                    Number(
-                      secondImage.display_order ??
-                        0
-                    )
-                );
+      results.forEach(
+        (result) => {
+          if (result.error) {
+            console.error(
+              "Wholesale reviews load error:",
+              result.error
+            );
 
-                return {
-                  id: variant.id,
-                  colorName:
-                    variant.colour_name,
-                  colorCode:
-                    variant.colour_code,
-                  price: Number(
-                    product.wholesale_price ??
-                      0
-                  ),
-                  stock: Number(
-                    variant.stock ?? 0
-                  ),
-                  sku: variant.sku,
-                  images: sortedImages.map(
-                    (image) =>
-                      image.image_url
-                  ),
-                };
-              }
-            ) ?? [],
-        })
+            return;
+          }
+
+          if (result.data) {
+            reviews.push(
+              ...(
+                result.data as ReviewRow[]
+              )
+            );
+          }
+        }
       );
 
-    setProducts(formattedProducts);
-    setIsLoading(false);
+      /*
+        Build rating data ONCE.
+
+        Old version did reviews.filter()
+        separately for every product.
+      */
+      const reviewMap =
+        new Map<
+          string,
+          {
+            totalRating: number;
+            count: number;
+          }
+        >();
+
+      reviews.forEach(
+        (review) => {
+          const key =
+            String(
+              review.product_id
+            );
+
+          const current =
+            reviewMap.get(key) ?? {
+              totalRating: 0,
+              count: 0,
+            };
+
+          current.totalRating +=
+            Number(
+              review.rating ?? 0
+            );
+
+          current.count += 1;
+
+          reviewMap.set(
+            key,
+            current
+          );
+        }
+      );
+
+      /*
+        Update ratings AFTER products
+        are already visible.
+      */
+      setProducts(
+        (currentProducts) =>
+          currentProducts.map(
+            (product) => {
+              const numericId =
+                String(
+                  createNumericProductId(
+                    product.id
+                  )
+                );
+
+              const stats =
+                reviewMap.get(
+                  numericId
+                );
+
+              if (
+                !stats ||
+                stats.count === 0
+              ) {
+                return {
+                  ...product,
+                  rating: 0,
+                  reviewCount: 0,
+                };
+              }
+
+              return {
+                ...product,
+
+                rating:
+                  stats.totalRating /
+                  stats.count,
+
+                reviewCount:
+                  stats.count,
+              };
+            }
+          )
+      );
+    } catch (error) {
+      console.error(
+        "Wholesale review stats error:",
+        error
+      );
+    }
   };
+
+  /* =====================================================
+     LOAD PRODUCTS
+     ===================================================== */
+
+  const loadProducts =
+    async () => {
+      const requestId =
+        ++requestIdRef.current;
+
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        /*
+          Fetch only the information required
+          for Wholesale collection cards.
+
+          Removed:
+          - status from select
+          - colour_code
+          - sku
+          - image id
+        */
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("products")
+          .select(`
+            id,
+            slug,
+            name,
+            category,
+            state,
+            description,
+            wholesale_price,
+            wholesale_minimum,
+
+            product_variants (
+              id,
+              colour_name,
+              stock,
+
+              product_images (
+                image_url,
+                display_order
+              )
+            )
+          `)
+          .eq(
+            "status",
+            "active"
+          )
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
+          );
+
+        /*
+          Ignore stale result.
+        */
+        if (
+          requestId !==
+          requestIdRef.current
+        ) {
+          return;
+        }
+
+        if (error) {
+          console.error(
+            "Wholesale products load error:",
+            error
+          );
+
+          setLoadError(
+            `Products load aagala: ${error.message}`
+          );
+
+          setProducts([]);
+          setIsLoading(false);
+
+          return;
+        }
+
+        /* =================================================
+           FORMAT PRODUCTS
+           ================================================= */
+
+        const formattedProducts:
+          WholesaleProduct[] =
+          (
+            (data ?? []) as ProductRow[]
+          ).map(
+            (product) => {
+              const variants:
+                WholesaleVariant[] =
+                (
+                  product
+                    .product_variants ??
+                  []
+                ).map(
+                  (variant) => {
+                    const sortedImages =
+                      [
+                        ...(
+                          variant.product_images ??
+                          []
+                        ),
+                      ].sort(
+                        (
+                          firstImage,
+                          secondImage
+                        ) =>
+                          Number(
+                            firstImage.display_order ??
+                              0
+                          ) -
+                          Number(
+                            secondImage.display_order ??
+                              0
+                          )
+                      );
+
+                    /*
+                      Wholesale collection card only
+                      needs the FIRST image.
+
+                      Remaining images are loaded only
+                      inside Product Detail page.
+                    */
+                    const firstImage =
+                      sortedImages[0]
+                        ?.image_url ??
+                      "";
+
+                    return {
+                      id:
+                        variant.id,
+
+                      colorName:
+                        variant.colour_name,
+
+                      price: Number(
+                        product.wholesale_price ??
+                          0
+                      ),
+
+                      stock: Number(
+                        variant.stock ??
+                          0
+                      ),
+
+                      images:
+                        firstImage
+                          ? [
+                              firstImage,
+                            ]
+                          : [],
+                    };
+                  }
+                );
+
+              const prices =
+                variants.map(
+                  (variant) =>
+                    variant.price
+                );
+
+              const lowestPrice =
+                prices.length > 0
+                  ? Math.min(
+                      ...prices
+                    )
+                  : Number(
+                      product.wholesale_price ??
+                        0
+                    );
+
+              const totalStock =
+                variants.reduce(
+                  (
+                    total,
+                    variant
+                  ) =>
+                    total +
+                    variant.stock,
+                  0
+                );
+
+              const stocks =
+                variants.map(
+                  (variant) =>
+                    variant.stock
+                );
+
+              const highestStock =
+                stocks.length > 0
+                  ? Math.max(
+                      ...stocks
+                    )
+                  : 0;
+
+              const category =
+                product.category ??
+                "";
+
+              const state =
+                product.state ??
+                "";
+
+              const description =
+                product.description ??
+                "";
+
+              /*
+                Search text is generated only ONCE.
+              */
+              const searchableText =
+                [
+                  product.name,
+                  category,
+                  state,
+                  description,
+
+                  ...variants.map(
+                    (variant) =>
+                      variant.colorName
+                  ),
+                ]
+                  .join(" ")
+                  .toLowerCase();
+
+              const categoryValue =
+                normalizeFilterValue(
+                  category
+                );
+
+              const stateValue =
+                normalizeFilterValue(
+                  state
+                );
+
+              return {
+                id:
+                  product.id,
+
+                slug:
+                  product.slug,
+
+                name:
+                  product.name,
+
+                category,
+
+                state,
+
+                description,
+
+                rating: 0,
+
+                reviewCount: 0,
+
+                wholesaleMinimum:
+                  Number(
+                    product.wholesale_minimum ??
+                      1
+                  ),
+
+                variants,
+
+                lowestPrice,
+
+                totalStock,
+
+                highestStock,
+
+                searchableText,
+
+                categoryValue,
+
+                stateValue,
+              };
+            }
+          );
+
+        /*
+          IMPORTANT:
+
+          Products become visible immediately.
+
+          We DO NOT wait for reviews anymore.
+        */
+        setProducts(
+          formattedProducts
+        );
+
+        setIsLoading(false);
+
+        /*
+          Ratings load quietly afterwards.
+        */
+        window.setTimeout(
+          () => {
+            void loadReviewStats(
+              formattedProducts,
+              requestId
+            );
+          },
+          150
+        );
+      } catch (error) {
+        if (
+          requestId !==
+          requestIdRef.current
+        ) {
+          return;
+        }
+
+        console.error(
+          "Wholesale products unexpected error:",
+          error
+        );
+
+        setLoadError(
+          "Products load pannumbodhu unexpected error vandhudhu."
+        );
+
+        setProducts([]);
+        setIsLoading(false);
+      }
+    };
+
+  /* =====================================================
+     INITIAL LOAD
+     ===================================================== */
 
   useEffect(() => {
     void loadProducts();
+
+    return () => {
+      /*
+        Invalidate pending async work when
+        page is left.
+      */
+      requestIdRef.current += 1;
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* =====================================================
+     LOGIN PROTECTION
+     ===================================================== */
 
   const runProtectedAction = (
     action: () => void
   ) => {
     if (isLoggedIn) {
       action();
+
       return;
     }
 
-    setPendingAction(() => action);
-    setIsLoginPopupOpen(true);
-  };
-
-  const handleLoginSuccess = () => {
-    pendingAction?.();
-
-    setPendingAction(null);
-    setIsLoginPopupOpen(false);
-  };
-
-  const closeLoginPopup = () => {
-    setIsLoginPopupOpen(false);
-    setPendingAction(null);
-  };
-
-  const filteredProducts = useMemo(() => {
-    const matchingProducts =
-      products.filter((product) => {
-        const firstVariant =
-          product.variants[0];
-
-        if (!firstVariant) {
-          return false;
-        }
-
-        const lowestPrice = Math.min(
-          ...product.variants.map(
-            (variant) => variant.price
-          )
-        );
-
-        const highestStock = Math.max(
-          ...product.variants.map(
-            (variant) => variant.stock
-          )
-        );
-
-        const searchableText = [
-          product.name,
-          product.category,
-          product.state,
-          product.description,
-          ...product.variants.map(
-            (variant) =>
-              variant.colorName
-          ),
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        const categoryValue =
-          product.category
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, "")
-            .replace(/\s+/g, "-")
-            .replace(/-+/g, "-");
-
-        const stateValue =
-          product.state
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, "")
-            .replace(/\s+/g, "-")
-            .replace(/-+/g, "-");
-
-        const matchesSearch =
-          !searchTerm ||
-          searchableText.includes(
-            searchTerm
-          );
-
-        const matchesCategory =
-          filters.category === "all" ||
-          categoryValue ===
-            filters.category;
-
-        const matchesState =
-          filters.state === "all" ||
-          stateValue === filters.state;
-
-        const matchesMinimumPrice =
-          lowestPrice >=
-          filters.minPrice;
-
-        const matchesMaximumPrice =
-          lowestPrice <=
-          filters.maxPrice;
-
-        const matchesRating =
-          product.rating >=
-          filters.minimumRating;
-
-        const matchesStock =
-          !filters.inStockOnly ||
-          highestStock > 0;
-
-        return (
-          matchesSearch &&
-          matchesCategory &&
-          matchesState &&
-          matchesMinimumPrice &&
-          matchesMaximumPrice &&
-          matchesRating &&
-          matchesStock
-        );
-      });
-
-    return [...matchingProducts].sort(
-      (firstProduct, secondProduct) => {
-        const firstPrice = Math.min(
-          ...firstProduct.variants.map(
-            (variant) => variant.price
-          )
-        );
-
-        const secondPrice = Math.min(
-          ...secondProduct.variants.map(
-            (variant) => variant.price
-          )
-        );
-
-        if (
-          filters.sortBy ===
-          "price-low"
-        ) {
-          return firstPrice - secondPrice;
-        }
-
-        if (
-          filters.sortBy ===
-          "price-high"
-        ) {
-          return secondPrice - firstPrice;
-        }
-
-        if (
-          filters.sortBy ===
-          "rating-high"
-        ) {
-          return (
-            secondProduct.rating -
-            firstProduct.rating
-          );
-        }
-
-        return 0;
-      }
+    setPendingAction(
+      () => action
     );
-  }, [
-    products,
-    filters,
-    searchTerm,
-  ]);
+
+    setIsLoginPopupOpen(
+      true
+    );
+  };
+
+  const handleLoginSuccess =
+    () => {
+      pendingAction?.();
+
+      setPendingAction(null);
+
+      setIsLoginPopupOpen(
+        false
+      );
+    };
+
+  const closeLoginPopup =
+    () => {
+      setIsLoginPopupOpen(
+        false
+      );
+
+      setPendingAction(null);
+    };
+
+  /* =====================================================
+     FILTER + SORT
+     ===================================================== */
+
+  const filteredProducts =
+    useMemo(() => {
+      const matchingProducts =
+        products.filter(
+          (product) => {
+            if (
+              product.variants
+                .length === 0
+            ) {
+              return false;
+            }
+
+            const matchesSearch =
+              !searchTerm ||
+              product.searchableText.includes(
+                searchTerm
+              );
+
+            const matchesCategory =
+              filters.category ===
+                "all" ||
+              product.categoryValue ===
+                filters.category;
+
+            const matchesState =
+              filters.state ===
+                "all" ||
+              product.stateValue ===
+                filters.state;
+
+            const matchesMinimumPrice =
+              product.lowestPrice >=
+              filters.minPrice;
+
+            const matchesMaximumPrice =
+              product.lowestPrice <=
+              filters.maxPrice;
+
+            const matchesRating =
+              product.rating >=
+              filters.minimumRating;
+
+            const matchesStock =
+              !filters.inStockOnly ||
+              product.highestStock >
+                0;
+
+            return (
+              matchesSearch &&
+              matchesCategory &&
+              matchesState &&
+              matchesMinimumPrice &&
+              matchesMaximumPrice &&
+              matchesRating &&
+              matchesStock
+            );
+          }
+        );
+
+      /*
+        Uses pre-calculated prices.
+      */
+      return [
+        ...matchingProducts,
+      ].sort(
+        (
+          firstProduct,
+          secondProduct
+        ) => {
+          if (
+            filters.sortBy ===
+            "price-low"
+          ) {
+            return (
+              firstProduct.lowestPrice -
+              secondProduct.lowestPrice
+            );
+          }
+
+          if (
+            filters.sortBy ===
+            "price-high"
+          ) {
+            return (
+              secondProduct.lowestPrice -
+              firstProduct.lowestPrice
+            );
+          }
+
+          if (
+            filters.sortBy ===
+            "rating-high"
+          ) {
+            return (
+              secondProduct.rating -
+              firstProduct.rating
+            );
+          }
+
+          return 0;
+        }
+      );
+    }, [
+      products,
+      filters,
+      searchTerm,
+    ]);
+
+  /* =====================================================
+     PAGE
+     ===================================================== */
 
   return (
     <div className="product-page">
       <ProductHeader mode="wholesale" />
 
       <main className="collection-page">
+        {/* =========================
+            HEADING
+            ========================= */}
+
         <section className="collection-heading">
           <span className="collection-label">
             ⌂ Wholesale Collection
@@ -503,6 +945,10 @@ export default function WholesalePage() {
             allowed.
           </p>
         </section>
+
+        {/* =========================
+            TOOLBAR
+            ========================= */}
 
         <div className="collection-toolbar">
           <div>
@@ -525,6 +971,10 @@ export default function WholesalePage() {
           />
         </div>
 
+        {/* =========================
+            LOADING
+            ========================= */}
+
         {isLoading ? (
           <section className="collection-empty-results">
             <h2>
@@ -532,18 +982,23 @@ export default function WholesalePage() {
             </h2>
 
             <p>
-              Supabase-la irundhu
-              wholesale products load
-              aaguthu.
+              Wholesale products load
+              aaguthu...
             </p>
           </section>
         ) : loadError ? (
+          /* =========================
+             ERROR
+             ========================= */
+
           <section className="collection-empty-results">
             <h2>
               Products Load Aagala
             </h2>
 
-            <p>{loadError}</p>
+            <p>
+              {loadError}
+            </p>
 
             <button
               type="button"
@@ -556,6 +1011,10 @@ export default function WholesalePage() {
           </section>
         ) : filteredProducts.length ===
           0 ? (
+          /* =========================
+             EMPTY
+             ========================= */
+
           <section className="collection-empty-results">
             <h2>
               No Sarees Found
@@ -579,30 +1038,19 @@ export default function WholesalePage() {
             </button>
           </section>
         ) : (
+          /* =========================
+             PRODUCT GRID
+             ========================= */
+
           <section className="shop-products-grid">
             {filteredProducts.map(
-              (product) => {
+              (
+                product,
+                productIndex
+              ) => {
                 const selectedVariant =
-                  product.variants[0];
-
-                const lowestPrice =
-                  Math.min(
-                    ...product.variants.map(
-                      (variant) =>
-                        variant.price
-                    )
-                  );
-
-                const totalStock =
-                  product.variants.reduce(
-                    (
-                      total,
-                      variant
-                    ) =>
-                      total +
-                      variant.stock,
-                    0
-                  );
+                  product
+                    .variants[0];
 
                 const numericProductId =
                   createNumericProductId(
@@ -616,26 +1064,45 @@ export default function WholesalePage() {
                   );
 
                 const shopProduct = {
-                  id: numericProductId,
-                  slug: product.slug,
-                  name: product.name,
-                  price: lowestPrice,
+                  id:
+                    numericProductId,
+
+                  slug:
+                    product.slug,
+
+                  name:
+                    product.name,
+
+                  price:
+                    product.lowestPrice,
+
                   rating:
                     product.rating,
-                  stock: totalStock,
+
+                  stock:
+                    product.totalStock,
+
                   colour:
                     selectedVariant
                       .colorName,
+
                   image:
                     selectedVariant
-                      .images[0] ?? "",
+                      .images[0] ??
+                    "",
                 };
 
                 return (
                   <article
                     className="shop-product-card"
-                    key={product.id}
+                    key={
+                      product.id
+                    }
                   >
+                    {/* =================
+                        IMAGE
+                        ================= */}
+
                     <div className="shop-product-image">
                       <Link
                         to={`/wholesale/product/${product.slug}`}
@@ -653,6 +1120,21 @@ export default function WholesalePage() {
                               product.name
                             }
                             className="shop-product-card-image"
+
+                            /*
+                              First row loads immediately.
+
+                              Products lower on page only load
+                              as customer scrolls down.
+                            */
+                            loading={
+                              productIndex <
+                              4
+                                ? "eager"
+                                : "lazy"
+                            }
+
+                            decoding="async"
                           />
                         ) : (
                           <div className="image-placeholder">
@@ -660,6 +1142,10 @@ export default function WholesalePage() {
                           </div>
                         )}
                       </Link>
+
+                      {/* =================
+                          WISHLIST
+                          ================= */}
 
                       <button
                         type="button"
@@ -687,36 +1173,54 @@ export default function WholesalePage() {
                       </button>
                     </div>
 
+                    {/* =================
+                        INFO
+                        ================= */}
+
                     <div className="shop-product-info">
                       <Link
                         to={`/wholesale/product/${product.slug}`}
                         className="shop-product-name-link"
                       >
                         <h2>
-                          {product.name}
+                          {
+                            product.name
+                          }
                         </h2>
                       </Link>
 
                       <span className="shop-product-colour">
                         {
-                          product.variants
+                          product
+                            .variants
                             .length
                         }{" "}
                         colour
-                        {product.variants
-                          .length === 1
+                        {product
+                          .variants
+                          .length ===
+                        1
                           ? ""
                           : "s"}{" "}
                         available
                       </span>
 
+                      {/* =================
+                          RATING
+                          ================= */}
+
                       <div className="product-rating">
                         {Array.from({
                           length: 5,
                         }).map(
-                          (_, index) => (
+                          (
+                            _,
+                            index
+                          ) => (
                             <span
-                              key={index}
+                              key={
+                                index
+                              }
                               className={
                                 index <
                                 Math.round(
@@ -734,15 +1238,28 @@ export default function WholesalePage() {
                         {product.reviewCount >
                           0 && (
                           <span className="product-rating-count">
-                            {product.rating.toFixed(1)} (
-                            {product.reviewCount})
+                            {product.rating.toFixed(
+                              1
+                            )}{" "}
+                            (
+                            {
+                              product.reviewCount
+                            }
+                            )
                           </span>
                         )}
                       </div>
 
+                      {/* =================
+                          PRICE + CART
+                          ================= */}
+
                       <div className="product-bottom-row">
                         <strong>
-                          ₹{lowestPrice}
+                          ₹
+                          {
+                            product.lowestPrice
+                          }
                         </strong>
 
                         <button
@@ -782,8 +1299,12 @@ export default function WholesalePage() {
       <Footer />
 
       <LoginPopup
-        isOpen={isLoginPopupOpen}
-        onClose={closeLoginPopup}
+        isOpen={
+          isLoginPopupOpen
+        }
+        onClose={
+          closeLoginPopup
+        }
         onLoginSuccess={
           handleLoginSuccess
         }

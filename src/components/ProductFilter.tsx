@@ -13,6 +13,10 @@ import { supabase } from "../lib/supabase";
 
 import "./ProductFilter.css";
 
+/* =====================================================
+   TYPES
+   ===================================================== */
+
 type CategoryOption = {
   id: string;
   name: string;
@@ -31,6 +35,7 @@ export type ProductFilterValues = {
   maxPrice: number;
   minimumRating: number;
   inStockOnly: boolean;
+
   sortBy:
     | "default"
     | "price-low"
@@ -48,6 +53,10 @@ type ProductFilterProps = {
   ) => void;
 };
 
+/* =====================================================
+   DEFAULT FILTERS
+   ===================================================== */
+
 const defaultFilters: ProductFilterValues = {
   category: "all",
   state: "all",
@@ -58,17 +67,268 @@ const defaultFilters: ProductFilterValues = {
   sortBy: "default",
 };
 
+/* =====================================================
+   CACHE
+
+   Retail → Wholesale navigation-la same categories /
+   states thirumba Supabase-la fetch panna vendam.
+   ===================================================== */
+
+let cachedCategories:
+  CategoryOption[] | null = null;
+
+let cachedStates:
+  StateOption[] | null = null;
+
+let categoriesRequest:
+  Promise<CategoryOption[]> | null = null;
+
+let statesRequest:
+  Promise<StateOption[]> | null = null;
+
+/* =====================================================
+   HELPERS
+   ===================================================== */
+
 const createFilterValue = (
   value: string
 ) => {
   return value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(
+      /[^a-z0-9\s-]/g,
+      ""
+    )
+    .replace(
+      /\s+/g,
+      "-"
+    )
+    .replace(
+      /-+/g,
+      "-"
+    )
+    .replace(
+      /^-+|-+$/g,
+      ""
+    );
 };
+
+/* =====================================================
+   LOAD CATEGORY OPTIONS
+
+   Only fetch fields actually required.
+   ===================================================== */
+
+const fetchCategories =
+  async (): Promise<
+    CategoryOption[]
+  > => {
+    if (cachedCategories) {
+      return cachedCategories;
+    }
+
+    /*
+      If another component already started the
+      same request, reuse that request.
+    */
+    if (categoriesRequest) {
+      return categoriesRequest;
+    }
+
+    categoriesRequest =
+      (async () => {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("categories")
+          .select(`
+            id,
+            name,
+            slug
+          `)
+          .eq(
+            "status",
+            "active"
+          )
+          .order(
+            "name",
+            {
+              ascending: true,
+            }
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        const categories:
+          CategoryOption[] =
+          (data ?? [])
+            .filter(
+              (category) =>
+                Boolean(
+                  category.name?.trim()
+                ) &&
+                Boolean(
+                  category.slug?.trim()
+                )
+            )
+            .map(
+              (category) => ({
+                id:
+                  String(
+                    category.id
+                  ),
+
+                name:
+                  String(
+                    category.name
+                  ).trim(),
+
+                slug:
+                  String(
+                    category.slug
+                  ).trim(),
+              })
+            );
+
+        cachedCategories =
+          categories;
+
+        return categories;
+      })();
+
+    try {
+      return await categoriesRequest;
+    } finally {
+      categoriesRequest = null;
+    }
+  };
+
+/* =====================================================
+   LOAD STATES
+
+   Only "state" column is downloaded.
+   ===================================================== */
+
+const fetchStates =
+  async (): Promise<
+    StateOption[]
+  > => {
+    if (cachedStates) {
+      return cachedStates;
+    }
+
+    if (statesRequest) {
+      return statesRequest;
+    }
+
+    statesRequest =
+      (async () => {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("products")
+          .select("state")
+          .eq(
+            "status",
+            "active"
+          )
+          .not(
+            "state",
+            "is",
+            null
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        const stateMap =
+          new Map<
+            string,
+            string
+          >();
+
+        (data ?? []).forEach(
+          (product) => {
+            const stateName =
+              String(
+                product.state ??
+                  ""
+              ).trim();
+
+            if (!stateName) {
+              return;
+            }
+
+            const stateValue =
+              createFilterValue(
+                stateName
+              );
+
+            if (!stateValue) {
+              return;
+            }
+
+            if (
+              !stateMap.has(
+                stateValue
+              )
+            ) {
+              stateMap.set(
+                stateValue,
+                stateName
+              );
+            }
+          }
+        );
+
+        const states =
+          Array.from(
+            stateMap.entries()
+          )
+            .map(
+              ([
+                stateValue,
+                stateName,
+              ]) => ({
+                value:
+                  stateValue,
+
+                label:
+                  stateName,
+              })
+            )
+            .sort(
+              (
+                first,
+                second
+              ) =>
+                first.label.localeCompare(
+                  second.label
+                )
+            );
+
+        cachedStates =
+          states;
+
+        return states;
+      })();
+
+    try {
+      return await statesRequest;
+    } finally {
+      statesRequest = null;
+    }
+  };
+
+/* =====================================================
+   COMPONENT
+   ===================================================== */
 
 export default function ProductFilter({
   mode,
@@ -80,230 +340,293 @@ export default function ProductFilter({
     setIsOpen,
   ] = useState(false);
 
+  /*
+    Draft filters are local.
+
+    User typing price DOES NOT filter every product
+    on every keyboard press.
+
+    Products update only after Apply Filters.
+  */
+  const [
+    draftFilters,
+    setDraftFilters,
+  ] =
+    useState<ProductFilterValues>({
+      ...value,
+    });
+
   const [
     categories,
     setCategories,
-  ] = useState<CategoryOption[]>([]);
-
-  const [
-    isCategoriesLoading,
-    setIsCategoriesLoading,
-  ] = useState(true);
+  ] = useState<
+    CategoryOption[]
+  >(
+    cachedCategories ?? []
+  );
 
   const [
     states,
     setStates,
-  ] = useState<StateOption[]>([]);
+  ] = useState<
+    StateOption[]
+  >(
+    cachedStates ?? []
+  );
+
+  const [
+    isCategoriesLoading,
+    setIsCategoriesLoading,
+  ] = useState(false);
 
   const [
     isStatesLoading,
     setIsStatesLoading,
-  ] = useState(true);
+  ] = useState(false);
 
-  /* =========================
-     LOAD CATEGORIES
-  ========================= */
+  /* =====================================================
+     OPEN FILTER
 
-  const loadCategories = async () => {
-    setIsCategoriesLoading(true);
+     IMPORTANT:
+     No Supabase requests on main product page load.
 
-    const {
-      data,
-      error,
-    } = await supabase
-      .from("categories")
-      .select(`
-        id,
-        name,
-        slug,
-        status
-      `)
-      .eq("status", "active")
-      .order("name", {
-        ascending: true,
-      });
-
-    if (error) {
-      console.error(
-        "Product filter categories load error:",
-        error
-      );
-
-      setCategories([]);
-      setIsCategoriesLoading(false);
-
-      return;
-    }
-
-    const activeCategories =
-      (data ?? [])
-        .filter(
-          (category) =>
-            Boolean(
-              category.name?.trim()
-            ) &&
-            Boolean(
-              category.slug?.trim()
-            )
-        )
-        .map((category) => ({
-          id: category.id,
-          name:
-            category.name.trim(),
-          slug:
-            category.slug.trim(),
-        }));
-
-    setCategories(
-      activeCategories
-    );
-
-    setIsCategoriesLoading(false);
-  };
-
-  /* =========================
-     LOAD STATES FROM PRODUCTS
-  ========================= */
-
-  const loadStates = async () => {
-    setIsStatesLoading(true);
-
-    const {
-      data,
-      error,
-    } = await supabase
-      .from("products")
-      .select(`
-        state,
-        status
-      `)
-      .eq("status", "active")
-      .not("state", "is", null);
-
-    if (error) {
-      console.error(
-        "Product filter states load error:",
-        error
-      );
-
-      setStates([]);
-      setIsStatesLoading(false);
-
-      return;
-    }
-
-    const stateMap =
-      new Map<string, string>();
-
-    (data ?? []).forEach(
-      (product) => {
-        const stateName =
-          String(
-            product.state ?? ""
-          ).trim();
-
-        if (!stateName) {
-          return;
-        }
-
-        const stateValue =
-          createFilterValue(
-            stateName
-          );
-
-        if (!stateValue) {
-          return;
-        }
-
-        if (
-          !stateMap.has(
-            stateValue
-          )
-        ) {
-          stateMap.set(
-            stateValue,
-            stateName
-          );
-        }
-      }
-    );
-
-    const uniqueStates =
-      Array.from(
-        stateMap.entries()
-      )
-        .map(
-          ([
-            stateValue,
-            stateName,
-          ]) => ({
-            value:
-              stateValue,
-            label:
-              stateName,
-          })
-        )
-        .sort(
-          (first, second) =>
-            first.label.localeCompare(
-              second.label
-            )
-        );
-
-    setStates(
-      uniqueStates
-    );
-
-    setIsStatesLoading(false);
-  };
-
-  /* =========================
-     INITIAL LOAD
-  ========================= */
-
-  useEffect(() => {
-    void loadCategories();
-    void loadStates();
-  }, []);
-
-  /* =========================
-     REFRESH WHEN DRAWER OPENS
-  ========================= */
+     Categories / states load only when customer actually
+     opens Filter.
+     ===================================================== */
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
-    void loadCategories();
-    void loadStates();
+    /*
+      Start every filter session using currently
+      applied filters.
+    */
+    setDraftFilters({
+      ...value,
+    });
+
+    let cancelled = false;
+
+    /* =========================
+       LOAD CATEGORIES
+       ========================= */
+
+    if (
+      cachedCategories
+    ) {
+      setCategories(
+        cachedCategories
+      );
+    } else {
+      setIsCategoriesLoading(
+        true
+      );
+
+      void fetchCategories()
+        .then(
+          (loadedCategories) => {
+            if (cancelled) {
+              return;
+            }
+
+            setCategories(
+              loadedCategories
+            );
+          }
+        )
+        .catch(
+          (error) => {
+            console.error(
+              "Product filter categories load error:",
+              error
+            );
+
+            if (!cancelled) {
+              setCategories([]);
+            }
+          }
+        )
+        .finally(() => {
+          if (!cancelled) {
+            setIsCategoriesLoading(
+              false
+            );
+          }
+        });
+    }
+
+    /* =========================
+       LOAD STATES
+       ========================= */
+
+    if (cachedStates) {
+      setStates(
+        cachedStates
+      );
+    } else {
+      setIsStatesLoading(
+        true
+      );
+
+      void fetchStates()
+        .then(
+          (loadedStates) => {
+            if (cancelled) {
+              return;
+            }
+
+            setStates(
+              loadedStates
+            );
+          }
+        )
+        .catch(
+          (error) => {
+            console.error(
+              "Product filter states load error:",
+              error
+            );
+
+            if (!cancelled) {
+              setStates([]);
+            }
+          }
+        )
+        .finally(() => {
+          if (!cancelled) {
+            setIsStatesLoading(
+              false
+            );
+          }
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isOpen,
+    value,
+  ]);
+
+  /* =====================================================
+     ESC KEY CLOSE
+     ===================================================== */
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.key === "Escape"
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
   }, [isOpen]);
 
-  /* =========================
-     UPDATE FILTER
-  ========================= */
+  /* =====================================================
+     UPDATE DRAFT FILTER
 
-  const updateFilter = <
+     Does NOT immediately update Retail/Wholesale page.
+     ===================================================== */
+
+  const updateDraftFilter = <
     Key extends keyof ProductFilterValues,
   >(
     key: Key,
-    nextValue: ProductFilterValues[Key]
+    nextValue:
+      ProductFilterValues[Key]
   ) => {
-    onChange({
-      ...value,
-      [key]: nextValue,
-    });
+    setDraftFilters(
+      (current) => ({
+        ...current,
+        [key]: nextValue,
+      })
+    );
   };
 
-  /* =========================
-     CLEAR FILTER
-  ========================= */
+  /* =====================================================
+     APPLY FILTERS
+     ===================================================== */
+
+  const applyFilters = () => {
+    const safeMinimum =
+      Number.isFinite(
+        draftFilters.minPrice
+      )
+        ? Math.max(
+            0,
+            draftFilters.minPrice
+          )
+        : 0;
+
+    const safeMaximum =
+      Number.isFinite(
+        draftFilters.maxPrice
+      )
+        ? Math.max(
+            safeMinimum,
+            draftFilters.maxPrice
+          )
+        : 10000;
+
+    onChange({
+      ...draftFilters,
+
+      minPrice:
+        safeMinimum,
+
+      maxPrice:
+        safeMaximum,
+    });
+
+    setIsOpen(false);
+  };
+
+  /* =====================================================
+     CLEAR FILTERS
+     ===================================================== */
 
   const clearFilters = () => {
-    onChange({
+    const cleared = {
       ...defaultFilters,
-    });
+    };
+
+    setDraftFilters(
+      cleared
+    );
+
+    /*
+      Clear is intentional action, so apply
+      immediately with only ONE parent update.
+    */
+    onChange(
+      cleared
+    );
   };
+
+  /* =====================================================
+     ACTIVE FILTER INDICATOR
+     ===================================================== */
 
   const hasActiveFilters =
     value.category !== "all" ||
@@ -314,12 +637,15 @@ export default function ProductFilter({
     value.inStockOnly ||
     value.sortBy !== "default";
 
+  /* =====================================================
+     PAGE
+     ===================================================== */
+
   return (
     <div className="product-filter">
-
       {/* =========================
           FILTER BUTTON
-      ========================= */}
+          ========================= */}
 
       <button
         type="button"
@@ -330,8 +656,12 @@ export default function ProductFilter({
         }`}
         onClick={() =>
           setIsOpen(
-            (current) => !current
+            (current) =>
+              !current
           )
+        }
+        aria-expanded={
+          isOpen
         }
       >
         <FiFilter />
@@ -351,7 +681,7 @@ export default function ProductFilter({
         <>
           {/* =========================
               OVERLAY
-          ========================= */}
+              ========================= */}
 
           <div
             className="filter-overlay"
@@ -362,11 +692,15 @@ export default function ProductFilter({
 
           {/* =========================
               FILTER PANEL
-          ========================= */}
+              ========================= */}
 
-          <aside className="filter-panel">
-
-            {/* HEADER */}
+          <aside
+            className="filter-panel"
+            aria-label="Product filters"
+          >
+            {/* =====================
+                HEADER
+                ===================== */}
 
             <div className="filter-panel-header">
               <div>
@@ -391,9 +725,9 @@ export default function ProductFilter({
               </button>
             </div>
 
-            {/* =========================
+            {/* =====================
                 CATEGORY
-            ========================= */}
+                ===================== */}
 
             <div className="filter-field">
               <label
@@ -404,9 +738,13 @@ export default function ProductFilter({
 
               <select
                 id={`${mode}-category`}
-                value={value.category}
-                onChange={(event) =>
-                  updateFilter(
+                value={
+                  draftFilters.category
+                }
+                onChange={(
+                  event
+                ) =>
+                  updateDraftFilter(
                     "category",
                     event.target.value
                   )
@@ -444,9 +782,9 @@ export default function ProductFilter({
               </select>
             </div>
 
-            {/* =========================
+            {/* =====================
                 STATE
-            ========================= */}
+                ===================== */}
 
             <div className="filter-field">
               <label
@@ -457,9 +795,13 @@ export default function ProductFilter({
 
               <select
                 id={`${mode}-state`}
-                value={value.state}
-                onChange={(event) =>
-                  updateFilter(
+                value={
+                  draftFilters.state
+                }
+                onChange={(
+                  event
+                ) =>
+                  updateDraftFilter(
                     "state",
                     event.target.value
                   )
@@ -497,9 +839,9 @@ export default function ProductFilter({
               </select>
             </div>
 
-            {/* =========================
+            {/* =====================
                 PRICE
-            ========================= */}
+                ===================== */}
 
             <div className="filter-field">
               <label>
@@ -510,11 +852,14 @@ export default function ProductFilter({
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
                   value={
-                    value.minPrice
+                    draftFilters.minPrice
                   }
-                  onChange={(event) =>
-                    updateFilter(
+                  onChange={(
+                    event
+                  ) =>
+                    updateDraftFilter(
                       "minPrice",
                       Number(
                         event.target.value
@@ -527,11 +872,14 @@ export default function ProductFilter({
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
                   value={
-                    value.maxPrice
+                    draftFilters.maxPrice
                   }
-                  onChange={(event) =>
-                    updateFilter(
+                  onChange={(
+                    event
+                  ) =>
+                    updateDraftFilter(
                       "maxPrice",
                       Number(
                         event.target.value
@@ -543,9 +891,9 @@ export default function ProductFilter({
               </div>
             </div>
 
-            {/* =========================
+            {/* =====================
                 RATING
-            ========================= */}
+                ===================== */}
 
             <div className="filter-field">
               <label
@@ -557,10 +905,12 @@ export default function ProductFilter({
               <select
                 id={`${mode}-rating`}
                 value={
-                  value.minimumRating
+                  draftFilters.minimumRating
                 }
-                onChange={(event) =>
-                  updateFilter(
+                onChange={(
+                  event
+                ) =>
+                  updateDraftFilter(
                     "minimumRating",
                     Number(
                       event.target.value
@@ -586,9 +936,9 @@ export default function ProductFilter({
               </select>
             </div>
 
-            {/* =========================
+            {/* =====================
                 SORT
-            ========================= */}
+                ===================== */}
 
             <div className="filter-field">
               <label
@@ -600,10 +950,12 @@ export default function ProductFilter({
               <select
                 id={`${mode}-sort`}
                 value={
-                  value.sortBy
+                  draftFilters.sortBy
                 }
-                onChange={(event) =>
-                  updateFilter(
+                onChange={(
+                  event
+                ) =>
+                  updateDraftFilter(
                     "sortBy",
                     event.target
                       .value as ProductFilterValues["sortBy"]
@@ -628,18 +980,20 @@ export default function ProductFilter({
               </select>
             </div>
 
-            {/* =========================
+            {/* =====================
                 STOCK
-            ========================= */}
+                ===================== */}
 
             <label className="filter-stock-option">
               <input
                 type="checkbox"
                 checked={
-                  value.inStockOnly
+                  draftFilters.inStockOnly
                 }
-                onChange={(event) =>
-                  updateFilter(
+                onChange={(
+                  event
+                ) =>
+                  updateDraftFilter(
                     "inStockOnly",
                     event.target.checked
                   )
@@ -651,9 +1005,9 @@ export default function ProductFilter({
               </span>
             </label>
 
-            {/* =========================
+            {/* =====================
                 ACTIONS
-            ========================= */}
+                ===================== */}
 
             <div className="filter-panel-actions">
               <button
@@ -669,20 +1023,23 @@ export default function ProductFilter({
               <button
                 type="button"
                 className="filter-apply-button"
-                onClick={() =>
-                  setIsOpen(false)
+                onClick={
+                  applyFilters
                 }
               >
                 Apply Filters
               </button>
             </div>
-
           </aside>
         </>
       )}
     </div>
   );
 }
+
+/* =====================================================
+   EXPORT DEFAULT FILTERS
+   ===================================================== */
 
 export {
   defaultFilters,

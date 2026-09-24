@@ -1,5 +1,7 @@
 import {
+  useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -8,7 +10,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { HiOutlineMenuAlt3 } from "react-icons/hi";
+import {
+  HiOutlineMenuAlt3,
+} from "react-icons/hi";
 
 import {
   FiHeart,
@@ -19,13 +23,19 @@ import {
 
 import logo from "../assets/VV logo.png";
 
-import { useAuth } from "../context/AuthContext";
-import { useShop } from "../context/ShopContext";
+import {
+  useAuth,
+} from "../context/AuthContext";
+
+import {
+  useShop,
+} from "../context/ShopContext";
 
 import "./Header.css";
 
 const Header = () => {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const [
     isMenuOpen,
@@ -44,164 +54,328 @@ const Header = () => {
     retailCart,
   } = useShop();
 
+  /* =========================================
+     COUNTS
+
+     Memoized so cart quantity calculation
+     doesn't unnecessarily repeat.
+  ========================================= */
+
   const wishlistCount =
-    retailWishlist.length;
+    useMemo(
+      () =>
+        retailWishlist.length,
+      [retailWishlist]
+    );
 
   const cartCount =
-    retailCart.reduce(
-      (total, item) =>
-        total + item.quantity,
-      0
+    useMemo(
+      () =>
+        retailCart.reduce(
+          (
+            total,
+            item
+          ) =>
+            total +
+            Number(
+              item.quantity ?? 0
+            ),
+          0
+        ),
+      [retailCart]
     );
 
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
+  /* =========================================
+     CLOSE MENU
+  ========================================= */
 
-  const goToLogin = (
-    redirectTo?: string
-  ) => {
-    closeMenu();
+  const closeMenu =
+    useCallback(() => {
+      setIsMenuOpen(false);
+    }, []);
 
-    navigate(
-      "/login",
-      {
-        state: redirectTo
-          ? {
-              redirectTo,
-            }
-          : undefined,
+  /* =========================================
+     LOGIN
+  ========================================= */
+
+  const goToLogin =
+    useCallback(
+      (
+        redirectTo?: string
+      ) => {
+        closeMenu();
+
+        navigate(
+          "/login",
+          {
+            state:
+              redirectTo
+                ? {
+                    redirectTo,
+                  }
+                : undefined,
+          }
+        );
+      },
+      [
+        closeMenu,
+        navigate,
+      ]
+    );
+
+  /* =========================================
+     MENU BUTTON
+  ========================================= */
+
+  const handleMenuClick =
+    useCallback(() => {
+      if (
+        isAuthLoading
+      ) {
+        return;
       }
-    );
-  };
 
-  const handleMenuClick = () => {
-    if (isAuthLoading) {
-      return;
-    }
+      if (
+        !isLoggedIn
+      ) {
+        goToLogin();
 
-    if (!isLoggedIn) {
-      goToLogin();
-      return;
-    }
+        return;
+      }
 
-    setIsMenuOpen(true);
-  };
+      setIsMenuOpen(true);
+    }, [
+      goToLogin,
+      isAuthLoading,
+      isLoggedIn,
+    ]);
 
-  const handleWishlistClick = () => {
-    if (isAuthLoading) {
-      return;
-    }
+  /* =========================================
+     WISHLIST
+  ========================================= */
 
-    if (!isLoggedIn) {
-      goToLogin(
+  const handleWishlistClick =
+    useCallback(() => {
+      if (
+        isAuthLoading
+      ) {
+        return;
+      }
+
+      if (
+        !isLoggedIn
+      ) {
+        goToLogin(
+          "/retail/wishlist"
+        );
+
+        return;
+      }
+
+      navigate(
         "/retail/wishlist"
       );
+    }, [
+      goToLogin,
+      isAuthLoading,
+      isLoggedIn,
+      navigate,
+    ]);
 
-      return;
-    }
+  /* =========================================
+     CART
+  ========================================= */
 
-    navigate(
-      "/retail/wishlist"
-    );
-  };
+  const handleCartClick =
+    useCallback(() => {
+      if (
+        isAuthLoading
+      ) {
+        return;
+      }
 
-  const handleCartClick = () => {
-    if (isAuthLoading) {
-      return;
-    }
+      if (
+        !isLoggedIn
+      ) {
+        goToLogin(
+          "/retail/cart"
+        );
 
-    if (!isLoggedIn) {
-      goToLogin(
+        return;
+      }
+
+      navigate(
         "/retail/cart"
       );
+    }, [
+      goToLogin,
+      isAuthLoading,
+      isLoggedIn,
+      navigate,
+    ]);
 
-      return;
-    }
+  /* =========================================
+     WHOLESALE
+  ========================================= */
 
-    navigate(
-      "/retail/cart"
-    );
-  };
+  const handleWholesaleClick =
+    useCallback(() => {
+      if (
+        isAuthLoading
+      ) {
+        return;
+      }
 
-  const handleWholesaleClick = () => {
-    if (isAuthLoading) {
-      return;
-    }
+      closeMenu();
 
-    closeMenu();
+      if (
+        !isLoggedIn
+      ) {
+        navigate(
+          "/login",
+          {
+            state: {
+              redirectTo:
+                "/wholesale-login",
+            },
+          }
+        );
 
-    if (!isLoggedIn) {
+        return;
+      }
+
       navigate(
-        "/login",
-        {
-          state: {
-            redirectTo:
-              "/wholesale-login",
-          },
-        }
+        "/wholesale-login"
       );
+    }, [
+      closeMenu,
+      isAuthLoading,
+      isLoggedIn,
+      navigate,
+    ]);
 
-      return;
-    }
-
-    navigate(
-      "/wholesale-login"
-    );
-  };
+  /* =========================================
+     DRAWER WISHLIST
+  ========================================= */
 
   const handleDrawerWishlistClick =
-    () => {
+    useCallback(() => {
       closeMenu();
+
       navigate(
         "/retail/wishlist"
       );
-    };
+    }, [
+      closeMenu,
+      navigate,
+    ]);
+
+  /* =========================================
+     DRAWER CART
+  ========================================= */
 
   const handleDrawerCartClick =
-    () => {
+    useCallback(() => {
       closeMenu();
+
       navigate(
         "/retail/cart"
       );
-    };
+    }, [
+      closeMenu,
+      navigate,
+    ]);
+
+  /* =========================================
+     LOGOUT
+  ========================================= */
 
   const handleLogout =
-    async () => {
-      closeMenu();
+    useCallback(
+      async () => {
+        closeMenu();
 
-      await logout();
+        await logout();
 
-      navigate(
-        "/",
-        {
-          replace: true,
-        }
-      );
-    };
+        navigate(
+          "/",
+          {
+            replace: true,
+          }
+        );
+      },
+      [
+        closeMenu,
+        logout,
+        navigate,
+      ]
+    );
+
+  /* =========================================
+     DRAWER BODY SCROLL + ESCAPE KEY
+
+     Event listener exists only while menu
+     is actually open.
+  ========================================= */
 
   useEffect(() => {
+    if (
+      !isMenuOpen
+    ) {
+      document.body.style.overflow =
+        "";
+
+      return;
+    }
+
     document.body.style.overflow =
-      isMenuOpen
-        ? "hidden"
-        : "";
+      "hidden";
+
+    const handleEscape = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.key ===
+        "Escape"
+      ) {
+        closeMenu();
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleEscape
+    );
 
     return () => {
       document.body.style.overflow =
         "";
+
+      window.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
-  }, [isMenuOpen]);
+  }, [
+    isMenuOpen,
+    closeMenu,
+  ]);
+
+  /* =========================================
+     PAGE
+  ========================================= */
 
   return (
     <>
-      {/* =========================
+      {/* =====================================
           HEADER
-      ========================= */}
+      ===================================== */}
 
       <header className="home-header">
         <div className="home-header-inner">
-
-          {/* HAMBURGER */}
+          {/* =============================
+              HAMBURGER
+          ============================= */}
 
           <button
             type="button"
@@ -210,6 +384,10 @@ const Header = () => {
               handleMenuClick
             }
             aria-label="Open menu"
+            aria-expanded={
+              isMenuOpen
+            }
+            aria-controls="home-menu-drawer"
             disabled={
               isAuthLoading
             }
@@ -217,17 +395,36 @@ const Header = () => {
             <HiOutlineMenuAlt3 />
           </button>
 
-          {/* LOGO */}
+          {/* =============================
+              LOGO
+          ============================= */}
 
           <Link
             to="/"
             className="home-header-brand"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
           >
             <img
               src={logo}
               alt="VV Sarees Logo"
               className="home-header-logo"
+
+              /*
+                Header is first-screen content.
+              */
+              loading="eager"
+
+              /*
+                Image decoding doesn't block
+                main-thread rendering.
+              */
+              decoding="async"
+
+              fetchPriority="high"
+
+              draggable={false}
             />
 
             <h1>
@@ -235,8 +432,11 @@ const Header = () => {
             </h1>
           </Link>
 
-          <div className="home-header-actions">
+          {/* =============================
+              HEADER ACTIONS
+          ============================= */}
 
+          <div className="home-header-actions">
             {/* WISHLIST */}
 
             <button
@@ -253,7 +453,9 @@ const Header = () => {
               <FiHeart />
 
               <span>
-                {wishlistCount}
+                {
+                  wishlistCount
+                }
               </span>
             </button>
 
@@ -276,33 +478,33 @@ const Header = () => {
                 {cartCount}
               </span>
             </button>
-
           </div>
         </div>
       </header>
 
-
-      {/* =========================
+      {/* =====================================
           SHIPPING BAR
-      ========================= */}
+      ===================================== */}
 
       <div className="shipping-bar">
         <div className="shipping-track">
-
           <div className="shipping-group">
             <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU,
-              PUDUCHERRY &amp; BANGALORE
+              🚚 FREE SHIPPING WITHIN
+              TAMIL NADU, PUDUCHERRY
+              &amp; BANGALORE
             </span>
 
             <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU,
-              PUDUCHERRY &amp; BANGALORE
+              🚚 FREE SHIPPING WITHIN
+              TAMIL NADU, PUDUCHERRY
+              &amp; BANGALORE
             </span>
 
             <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU,
-              PUDUCHERRY &amp; BANGALORE
+              🚚 FREE SHIPPING WITHIN
+              TAMIL NADU, PUDUCHERRY
+              &amp; BANGALORE
             </span>
           </div>
 
@@ -311,28 +513,29 @@ const Header = () => {
             aria-hidden="true"
           >
             <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU,
-              PUDUCHERRY &amp; BANGALORE
+              🚚 FREE SHIPPING WITHIN
+              TAMIL NADU, PUDUCHERRY
+              &amp; BANGALORE
             </span>
 
             <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU,
-              PUDUCHERRY &amp; BANGALORE
+              🚚 FREE SHIPPING WITHIN
+              TAMIL NADU, PUDUCHERRY
+              &amp; BANGALORE
             </span>
 
             <span>
-              🚚 FREE SHIPPING WITHIN TAMIL NADU,
-              PUDUCHERRY &amp; BANGALORE
+              🚚 FREE SHIPPING WITHIN
+              TAMIL NADU, PUDUCHERRY
+              &amp; BANGALORE
             </span>
           </div>
-
         </div>
       </div>
 
-
-      {/* =========================
+      {/* =====================================
           OVERLAY
-      ========================= */}
+      ===================================== */}
 
       <div
         className={`home-menu-overlay ${
@@ -340,15 +543,18 @@ const Header = () => {
             ? "home-menu-overlay-open"
             : ""
         }`}
-        onClick={closeMenu}
+        onClick={
+          closeMenu
+        }
+        aria-hidden="true"
       />
 
-
-      {/* =========================
-          MOBILE DRAWER
-      ========================= */}
+      {/* =====================================
+          DRAWER
+      ===================================== */}
 
       <aside
+        id="home-menu-drawer"
         className={`home-menu-drawer ${
           isMenuOpen
             ? "home-menu-drawer-open"
@@ -358,9 +564,11 @@ const Header = () => {
           !isMenuOpen
         }
       >
+        {/* =============================
+            DRAWER TOP
+        ============================= */}
 
         <div className="home-menu-drawer-top">
-
           <div>
             <span>
               VV SAREES
@@ -374,31 +582,34 @@ const Header = () => {
           <button
             type="button"
             className="home-menu-close"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
             aria-label="Close menu"
           >
             <FiX />
           </button>
-
         </div>
 
-
-        {/* =========================
-            MENU LINKS
-        ========================= */}
+        {/* =============================
+            LINKS
+        ============================= */}
 
         <nav className="home-menu-links">
-
           <Link
             to="/"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
           >
             Home
           </Link>
 
           <Link
             to="/retail"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
           >
             Retail Collection
           </Link>
@@ -411,11 +622,8 @@ const Header = () => {
               handleWholesaleClick
             }
             style={{
-              width:
-                "100%",
-
-              border:
-                "none",
+              width: "100%",
+              border: "none",
 
               borderBottom:
                 "1px solid rgba(114, 67, 33, 0.14)",
@@ -453,11 +661,8 @@ const Header = () => {
               handleDrawerWishlistClick
             }
             style={{
-              width:
-                "100%",
-
-              border:
-                "none",
+              width: "100%",
+              border: "none",
 
               borderBottom:
                 "1px solid rgba(114, 67, 33, 0.14)",
@@ -484,7 +689,8 @@ const Header = () => {
                 "pointer",
             }}
           >
-            Wishlist ({wishlistCount})
+            Wishlist (
+            {wishlistCount})
           </button>
 
           {/* CART */}
@@ -495,11 +701,8 @@ const Header = () => {
               handleDrawerCartClick
             }
             style={{
-              width:
-                "100%",
-
-              border:
-                "none",
+              width: "100%",
+              border: "none",
 
               borderBottom:
                 "1px solid rgba(114, 67, 33, 0.14)",
@@ -531,36 +734,43 @@ const Header = () => {
 
           <Link
             to="/track-order"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
           >
             Track Order
           </Link>
 
           <Link
             to="/about"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
           >
             About Us
           </Link>
 
           <Link
             to="/contact"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
           >
             Contact Us
           </Link>
 
-
-          {/* =========================
+          {/* =============================
               ACCOUNT
-          ========================= */}
+          ============================= */}
 
           {!isAuthLoading &&
             isLoggedIn && (
               <>
                 <Link
                   to="/my-account"
-                  onClick={closeMenu}
+                  onClick={
+                    closeMenu
+                  }
                 >
                   My Account
                 </Link>
@@ -617,16 +827,13 @@ const Header = () => {
                 </button>
               </>
             )}
-
         </nav>
 
-
-        {/* =========================
-            FOOTER
-        ========================= */}
+        {/* =============================
+            DRAWER FOOTER
+        ============================= */}
 
         <div className="home-menu-footer">
-
           {isLoggedIn &&
             user?.name && (
               <p
@@ -644,20 +851,21 @@ const Header = () => {
             )}
 
           <p>
-            Premium sarees sourced directly
-            from skilled weavers across India.
+            Premium sarees sourced
+            directly from skilled
+            weavers across India.
           </p>
 
           <Link
             to="/retail"
             className="home-menu-shop-button"
-            onClick={closeMenu}
+            onClick={
+              closeMenu
+            }
           >
             Shop Retail
           </Link>
-
         </div>
-
       </aside>
     </>
   );

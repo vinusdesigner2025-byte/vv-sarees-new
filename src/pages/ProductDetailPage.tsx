@@ -46,6 +46,7 @@ type ProductVariantRow = {
   colour_code: string;
   sku: string;
   stock: number;
+
   product_images:
     | ProductImageRow[]
     | null;
@@ -61,6 +62,7 @@ type ProductRow = {
   wholesale_price: number;
   wholesale_minimum: number;
   status: string;
+
   product_variants:
     | ProductVariantRow[]
     | null;
@@ -98,6 +100,9 @@ type ProductReview = {
   review: string | null;
   created_at: string;
 };
+
+const REVIEWS_LIMIT = 10;
+const REVIEWS_LOAD_DELAY = 400;
 
 const createNumericProductId = (
   productId: string
@@ -155,19 +160,32 @@ export default function ProductDetailPage({
     setIsLoginPopupOpen,
   ] = useState(false);
 
-  const [pendingAction, setPendingAction] =
-    useState<(() => void) | null>(null);
+  const [
+    pendingAction,
+    setPendingAction,
+  ] = useState<(() => void) | null>(null);
+
+  /* =====================================================
+     LOAD SINGLE PRODUCT
+     ===================================================== */
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadProduct = async () => {
       if (!slug) {
-        setProduct(null);
-        setIsLoading(false);
+        if (!cancelled) {
+          setProduct(null);
+          setReviews([]);
+          setIsLoading(false);
+        }
+
         return;
       }
 
       setIsLoading(true);
       setLoadError("");
+      setReviews([]);
 
       const { data, error } =
         await supabase
@@ -199,6 +217,10 @@ export default function ProductDetailPage({
           .eq("status", "active")
           .maybeSingle();
 
+      if (cancelled) {
+        return;
+      }
+
       if (error) {
         console.error(
           "Product detail load error:",
@@ -211,12 +233,14 @@ export default function ProductDetailPage({
 
         setProduct(null);
         setIsLoading(false);
+
         return;
       }
 
       if (!data) {
         setProduct(null);
         setIsLoading(false);
+
         return;
       }
 
@@ -245,14 +269,19 @@ export default function ProductDetailPage({
 
             return {
               id: variant.id,
+
               colorName:
                 variant.colour_name,
+
               colorCode:
                 variant.colour_code,
+
               sku: variant.sku,
+
               stock: Number(
                 variant.stock ?? 0
               ),
+
               price:
                 mode === "wholesale"
                   ? Number(
@@ -263,27 +292,41 @@ export default function ProductDetailPage({
                       row.retail_price ??
                         0
                     ),
-              images: sortedImages.map(
-                (image) =>
-                  image.image_url
-              ),
+
+              images: sortedImages
+                .map(
+                  (image) =>
+                    image.image_url
+                )
+                .filter(Boolean),
             };
           }
         ) ?? [];
 
       setProduct({
         id: row.id,
+
         slug: row.slug,
+
         name: row.name,
-        category: row.category ?? "",
-        fabric: row.category ?? "",
+
+        category:
+          row.category ?? "",
+
+        fabric:
+          row.category ?? "",
+
         state: "",
+
         description:
           row.description ?? "",
+
         rating: 0,
+
         wholesaleMinimum: Number(
           row.wholesale_minimum ?? 1
         ),
+
         variants,
       });
 
@@ -293,17 +336,29 @@ export default function ProductDetailPage({
     };
 
     void loadProduct();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug, mode]);
 
-  useEffect(() => {
-    const loadReviews = async () => {
-      if (!product) {
-        setReviews([]);
-        return;
-      }
+  /* =====================================================
+     LOAD REVIEWS AFTER PRODUCT
+     ===================================================== */
 
+  useEffect(() => {
+    if (!product) {
+      setReviews([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadReviews = async () => {
       const numericProductId =
-        createNumericProductId(product.id);
+        createNumericProductId(
+          product.id
+        );
 
       const { data, error } =
         await supabase
@@ -323,7 +378,12 @@ export default function ProductDetailPage({
           )
           .order("created_at", {
             ascending: false,
-          });
+          })
+          .limit(REVIEWS_LIMIT);
+
+      if (cancelled) {
+        return;
+      }
 
       if (error) {
         console.error(
@@ -332,6 +392,7 @@ export default function ProductDetailPage({
         );
 
         setReviews([]);
+
         return;
       }
 
@@ -340,21 +401,46 @@ export default function ProductDetailPage({
       );
     };
 
-    void loadReviews();
+    /*
+      Product / main image gets priority.
+
+      Reviews start a little later so they don't
+      compete with the initial product render.
+    */
+    const timer = window.setTimeout(
+      () => {
+        void loadReviews();
+      },
+      REVIEWS_LOAD_DELAY
+    );
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [product]);
 
-  const selectedVariant = useMemo(() => {
-    if (!product) return null;
+  /* =====================================================
+     SELECTED VARIANT
+     ===================================================== */
 
-    return (
-      product.variants[
-        selectedVariantIndex
-      ] ?? product.variants[0] ?? null
-    );
-  }, [
-    product,
-    selectedVariantIndex,
-  ]);
+  const selectedVariant =
+    useMemo(() => {
+      if (!product) {
+        return null;
+      }
+
+      return (
+        product.variants[
+          selectedVariantIndex
+        ] ??
+        product.variants[0] ??
+        null
+      );
+    }, [
+      product,
+      selectedVariantIndex,
+    ]);
 
   const selectedImage =
     selectedVariant?.images[
@@ -363,63 +449,86 @@ export default function ProductDetailPage({
     selectedVariant?.images[0] ??
     "";
 
+  /* =====================================================
+     LOADING
+     ===================================================== */
+
   if (isLoading) {
     return (
       <div className="detail-page">
         <ProductHeader mode={mode} />
 
-        <div className="product-not-found">
-          <h1>Loading product...</h1>
-          <p>
-            Supabase-la irundhu product
-            load aaguthu.
-          </p>
-        </div>
+        <main className="detail-container">
+          <div className="product-not-found">
+            <h1>Loading product...</h1>
 
-        <Footer />
+            <p>
+              Product details load
+              aaguthu...
+            </p>
+          </div>
+        </main>
       </div>
     );
   }
+
+  /* =====================================================
+     ERROR
+     ===================================================== */
 
   if (loadError) {
     return (
       <div className="detail-page">
         <ProductHeader mode={mode} />
 
-        <div className="product-not-found">
-          <h1>
-            Product load aagala
-          </h1>
+        <main className="detail-container">
+          <div className="product-not-found">
+            <h1>
+              Product load aagala
+            </h1>
 
-          <p>{loadError}</p>
+            <p>{loadError}</p>
 
-          <Link to={`/${mode}`}>
-            Back to {mode} collection
-          </Link>
-        </div>
+            <Link to={`/${mode}`}>
+              Back to {mode} collection
+            </Link>
+          </div>
+        </main>
 
         <Footer />
       </div>
     );
   }
+
+  /* =====================================================
+     PRODUCT NOT FOUND
+     ===================================================== */
 
   if (!product || !selectedVariant) {
     return (
       <div className="detail-page">
         <ProductHeader mode={mode} />
 
-        <div className="product-not-found">
-          <h1>Product not found</h1>
+        <main className="detail-container">
+          <div className="product-not-found">
+            <h1>
+              Product not found
+            </h1>
 
-          <Link to={`/${mode}`}>
-            Back to {mode} collection
-          </Link>
-        </div>
+            <Link to={`/${mode}`}>
+              Back to {mode} collection
+            </Link>
+          </div>
+        </main>
 
         <Footer />
       </div>
     );
   }
+
+  /* =====================================================
+     PRODUCT VALUES
+     ===================================================== */
 
   const isInStock =
     selectedVariant.stock > 0;
@@ -429,13 +538,15 @@ export default function ProductDetailPage({
       product.id
     );
 
-  const reviewCount = reviews.length;
+  const reviewCount =
+    reviews.length;
 
   const averageRating =
     reviewCount > 0
       ? reviews.reduce(
           (total, item) =>
-            total + Number(item.rating),
+            total +
+            Number(item.rating),
           0
         ) / reviewCount
       : 0;
@@ -448,44 +559,65 @@ export default function ProductDetailPage({
 
   const selectedShopProduct = {
     id: numericProductId,
+
     slug: product.slug,
+
     name: product.name,
-    price: selectedVariant.price,
-    rating: product.rating,
-    stock: selectedVariant.stock,
+
+    price:
+      selectedVariant.price,
+
+    rating:
+      averageRating,
+
+    stock:
+      selectedVariant.stock,
+
     colour:
       selectedVariant.colorName,
+
     image:
-      selectedVariant.images[0] ?? "",
+      selectedVariant.images[0] ??
+      "",
   };
+
+  /* =====================================================
+     IMAGE GALLERY
+     ===================================================== */
 
   const showPreviousImage = () => {
     if (
-      selectedVariant.images.length === 0
+      selectedVariant.images
+        .length === 0
     ) {
       return;
     }
 
-    setSelectedImageIndex((current) =>
-      current === 0
-        ? selectedVariant.images.length -
-          1
-        : current - 1
+    setSelectedImageIndex(
+      (current) =>
+        current === 0
+          ? selectedVariant
+              .images.length - 1
+          : current - 1
     );
   };
 
   const showNextImage = () => {
     if (
-      selectedVariant.images.length === 0
+      selectedVariant.images
+        .length === 0
     ) {
       return;
     }
 
-    setSelectedImageIndex((current) =>
-      current ===
-      selectedVariant.images.length - 1
-        ? 0
-        : current + 1
+    setSelectedImageIndex(
+      (current) =>
+        current ===
+        selectedVariant.images
+          .length -
+          1
+          ? 0
+          : current + 1
     );
   };
 
@@ -493,20 +625,33 @@ export default function ProductDetailPage({
     index: number
   ) => {
     setSelectedVariantIndex(index);
+
     setSelectedImageIndex(0);
   };
+
+  /* =====================================================
+     LOGIN PROTECTED ACTION
+     ===================================================== */
 
   const runProtectedAction = (
     action: () => void
   ) => {
     if (isLoggedIn) {
       action();
+
       return;
     }
 
-    setPendingAction(() => action);
+    setPendingAction(
+      () => action
+    );
+
     setIsLoginPopupOpen(true);
   };
+
+  /* =====================================================
+     WISHLIST
+     ===================================================== */
 
   const handleWishlist = () => {
     runProtectedAction(() => {
@@ -517,8 +662,14 @@ export default function ProductDetailPage({
     });
   };
 
+  /* =====================================================
+     ADD TO CART
+     ===================================================== */
+
   const handleAddToCart = () => {
-    if (!isInStock) return;
+    if (!isInStock) {
+      return;
+    }
 
     runProtectedAction(() => {
       addToCart(
@@ -528,8 +679,14 @@ export default function ProductDetailPage({
     });
   };
 
+  /* =====================================================
+     BUY NOW
+     ===================================================== */
+
   const handleBuyNow = () => {
-    if (!isInStock) return;
+    if (!isInStock) {
+      return;
+    }
 
     runProtectedAction(() => {
       addToCart(
@@ -545,17 +702,28 @@ export default function ProductDetailPage({
     });
   };
 
-  const handleLoginSuccess = () => {
-    pendingAction?.();
+  /* =====================================================
+     LOGIN SUCCESS
+     ===================================================== */
 
-    setPendingAction(null);
-    setIsLoginPopupOpen(false);
-  };
+  const handleLoginSuccess =
+    () => {
+      pendingAction?.();
+
+      setPendingAction(null);
+
+      setIsLoginPopupOpen(false);
+    };
 
   const closeLoginPopup = () => {
     setIsLoginPopupOpen(false);
+
     setPendingAction(null);
   };
+
+  /* =====================================================
+     PAGE
+     ===================================================== */
 
   return (
     <div className="detail-page">
@@ -570,6 +738,10 @@ export default function ProductDetailPage({
         </Link>
 
         <section className="detail-main">
+          {/* =========================
+              PRODUCT GALLERY
+              ========================= */}
+
           <div className="detail-gallery">
             <div className="detail-main-image-wrap">
               {selectedImage ? (
@@ -577,6 +749,9 @@ export default function ProductDetailPage({
                   src={selectedImage}
                   alt={`${product.name} - ${selectedVariant.colorName}`}
                   className="detail-main-image"
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                 />
               ) : (
                 <div className="image-placeholder">
@@ -584,8 +759,8 @@ export default function ProductDetailPage({
                 </div>
               )}
 
-              {selectedVariant.images.length >
-                1 && (
+              {selectedVariant.images
+                .length > 1 && (
                 <>
                   <button
                     type="button"
@@ -612,8 +787,12 @@ export default function ProductDetailPage({
               )}
             </div>
 
-            {selectedVariant.images.length >
-              0 && (
+            {/* =========================
+                THUMBNAILS
+                ========================= */}
+
+            {selectedVariant.images
+              .length > 0 && (
               <div className="detail-thumbnails">
                 {selectedVariant.images.map(
                   (image, index) => (
@@ -631,12 +810,17 @@ export default function ProductDetailPage({
                           index
                         )
                       }
+                      aria-label={`View image ${
+                        index + 1
+                      }`}
                     >
                       <img
                         src={image}
                         alt={`${product.name} thumbnail ${
                           index + 1
                         }`}
+                        loading="lazy"
+                        decoding="async"
                       />
                     </button>
                   )
@@ -645,12 +829,20 @@ export default function ProductDetailPage({
             )}
           </div>
 
+          {/* =========================
+              PRODUCT INFO
+              ========================= */}
+
           <div className="detail-info">
             <span className="detail-category">
               {product.category}
             </span>
 
             <h1>{product.name}</h1>
+
+            {/* =========================
+                RATING
+                ========================= */}
 
             <div className="detail-rating-row">
               <div className="detail-stars">
@@ -673,7 +865,9 @@ export default function ProductDetailPage({
 
               <span>
                 {reviewCount > 0
-                  ? `${averageRating.toFixed(1)} (${reviewCount} ${
+                  ? `${averageRating.toFixed(
+                      1
+                    )} (${reviewCount} ${
                       reviewCount === 1
                         ? "Review"
                         : "Reviews"
@@ -682,9 +876,18 @@ export default function ProductDetailPage({
               </span>
             </div>
 
+            {/* =========================
+                PRICE
+                ========================= */}
+
             <div className="detail-price">
-              ₹{selectedVariant.price}
+              ₹
+              {selectedVariant.price}
             </div>
+
+            {/* =========================
+                STOCK
+                ========================= */}
 
             <div className="detail-stock-row">
               <span
@@ -702,12 +905,18 @@ export default function ProductDetailPage({
               {isInStock && (
                 <span className="detail-available">
                   Available Quantity:{" "}
-                  {selectedVariant.stock}
+                  {
+                    selectedVariant.stock
+                  }
                 </span>
               )}
             </div>
 
             <div className="detail-divider" />
+
+            {/* =========================
+                COLOUR OPTIONS
+                ========================= */}
 
             <div className="detail-colour-section">
               <div className="detail-label-row">
@@ -722,10 +931,15 @@ export default function ProductDetailPage({
 
               <div className="detail-colour-options">
                 {product.variants.map(
-                  (variant, index) => (
+                  (
+                    variant,
+                    index
+                  ) => (
                     <button
                       type="button"
-                      key={variant.id}
+                      key={
+                        variant.id
+                      }
                       className={`detail-colour-option ${
                         selectedVariantIndex ===
                         index
@@ -733,7 +947,9 @@ export default function ProductDetailPage({
                           : ""
                       }`}
                       onClick={() =>
-                        selectVariant(index)
+                        selectVariant(
+                          index
+                        )
                       }
                       aria-label={`Select ${variant.colorName}`}
                     >
@@ -746,7 +962,9 @@ export default function ProductDetailPage({
                       />
 
                       <span>
-                        {variant.colorName}
+                        {
+                          variant.colorName
+                        }
                       </span>
                     </button>
                   )
@@ -754,9 +972,15 @@ export default function ProductDetailPage({
               </div>
             </div>
 
+            {/* =========================
+                SPECIFICATIONS
+                ========================= */}
+
             <div className="detail-specifications">
               <div>
-                <span>Fabric</span>
+                <span>
+                  Fabric
+                </span>
 
                 <strong>
                   {product.fabric ||
@@ -765,7 +989,9 @@ export default function ProductDetailPage({
               </div>
 
               <div>
-                <span>State</span>
+                <span>
+                  State
+                </span>
 
                 <strong>
                   {product.state ||
@@ -774,23 +1000,34 @@ export default function ProductDetailPage({
               </div>
 
               <div>
-                <span>SKU</span>
+                <span>
+                  SKU
+                </span>
 
                 <strong>
-                  {selectedVariant.sku}
+                  {
+                    selectedVariant.sku
+                  }
                 </strong>
               </div>
 
               <div>
-                <span>Order Type</span>
+                <span>
+                  Order Type
+                </span>
 
                 <strong>
-                  {mode === "wholesale"
+                  {mode ===
+                  "wholesale"
                     ? "Wholesale"
                     : "Retail"}
                 </strong>
               </div>
             </div>
+
+            {/* =========================
+                WHOLESALE NOTE
+                ========================= */}
 
             {mode === "wholesale" && (
               <div className="detail-wholesale-note">
@@ -799,10 +1036,14 @@ export default function ProductDetailPage({
                 {
                   product.wholesaleMinimum
                 }{" "}
-                sarees. Mix &amp; Match
-                allowed.
+                sarees. Mix &amp;
+                Match allowed.
               </div>
             )}
+
+            {/* =========================
+                ACTION BUTTONS
+                ========================= */}
 
             <div className="detail-actions">
               <button
@@ -812,7 +1053,9 @@ export default function ProductDetailPage({
                     ? "detail-wishlist-active"
                     : ""
                 }`}
-                onClick={handleWishlist}
+                onClick={
+                  handleWishlist
+                }
               >
                 <FiHeart />
 
@@ -824,7 +1067,9 @@ export default function ProductDetailPage({
               <button
                 type="button"
                 className="detail-cart-button"
-                disabled={!isInStock}
+                disabled={
+                  !isInStock
+                }
                 onClick={
                   handleAddToCart
                 }
@@ -839,14 +1084,22 @@ export default function ProductDetailPage({
               <button
                 type="button"
                 className="detail-buy-button"
-                disabled={!isInStock}
-                onClick={handleBuyNow}
+                disabled={
+                  !isInStock
+                }
+                onClick={
+                  handleBuyNow
+                }
               >
                 Buy Now
               </button>
             </div>
           </div>
         </section>
+
+        {/* =========================
+            DESCRIPTION
+            ========================= */}
 
         <section className="detail-description-section">
           <h2>
@@ -858,6 +1111,10 @@ export default function ProductDetailPage({
               "No product description added."}
           </p>
         </section>
+
+        {/* =========================
+            REVIEWS
+            ========================= */}
 
         <section className="detail-reviews-section">
           <div className="detail-section-heading">
@@ -886,64 +1143,78 @@ export default function ProductDetailPage({
                 )}
               </div>
 
-              <p>No Reviews Yet</p>
+              <p>
+                No Reviews Yet
+              </p>
             </div>
           ) : (
             <div className="detail-reviews-list">
-              {reviews.map((item) => (
-                <article
-                  className="detail-review-card"
-                  key={item.id}
-                >
-                  <div className="detail-review-top">
-                    <div className="detail-review-customer">
-                      <strong>
-                        {item.customer_name ||
-                          "VV Sarees Customer"}
-                      </strong>
+              {reviews.map(
+                (item) => (
+                  <article
+                    className="detail-review-card"
+                    key={item.id}
+                  >
+                    <div className="detail-review-top">
+                      <div className="detail-review-customer">
+                        <strong>
+                          {item.customer_name ||
+                            "VV Sarees Customer"}
+                        </strong>
 
-                      <span className="detail-verified-review">
-                        ✓ Verified Purchase
+                        <span className="detail-verified-review">
+                          ✓ Verified
+                          Purchase
+                        </span>
+                      </div>
+
+                      <span className="detail-review-date">
+                        {new Date(
+                          item.created_at
+                        ).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month:
+                              "short",
+                            year: "numeric",
+                          }
+                        )}
                       </span>
                     </div>
 
-                    <span className="detail-review-date">
-                      {new Date(
-                        item.created_at
-                      ).toLocaleDateString(
-                        "en-IN",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        }
+                    <div className="detail-stars detail-review-stars">
+                      {[
+                        1, 2, 3, 4, 5,
+                      ].map(
+                        (star) => (
+                          <FaStar
+                            key={
+                              star
+                            }
+                            className={
+                              star <=
+                              Number(
+                                item.rating
+                              )
+                                ? "detail-star detail-star-active"
+                                : "detail-star"
+                            }
+                          />
+                        )
                       )}
-                    </span>
-                  </div>
+                    </div>
 
-                  <div className="detail-stars detail-review-stars">
-                    {[1, 2, 3, 4, 5].map(
-                      (star) => (
-                        <FaStar
-                          key={star}
-                          className={
-                            star <=
-                            Number(item.rating)
-                              ? "detail-star detail-star-active"
-                              : "detail-star"
-                          }
-                        />
-                      )
+                    {item.review && (
+                      <p className="detail-review-text">
+                        {
+                          item.review
+                        }
+                      </p>
                     )}
-                  </div>
-
-                  {item.review && (
-                    <p className="detail-review-text">
-                      {item.review}
-                    </p>
-                  )}
-                </article>
-              ))}
+                  </article>
+                )
+              )}
             </div>
           )}
         </section>
@@ -952,8 +1223,12 @@ export default function ProductDetailPage({
       <Footer />
 
       <LoginPopup
-        isOpen={isLoginPopupOpen}
-        onClose={closeLoginPopup}
+        isOpen={
+          isLoginPopupOpen
+        }
+        onClose={
+          closeLoginPopup
+        }
         onLoginSuccess={
           handleLoginSuccess
         }

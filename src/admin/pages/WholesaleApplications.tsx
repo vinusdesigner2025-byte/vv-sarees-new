@@ -85,6 +85,8 @@ type AdminFunctionResponse = {
 
   message?: string;
 
+  emailSent?: boolean;
+
   applications?:
     WholesaleApplication[];
 
@@ -422,9 +424,10 @@ export default function WholesaleApplications() {
         );
 
         window.alert(
-          updated
-            .access_code
-            ? `Approved successfully.\nAccess Code: ${updated.access_code}`
+          updated.access_code
+            ? result.emailSent
+              ? `Approved successfully.\nAccess Code: ${updated.access_code}\nCode sent to ${updated.email}`
+              : `Approved successfully.\nAccess Code: ${updated.access_code}\nEmail could not be sent.`
             : "Approved successfully."
         );
       } catch (error) {

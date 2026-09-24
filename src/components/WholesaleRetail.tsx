@@ -9,7 +9,9 @@ import {
 } from "react-router-dom";
 
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  ScrollTrigger,
+} from "gsap/ScrollTrigger";
 
 import {
   FiArrowRight,
@@ -23,14 +25,19 @@ import {
   FiTruck,
 } from "react-icons/fi";
 
-import { useAuth } from "../context/AuthContext";
+import {
+  useAuth,
+} from "../context/AuthContext";
 
 import "./WholesaleRetail.css";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(
+  ScrollTrigger
+);
 
 export default function WholesaleRetail() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const {
     isLoggedIn,
@@ -38,279 +45,524 @@ export default function WholesaleRetail() {
   } = useAuth();
 
   const sectionRef =
-    useRef<HTMLElement>(null);
+    useRef<HTMLElement | null>(
+      null
+    );
+
+  /* =========================================
+     GSAP ANIMATION
+
+     Only animate elements that actually exist.
+     No missing-target warnings.
+  ========================================= */
 
   useLayoutEffect(() => {
-    const section = sectionRef.current;
+    const section =
+      sectionRef.current;
 
-    if (!section) return;
+    if (!section) {
+      return;
+    }
 
-    const context = gsap.context(() => {
-      const media = gsap.matchMedia();
+    /* =====================================
+       ACCESSIBILITY
 
-      /* =========================
-         DESKTOP
-      ========================= */
+       User reduced motion prefer pannina
+       animation completely skip pannuvom.
+    ===================================== */
 
-      media.add(
-        "(min-width: 701px)",
-        () => {
-          const timeline = gsap.timeline({
-            scrollTrigger: {
-              trigger: section,
-              start: "top 82%",
-              toggleActions:
-                "play none none none",
-            },
-          });
+    const prefersReducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
 
-          timeline
-            .fromTo(
-              ".shop-tag",
-              {
-                y: 16,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.45,
-                ease: "power2.out",
-              }
-            )
-            .fromTo(
-              ".shop-heading h2",
-              {
-                y: 24,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.6,
-                ease: "power3.out",
-              },
-              "-=0.2"
-            )
-            .fromTo(
-              ".shop-heading p",
-              {
-                y: 18,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.5,
-                ease: "power2.out",
-              },
-              "-=0.3"
-            )
-            .fromTo(
-              ".shop-card-left",
-              {
-                x: -90,
-                y: 18,
-                opacity: 0,
-              },
-              {
-                x: 0,
-                y: 0,
-                opacity: 1,
-                duration: 0.85,
-                ease: "power3.out",
-              },
-              "-=0.05"
-            )
-            .fromTo(
-              ".shop-card-right",
-              {
-                x: 90,
-                y: 18,
-                opacity: 0,
-              },
-              {
-                x: 0,
-                y: 0,
-                opacity: 1,
-                duration: 0.85,
-                ease: "power3.out",
-              },
-              "-=0.65"
-            )
-            .fromTo(
-              ".feature-row",
-              {
-                y: 12,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.38,
-                stagger: 0.06,
-                ease: "power2.out",
-              },
-              "-=0.35"
-            );
-        }
-      );
+    if (
+      prefersReducedMotion
+    ) {
+      return;
+    }
 
-      /* =========================
-         MOBILE
-      ========================= */
+    const context =
+      gsap.context(() => {
+        const media =
+          gsap.matchMedia();
 
-      media.add(
-        "(max-width: 700px)",
-        () => {
-          const timeline = gsap.timeline({
-            scrollTrigger: {
-              trigger: section,
-              start: "top 88%",
-              toggleActions:
-                "play none none none",
-            },
-          });
+        /* =====================================
+           GET EXISTING ELEMENTS
 
-          timeline
-            .fromTo(
-              ".shop-tag",
-              {
-                y: 12,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.35,
-                ease: "power2.out",
-              }
-            )
-            .fromTo(
-              ".shop-heading h2",
-              {
-                y: 18,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.48,
-                ease: "power3.out",
-              },
-              "-=0.18"
-            )
-            .fromTo(
-              ".shop-heading p",
-              {
-                y: 14,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.42,
-                ease: "power2.out",
-              },
-              "-=0.27"
-            )
-            .fromTo(
-              ".shop-card-left",
-              {
-                xPercent: -110,
-                y: 12,
-                scale: 0.94,
-                opacity: 0,
-              },
-              {
-                xPercent: 0,
-                y: 0,
-                scale: 1,
-                opacity: 1,
-                duration: 0.95,
-                ease: "expo.out",
-              },
-              "-=0.05"
-            )
-            .fromTo(
-              ".shop-card-right",
-              {
-                xPercent: 110,
-                y: 12,
-                scale: 0.94,
-                opacity: 0,
-              },
-              {
-                xPercent: 0,
-                y: 0,
-                scale: 1,
-                opacity: 1,
-                duration: 0.95,
-                ease: "expo.out",
-              },
-              "-=0.82"
-            )
-            .fromTo(
-              ".feature-row",
-              {
-                y: 8,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.28,
-                stagger: 0.025,
-                ease: "power2.out",
-              },
-              "-=0.38"
-            );
-        }
-      );
+           querySelector use pannradhu nala
+           missing element-na GSAP-ku pass
+           aagadhu.
+        ===================================== */
 
-      return () => media.revert();
-    }, section);
+        const wholesaleCard =
+          section.querySelector<HTMLElement>(
+            ".shop-card-left"
+          );
 
-    ScrollTrigger.refresh();
+        const retailCard =
+          section.querySelector<HTMLElement>(
+            ".shop-card-right"
+          );
 
-    return () => context.revert();
+        const badges =
+          section.querySelectorAll<HTMLElement>(
+            ".shop-card-badge"
+          );
+
+        const headings =
+          section.querySelectorAll<HTMLElement>(
+            ".card-heading"
+          );
+
+        const descriptions =
+          section.querySelectorAll<HTMLElement>(
+            ".card-description"
+          );
+
+        const featureRows =
+          section.querySelectorAll<HTMLElement>(
+            ".feature-row"
+          );
+
+        const cardFooters =
+          section.querySelectorAll<HTMLElement>(
+            ".card-footer"
+          );
+
+        /* =====================================
+           DESKTOP
+        ===================================== */
+
+        media.add(
+          "(min-width: 701px)",
+          () => {
+            const timeline =
+              gsap.timeline({
+                defaults: {
+                  overwrite:
+                    "auto",
+                },
+
+                scrollTrigger: {
+                  trigger:
+                    section,
+
+                  start:
+                    "top 82%",
+
+                  toggleActions:
+                    "play none none none",
+
+                  once: true,
+                },
+              });
+
+            /* =============================
+               CARDS
+            ============================= */
+
+            if (
+              wholesaleCard
+            ) {
+              timeline.fromTo(
+                wholesaleCard,
+                {
+                  x: -55,
+                  y: 16,
+                  opacity: 0,
+                },
+                {
+                  x: 0,
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.65,
+
+                  ease:
+                    "power3.out",
+                }
+              );
+            }
+
+            if (
+              retailCard
+            ) {
+              timeline.fromTo(
+                retailCard,
+                {
+                  x: 55,
+                  y: 16,
+                  opacity: 0,
+                },
+                {
+                  x: 0,
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.65,
+
+                  ease:
+                    "power3.out",
+                },
+                "-=0.5"
+              );
+            }
+
+            /* =============================
+               BADGES
+            ============================= */
+
+            if (
+              badges.length >
+              0
+            ) {
+              timeline.fromTo(
+                badges,
+                {
+                  y: 10,
+                  opacity: 0,
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.3,
+
+                  stagger:
+                    0.04,
+
+                  ease:
+                    "power2.out",
+                },
+                "-=0.25"
+              );
+            }
+
+            /* =============================
+               HEADINGS
+            ============================= */
+
+            if (
+              headings.length >
+              0
+            ) {
+              timeline.fromTo(
+                headings,
+                {
+                  y: 14,
+                  opacity: 0,
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.38,
+
+                  stagger:
+                    0.04,
+
+                  ease:
+                    "power2.out",
+                },
+                "-=0.2"
+              );
+            }
+
+            /* =============================
+               DESCRIPTIONS
+            ============================= */
+
+            if (
+              descriptions.length >
+              0
+            ) {
+              timeline.fromTo(
+                descriptions,
+                {
+                  y: 10,
+                  opacity: 0,
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.32,
+
+                  stagger:
+                    0.04,
+
+                  ease:
+                    "power2.out",
+                },
+                "-=0.2"
+              );
+            }
+
+            /* =============================
+               FEATURES
+            ============================= */
+
+            if (
+              featureRows.length >
+              0
+            ) {
+              timeline.fromTo(
+                featureRows,
+                {
+                  y: 8,
+                  opacity: 0,
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.25,
+
+                  stagger:
+                    0.025,
+
+                  ease:
+                    "power2.out",
+                },
+                "-=0.15"
+              );
+            }
+
+            /* =============================
+               FOOTERS
+            ============================= */
+
+            if (
+              cardFooters.length >
+              0
+            ) {
+              timeline.fromTo(
+                cardFooters,
+                {
+                  y: 8,
+                  opacity: 0,
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.3,
+
+                  stagger:
+                    0.04,
+
+                  ease:
+                    "power2.out",
+                },
+                "-=0.1"
+              );
+            }
+
+            return () => {
+              timeline.kill();
+            };
+          }
+        );
+
+        /* =====================================
+           MOBILE
+
+           Mobile-la movement romba heavy-a
+           vechaa scroll lag feel aagum.
+
+           So lighter animation.
+        ===================================== */
+
+        media.add(
+          "(max-width: 700px)",
+          () => {
+            const timeline =
+              gsap.timeline({
+                defaults: {
+                  overwrite:
+                    "auto",
+                },
+
+                scrollTrigger: {
+                  trigger:
+                    section,
+
+                  start:
+                    "top 90%",
+
+                  toggleActions:
+                    "play none none none",
+
+                  once: true,
+                },
+              });
+
+            /* =============================
+               WHOLESALE CARD
+            ============================= */
+
+            if (
+              wholesaleCard
+            ) {
+              timeline.fromTo(
+                wholesaleCard,
+                {
+                  y: 24,
+                  opacity: 0,
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.45,
+
+                  ease:
+                    "power2.out",
+                }
+              );
+            }
+
+            /* =============================
+               RETAIL CARD
+            ============================= */
+
+            if (
+              retailCard
+            ) {
+              timeline.fromTo(
+                retailCard,
+                {
+                  y: 24,
+                  opacity: 0,
+                },
+                {
+                  y: 0,
+                  opacity: 1,
+
+                  duration:
+                    0.45,
+
+                  ease:
+                    "power2.out",
+                },
+                "-=0.28"
+              );
+            }
+
+            /* =============================
+               FEATURES
+
+               Very small fade only.
+            ============================= */
+
+            if (
+              featureRows.length >
+              0
+            ) {
+              timeline.fromTo(
+                featureRows,
+                {
+                  opacity: 0,
+                },
+                {
+                  opacity: 1,
+
+                  duration:
+                    0.18,
+
+                  stagger:
+                    0.015,
+
+                  ease:
+                    "none",
+                },
+                "-=0.15"
+              );
+            }
+
+            return () => {
+              timeline.kill();
+            };
+          }
+        );
+
+        return () => {
+          media.revert();
+        };
+      }, section);
+
+    /*
+      Explicit ScrollTrigger.refresh()
+      remove panniruken.
+
+      Every component mount-la refresh panna
+      unnecessary layout calculation nadakkum.
+    */
+
+    return () => {
+      context.revert();
+    };
   }, []);
 
-  const handleWholesaleClick = () => {
-    if (isAuthLoading) {
-      return;
-    }
+  /* =========================================
+     WHOLESALE BUTTON
+  ========================================= */
 
-    if (!isLoggedIn) {
+  const handleWholesaleClick =
+    () => {
+      if (
+        isAuthLoading
+      ) {
+        return;
+      }
+
+      if (
+        !isLoggedIn
+      ) {
+        navigate(
+          "/login",
+          {
+            state: {
+              redirectTo:
+                "/wholesale-login",
+            },
+          }
+        );
+
+        return;
+      }
+
       navigate(
-        "/login",
-        {
-          state: {
-            redirectTo:
-              "/wholesale-login",
-          },
-        }
+        "/wholesale-login"
       );
+    };
 
-      return;
-    }
-
-    navigate(
-      "/wholesale-login"
-    );
-  };
+  /* =========================================
+     PAGE
+  ========================================= */
 
   return (
     <section
-      ref={sectionRef}
+      ref={
+        sectionRef
+      }
       className="shop-section"
       id="collections"
-      aria-labelledby="shopping-experience-title"
+      aria-label="Shopping experience"
     >
       <div className="shop-grid">
-        {/* =========================
-            WHOLESALE
-        ========================= */}
+        {/* =================================
+            WHOLESALE CARD
+        ================================= */}
 
         <article className="shop-card shop-card-wholesale shop-card-left">
           <div
@@ -323,9 +575,18 @@ export default function WholesaleRetail() {
             aria-hidden="true"
           />
 
+          {/* =============================
+              BADGE
+          ============================= */}
+
           <span className="shop-card-badge">
-            Boutique &amp; Reseller
+            Boutique &amp;
+            Reseller
           </span>
+
+          {/* =============================
+              HEADING
+          ============================= */}
 
           <div className="card-heading">
             <span className="card-main-icon">
@@ -345,11 +606,20 @@ export default function WholesaleRetail() {
             </div>
           </div>
 
+          {/* =============================
+              DESCRIPTION
+          ============================= */}
+
           <p className="card-description">
-            Premium sarees for boutiques,
-            retailers and resellers at dedicated
+            Premium sarees for
+            boutiques, retailers and
+            resellers at dedicated
             wholesale prices.
           </p>
+
+          {/* =============================
+              FEATURES
+          ============================= */}
 
           <div className="feature-list">
             <div className="feature-row">
@@ -393,6 +663,10 @@ export default function WholesaleRetail() {
             </div>
           </div>
 
+          {/* =============================
+              FOOTER
+          ============================= */}
+
           <div className="card-footer">
             <div className="order-note">
               <strong>
@@ -400,7 +674,8 @@ export default function WholesaleRetail() {
               </strong>
 
               <span>
-                Any 5 Sarees · Mix &amp; Match
+                Any 5 Sarees ·
+                Mix &amp; Match
               </span>
             </div>
 
@@ -414,15 +689,18 @@ export default function WholesaleRetail() {
                 isAuthLoading
               }
             >
-              Explore Wholesale
+              {isAuthLoading
+                ? "Please wait..."
+                : "Explore Wholesale"}
+
               <FiArrowRight />
             </button>
           </div>
         </article>
 
-        {/* =========================
-            RETAIL
-        ========================= */}
+        {/* =================================
+            RETAIL CARD
+        ================================= */}
 
         <article className="shop-card shop-card-retail shop-card-right">
           <div
@@ -435,9 +713,17 @@ export default function WholesaleRetail() {
             aria-hidden="true"
           />
 
+          {/* =============================
+              BADGE
+          ============================= */}
+
           <span className="shop-card-badge">
             Personal Shopping
           </span>
+
+          {/* =============================
+              HEADING
+          ============================= */}
 
           <div className="card-heading">
             <span className="card-main-icon">
@@ -457,11 +743,21 @@ export default function WholesaleRetail() {
             </div>
           </div>
 
+          {/* =============================
+              DESCRIPTION
+          ============================= */}
+
           <p className="card-description">
-            Elegant sarees for weddings,
-            festivals and everyday occasions,
-            available with no minimum order.
+            Elegant sarees for
+            weddings, festivals and
+            everyday occasions,
+            available with no minimum
+            order.
           </p>
+
+          {/* =============================
+              FEATURES
+          ============================= */}
 
           <div className="feature-list">
             <div className="feature-row">
@@ -505,6 +801,10 @@ export default function WholesaleRetail() {
             </div>
           </div>
 
+          {/* =============================
+              FOOTER
+          ============================= */}
+
           <div className="card-footer">
             <div className="order-note">
               <strong>
@@ -521,6 +821,7 @@ export default function WholesaleRetail() {
               className="card-button"
             >
               Explore Retail
+
               <FiArrowRight />
             </Link>
           </div>
