@@ -1,5 +1,6 @@
-import {
-  useEffect,
+
+ import {
+ useEffect,
   useMemo,
   useState,
 } from "react";
@@ -52,16 +53,33 @@ type ProductVariantRow = {
     | null;
 };
 
+type ShippingMode = "free" | "manual";
+
+type ShippingRule = {
+  type?: ShippingMode;
+  amount?: number | string | null;
+};
+
+type ProductShippingDetails = {
+  tamilNadu?: ShippingRule;
+  withinIndia?: ShippingRule & {
+    freeLocations?: string[];
+  };
+  international?: ShippingRule;
+};
+
 type ProductRow = {
   id: string;
   slug: string;
   name: string;
   category: string;
+  state: string | null;
   description: string | null;
   retail_price: number;
   wholesale_price: number;
   wholesale_minimum: number;
   status: string;
+  shipping_details: ProductShippingDetails | null;
 
   product_variants:
     | ProductVariantRow[]
@@ -88,6 +106,7 @@ type ProductDetail = {
   description: string;
   rating: number;
   wholesaleMinimum: number;
+  shippingDetails: ProductShippingDetails;
   variants: ProductVariant[];
 };
 
@@ -103,6 +122,75 @@ type ProductReview = {
 
 const REVIEWS_LIMIT = 10;
 const REVIEWS_LOAD_DELAY = 400;
+
+const normalizeShippingDetails = (
+  details: ProductShippingDetails | null | undefined
+): ProductShippingDetails => {
+  const tamilNaduType =
+    details?.tamilNadu?.type === "manual"
+      ? "manual"
+      : "free";
+
+  const indiaType =
+    details?.withinIndia?.type === "free"
+      ? "free"
+      : "manual";
+
+  const internationalType =
+    details?.international?.type === "free"
+      ? "free"
+      : "manual";
+
+  const savedLocations =
+    details?.withinIndia?.freeLocations;
+
+  return {
+    tamilNadu: {
+      type: tamilNaduType,
+      amount:
+        tamilNaduType === "free"
+          ? 0
+          : Number(details?.tamilNadu?.amount ?? 0),
+    },
+
+    withinIndia: {
+      type: indiaType,
+      amount:
+        indiaType === "free"
+          ? 0
+          : Number(details?.withinIndia?.amount ?? 0),
+      freeLocations:
+        Array.isArray(savedLocations) &&
+        savedLocations.length > 0
+          ? savedLocations
+          : ["Puducherry", "Bangalore"],
+    },
+
+    international: {
+      type: internationalType,
+      amount:
+        internationalType === "free"
+          ? 0
+          : Number(details?.international?.amount ?? 0),
+    },
+  };
+};
+
+const getShippingDisplay = (
+  rule: ShippingRule | undefined
+) => {
+  if (rule?.type === "free") {
+    return "Free Shipping";
+  }
+
+  const amount = Number(
+    rule?.amount ?? 0
+  );
+
+  return amount > 0
+    ? `₹${amount}`
+    : "Calculated at checkout";
+};
 
 const createNumericProductId = (
   productId: string
@@ -195,11 +283,13 @@ export default function ProductDetailPage({
             slug,
             name,
             category,
+            state,
             description,
             retail_price,
             wholesale_price,
             wholesale_minimum,
             status,
+            shipping_details,
             product_variants (
               id,
               colour_name,
@@ -316,7 +406,8 @@ export default function ProductDetailPage({
         fabric:
           row.category ?? "",
 
-        state: "",
+        state:
+          row.state ?? "",
 
         description:
           row.description ?? "",
@@ -326,6 +417,11 @@ export default function ProductDetailPage({
         wholesaleMinimum: Number(
           row.wholesale_minimum ?? 1
         ),
+
+        shippingDetails:
+          normalizeShippingDetails(
+            row.shipping_details
+          ),
 
         variants,
       });
@@ -579,6 +675,9 @@ export default function ProductDetailPage({
     image:
       selectedVariant.images[0] ??
       "",
+
+    shippingDetails:
+      product.shippingDetails,
   };
 
   /* =====================================================
@@ -1109,6 +1208,277 @@ export default function ProductDetailPage({
           <p>
             {product.description ||
               "No product description added."}
+          </p>
+        </section>
+
+        {/* =========================
+            SHIPPING DETAILS
+            ========================= */}
+
+        <section
+          className="detail-description-section"
+          aria-labelledby="shipping-details-title"
+        >
+          <div className="detail-section-heading">
+            <h2 id="shipping-details-title">
+              Shipping Details
+            </h2>
+
+            <span>
+              Delivery based
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: "10px",
+              marginTop: "16px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px",
+                padding: "14px 16px",
+                border:
+                  "1px solid rgba(110, 61, 25, 0.12)",
+                borderRadius: "14px",
+                background:
+                  "rgba(255, 250, 244, 0.82)",
+              }}
+            >
+              <div>
+                <strong
+                  style={{
+                    display: "block",
+                    color: "#4b250e",
+                  }}
+                >
+                  Tamil Nadu
+                </strong>
+
+                <small
+                  style={{
+                    color: "#8b7565",
+                  }}
+                >
+                  Delivery within Tamil Nadu
+                </small>
+              </div>
+
+              <strong
+                style={{
+                  color:
+                    product.shippingDetails
+                      .tamilNadu?.type === "free"
+                      ? "#2f7d4a"
+                      : "#6e3d19",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {getShippingDisplay(
+                  product.shippingDetails
+                    .tamilNadu
+                )}
+              </strong>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px",
+                padding: "14px 16px",
+                border:
+                  "1px solid rgba(110, 61, 25, 0.12)",
+                borderRadius: "14px",
+                background:
+                  "rgba(255, 250, 244, 0.82)",
+              }}
+            >
+              <div>
+                <strong
+                  style={{
+                    display: "block",
+                    color: "#4b250e",
+                  }}
+                >
+                  Within India
+                </strong>
+
+                <small
+                  style={{
+                    color: "#8b7565",
+                  }}
+                >
+                  Other Indian locations
+                </small>
+              </div>
+
+              <strong
+                style={{
+                  color:
+                    product.shippingDetails
+                      .withinIndia?.type === "free"
+                      ? "#2f7d4a"
+                      : "#6e3d19",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {getShippingDisplay(
+                  product.shippingDetails
+                    .withinIndia
+                )}
+              </strong>
+            </div>
+
+            {product.shippingDetails
+              .withinIndia?.type === "manual" &&
+              Array.isArray(
+                product.shippingDetails
+                  .withinIndia?.freeLocations
+              ) &&
+              (
+                product.shippingDetails
+                  .withinIndia?.freeLocations
+                  ?.length ?? 0
+              ) > 0 && (
+                <div
+                  style={{
+                    padding:
+                      "14px 16px",
+                    border:
+                      "1px solid rgba(110, 61, 25, 0.12)",
+                    borderRadius:
+                      "14px",
+                    background:
+                      "rgba(255, 250, 244, 0.82)",
+                  }}
+                >
+                  <strong
+                    style={{
+                      display:
+                        "block",
+                      marginBottom:
+                        "10px",
+                      color:
+                        "#4b250e",
+                    }}
+                  >
+                    Free Shipping Locations
+                  </strong>
+
+                  <div
+                    style={{
+                      display:
+                        "flex",
+                      flexWrap:
+                        "wrap",
+                      gap: "8px",
+                    }}
+                  >
+                    {product.shippingDetails
+                      .withinIndia
+                      ?.freeLocations?.map(
+                        (
+                          location,
+                          index
+                        ) => (
+                          <span
+                            key={`${location}-${index}`}
+                            style={{
+                              padding:
+                                "7px 10px",
+                              borderRadius:
+                                "999px",
+                              background:
+                                "#f6eadc",
+                              color:
+                                "#6e3d19",
+                              fontSize:
+                                "12px",
+                              fontWeight:
+                                700,
+                            }}
+                          >
+                            {location}
+                          </span>
+                        )
+                      )}
+                  </div>
+                </div>
+              )}
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px",
+                padding: "14px 16px",
+                border:
+                  "1px solid rgba(110, 61, 25, 0.12)",
+                borderRadius: "14px",
+                background:
+                  "rgba(255, 250, 244, 0.82)",
+              }}
+            >
+              <div>
+                <strong
+                  style={{
+                    display: "block",
+                    color: "#4b250e",
+                  }}
+                >
+                  International
+                </strong>
+
+                <small
+                  style={{
+                    color: "#8b7565",
+                  }}
+                >
+                  Outside India
+                </small>
+              </div>
+
+              <strong
+                style={{
+                  color:
+                    product.shippingDetails
+                      .international?.type === "free"
+                      ? "#2f7d4a"
+                      : "#6e3d19",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {getShippingDisplay(
+                  product.shippingDetails
+                    .international
+                )}
+              </strong>
+            </div>
+          </div>
+
+          <p
+            style={{
+              margin:
+                "14px 0 0",
+              color:
+                "#8b7565",
+              fontSize:
+                "12px",
+              lineHeight:
+                1.6,
+            }}
+          >
+            Final shipping charge is
+            applied according to the
+            delivery address at checkout.
           </p>
         </section>
 

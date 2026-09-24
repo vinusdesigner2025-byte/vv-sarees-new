@@ -1,4 +1,5 @@
-import {
+
+  import {
   useEffect,
   useState,
 } from "react";
@@ -173,6 +174,21 @@ type ProductVariantRow = {
     | null;
 };
 
+type ShippingMode = "free" | "manual";
+
+type ShippingRule = {
+  type?: ShippingMode;
+  amount?: number | string | null;
+};
+
+type ProductShippingDetails = {
+  tamilNadu?: ShippingRule;
+  withinIndia?: ShippingRule & {
+    freeLocations?: string[];
+  };
+  international?: ShippingRule;
+};
+
 type ProductRow = {
   id: string;
   name: string;
@@ -187,6 +203,7 @@ type ProductRow = {
   status: string | null;
   is_featured: boolean | null;
   is_new_arrival: boolean | null;
+  shipping_details: ProductShippingDetails | null;
   product_variants:
     | ProductVariantRow[]
     | null;
@@ -282,6 +299,49 @@ export default function EditProduct() {
     wholesaleMinimum,
     setWholesaleMinimum,
   ] = useState("5");
+
+  const [
+    tamilNaduShippingMode,
+    setTamilNaduShippingMode,
+  ] = useState<ShippingMode>("free");
+
+  const [
+    tamilNaduShippingAmount,
+    setTamilNaduShippingAmount,
+  ] = useState("");
+
+  const [
+    indiaShippingMode,
+    setIndiaShippingMode,
+  ] = useState<ShippingMode>("manual");
+
+  const [
+    indiaShippingAmount,
+    setIndiaShippingAmount,
+  ] = useState("");
+
+  const [
+    freeShippingLocations,
+    setFreeShippingLocations,
+  ] = useState<string[]>([
+    "Puducherry",
+    "Bangalore",
+  ]);
+
+  const [
+    freeShippingLocationInput,
+    setFreeShippingLocationInput,
+  ] = useState("");
+
+  const [
+    internationalShippingMode,
+    setInternationalShippingMode,
+  ] = useState<ShippingMode>("manual");
+
+  const [
+    internationalShippingAmount,
+    setInternationalShippingAmount,
+  ] = useState("");
 
   const [isFeatured, setIsFeatured] =
     useState(false);
@@ -397,6 +457,7 @@ export default function EditProduct() {
               status,
               is_featured,
               is_new_arrival,
+              shipping_details,
               product_variants (
                 id,
                 colour_name,
@@ -466,6 +527,74 @@ export default function EditProduct() {
             product.wholesale_minimum ??
               5
           )
+        );
+
+        const shippingDetails =
+          product.shipping_details ?? {};
+
+        const tamilNaduRule =
+          shippingDetails.tamilNadu;
+
+        const withinIndiaRule =
+          shippingDetails.withinIndia;
+
+        const internationalRule =
+          shippingDetails.international;
+
+        setTamilNaduShippingMode(
+          tamilNaduRule?.type === "manual"
+            ? "manual"
+            : "free"
+        );
+
+        setTamilNaduShippingAmount(
+          tamilNaduRule?.type === "manual" &&
+          tamilNaduRule.amount !== null &&
+          tamilNaduRule.amount !== undefined
+            ? String(tamilNaduRule.amount)
+            : ""
+        );
+
+        setIndiaShippingMode(
+          withinIndiaRule?.type === "free"
+            ? "free"
+            : "manual"
+        );
+
+        setIndiaShippingAmount(
+          withinIndiaRule?.type === "manual" &&
+          withinIndiaRule.amount !== null &&
+          withinIndiaRule.amount !== undefined
+            ? String(withinIndiaRule.amount)
+            : ""
+        );
+
+        setFreeShippingLocations(
+          Array.isArray(
+            withinIndiaRule?.freeLocations
+          ) &&
+            withinIndiaRule.freeLocations.length >
+              0
+            ? withinIndiaRule.freeLocations.filter(
+                (location): location is string =>
+                  typeof location === "string" &&
+                  Boolean(location.trim())
+              )
+            : ["Puducherry", "Bangalore"]
+        );
+
+        setInternationalShippingMode(
+          internationalRule?.type === "free"
+            ? "free"
+            : "manual"
+        );
+
+        setInternationalShippingAmount(
+          internationalRule?.type === "manual" &&
+          internationalRule.amount !== null &&
+          internationalRule.amount !== undefined
+            ? String(internationalRule.amount)
+            : ""
         );
 
         setStatus(
@@ -764,6 +893,63 @@ export default function EditProduct() {
     );
   };
 
+  const addFreeShippingLocation = () => {
+    const nextLocation =
+      freeShippingLocationInput
+        .trim()
+        .replace(/\s+/g, " ");
+
+    if (!nextLocation) {
+      return;
+    }
+
+    if (
+      nextLocation.toLowerCase() ===
+      "tamil nadu"
+    ) {
+      alert(
+        "Tamil Nadu-ku mela irukkura separate shipping setting use pannu."
+      );
+
+      return;
+    }
+
+    const alreadyExists =
+      freeShippingLocations.some(
+        (location) =>
+          location.toLowerCase() ===
+          nextLocation.toLowerCase()
+      );
+
+    if (alreadyExists) {
+      setFreeShippingLocationInput("");
+
+      return;
+    }
+
+    setFreeShippingLocations(
+      (currentLocations) => [
+        ...currentLocations,
+        nextLocation,
+      ]
+    );
+
+    setFreeShippingLocationInput("");
+  };
+
+  const removeFreeShippingLocation = (
+    locationToRemove: string
+  ) => {
+    setFreeShippingLocations(
+      (currentLocations) =>
+        currentLocations.filter(
+          (location) =>
+            location !==
+            locationToRemove
+        )
+    );
+  };
+
   const validateForm = () => {
     if (
       !productName.trim()
@@ -823,6 +1009,42 @@ export default function EditProduct() {
     ) {
       alert(
         "Enter a valid wholesale minimum quantity."
+      );
+
+      return false;
+    }
+
+    if (
+      tamilNaduShippingMode === "manual" &&
+      (tamilNaduShippingAmount === "" ||
+        Number(tamilNaduShippingAmount) <= 0)
+    ) {
+      alert(
+        "Tamil Nadu manual shipping amount enter pannu."
+      );
+
+      return false;
+    }
+
+    if (
+      indiaShippingMode === "manual" &&
+      (indiaShippingAmount === "" ||
+        Number(indiaShippingAmount) <= 0)
+    ) {
+      alert(
+        "Within India manual shipping amount enter pannu."
+      );
+
+      return false;
+    }
+
+    if (
+      internationalShippingMode === "manual" &&
+      (internationalShippingAmount === "" ||
+        Number(internationalShippingAmount) <= 0)
+    ) {
+      alert(
+        "International manual shipping amount enter pannu."
       );
 
       return false;
@@ -1205,6 +1427,46 @@ export default function EditProduct() {
                 Number(
                   wholesaleMinimum
                 ),
+
+              shipping_details: {
+                tamilNadu: {
+                  type:
+                    tamilNaduShippingMode,
+                  amount:
+                    tamilNaduShippingMode ===
+                    "free"
+                      ? 0
+                      : Number(
+                          tamilNaduShippingAmount
+                        ),
+                },
+
+                withinIndia: {
+                  type:
+                    indiaShippingMode,
+                  amount:
+                    indiaShippingMode ===
+                    "free"
+                      ? 0
+                      : Number(
+                          indiaShippingAmount
+                        ),
+                  freeLocations:
+                    freeShippingLocations,
+                },
+
+                international: {
+                  type:
+                    internationalShippingMode,
+                  amount:
+                    internationalShippingMode ===
+                    "free"
+                      ? 0
+                      : Number(
+                          internationalShippingAmount
+                        ),
+                },
+              },
 
               status,
 
@@ -1859,6 +2121,434 @@ export default function EditProduct() {
                     )
                   }
                 />
+              </div>
+            </div>
+          </section>
+
+          <section className="new-product-card">
+            <div className="new-product-card-heading">
+              <h2>Shipping Details</h2>
+
+              <p>
+                Set free or manual shipping
+                charges for this product.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gap: "22px",
+              }}
+            >
+              <div
+                style={{
+                  border:
+                    "1px solid rgba(122, 62, 24, 0.14)",
+                  borderRadius: "16px",
+                  padding: "18px",
+                  background: "#fffdfa",
+                }}
+              >
+                <div className="new-product-form-grid">
+                  <div className="new-product-field">
+                    <label htmlFor="tamil-nadu-shipping-mode">
+                      Tamil Nadu
+                    </label>
+
+                    <select
+                      id="tamil-nadu-shipping-mode"
+                      value={tamilNaduShippingMode}
+                      disabled={isSaving}
+                      onChange={(event) =>
+                        setTamilNaduShippingMode(
+                          event.target
+                            .value as ShippingMode
+                        )
+                      }
+                    >
+                      <option value="free">
+                        Free Shipping
+                      </option>
+
+                      <option value="manual">
+                        Manual Amount
+                      </option>
+                    </select>
+                  </div>
+
+                  {tamilNaduShippingMode ===
+                  "manual" ? (
+                    <div className="new-product-field">
+                      <label htmlFor="tamil-nadu-shipping-amount">
+                        Shipping Amount
+                      </label>
+
+                      <div className="new-product-price-input">
+                        <span>₹</span>
+
+                        <input
+                          id="tamil-nadu-shipping-amount"
+                          type="number"
+                          min="0"
+                          placeholder="80"
+                          value={
+                            tamilNaduShippingAmount
+                          }
+                          disabled={isSaving}
+                          onChange={(event) =>
+                            setTamilNaduShippingAmount(
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="new-product-field">
+                      <label>Shipping Charge</label>
+
+                      <div
+                        style={{
+                          minHeight: "56px",
+                          border:
+                            "1px solid rgba(122, 62, 24, 0.14)",
+                          borderRadius: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "0 16px",
+                          fontWeight: 700,
+                          color: "#6e3d19",
+                          background: "#fff",
+                        }}
+                      >
+                        Free Shipping
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border:
+                    "1px solid rgba(122, 62, 24, 0.14)",
+                  borderRadius: "16px",
+                  padding: "18px",
+                  background: "#fffdfa",
+                }}
+              >
+                <div className="new-product-form-grid">
+                  <div className="new-product-field">
+                    <label htmlFor="india-shipping-mode">
+                      Within India
+                    </label>
+
+                    <select
+                      id="india-shipping-mode"
+                      value={indiaShippingMode}
+                      disabled={isSaving}
+                      onChange={(event) =>
+                        setIndiaShippingMode(
+                          event.target
+                            .value as ShippingMode
+                        )
+                      }
+                    >
+                      <option value="free">
+                        Free Shipping
+                      </option>
+
+                      <option value="manual">
+                        Manual Amount
+                      </option>
+                    </select>
+                  </div>
+
+                  {indiaShippingMode ===
+                  "manual" ? (
+                    <div className="new-product-field">
+                      <label htmlFor="india-shipping-amount">
+                        Shipping Amount
+                      </label>
+
+                      <div className="new-product-price-input">
+                        <span>₹</span>
+
+                        <input
+                          id="india-shipping-amount"
+                          type="number"
+                          min="0"
+                          placeholder="120"
+                          value={
+                            indiaShippingAmount
+                          }
+                          disabled={isSaving}
+                          onChange={(event) =>
+                            setIndiaShippingAmount(
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="new-product-field">
+                      <label>Shipping Charge</label>
+
+                      <div
+                        style={{
+                          minHeight: "56px",
+                          border:
+                            "1px solid rgba(122, 62, 24, 0.14)",
+                          borderRadius: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "0 16px",
+                          fontWeight: 700,
+                          color: "#6e3d19",
+                          background: "#fff",
+                        }}
+                      >
+                        Free Shipping Across India
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {indiaShippingMode === "manual" && (
+                  <div
+                    className="new-product-field"
+                    style={{
+                      marginTop: "18px",
+                    }}
+                  >
+                    <label htmlFor="free-shipping-location">
+                      Free Shipping Locations
+                    </label>
+
+                    <p
+                      style={{
+                        margin:
+                          "0 0 10px",
+                        color: "#9b7b62",
+                        fontSize: "12px",
+                      }}
+                    >
+                      Manual India shipping charge-la
+                      irundhu free-a irukkanum cities /
+                      states inga add pannu. Example:
+                      Puducherry, Bangalore.
+                    </p>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "minmax(0, 1fr) auto",
+                        gap: "10px",
+                      }}
+                    >
+                      <input
+                        id="free-shipping-location"
+                        type="text"
+                        placeholder="Example: Puducherry / Bangalore"
+                        value={
+                          freeShippingLocationInput
+                        }
+                        disabled={isSaving}
+                        onChange={(event) =>
+                          setFreeShippingLocationInput(
+                            event.target.value
+                          )
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addFreeShippingLocation();
+                          }
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        className="add-colour-button"
+                        onClick={
+                          addFreeShippingLocation
+                        }
+                        disabled={isSaving}
+                        style={{
+                          alignSelf: "stretch",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <FiPlus />
+                        Add Location
+                      </button>
+                    </div>
+
+                    {freeShippingLocations.length >
+                    0 ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                          marginTop: "12px",
+                        }}
+                      >
+                        {freeShippingLocations.map(
+                          (location) => (
+                            <span
+                              key={location}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                border:
+                                  "1px solid rgba(122, 62, 24, 0.18)",
+                                borderRadius: "999px",
+                                padding:
+                                  "7px 10px 7px 12px",
+                                background: "#fff",
+                                color: "#6e3d19",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {location}
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeFreeShippingLocation(
+                                    location
+                                  )
+                                }
+                                disabled={isSaving}
+                                aria-label={`Remove ${location}`}
+                                style={{
+                                  width: "22px",
+                                  height: "22px",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  display: "grid",
+                                  placeItems: "center",
+                                  background:
+                                    "rgba(122, 62, 24, 0.08)",
+                                  color: "#6e3d19",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                <FiX />
+                              </button>
+                            </span>
+                          )
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          marginTop: "12px",
+                          color: "#9b7b62",
+                          fontSize: "12px",
+                        }}
+                      >
+                        No free shipping locations added.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  border:
+                    "1px solid rgba(122, 62, 24, 0.14)",
+                  borderRadius: "16px",
+                  padding: "18px",
+                  background: "#fffdfa",
+                }}
+              >
+                <div className="new-product-form-grid">
+                  <div className="new-product-field">
+                    <label htmlFor="international-shipping-mode">
+                      International
+                    </label>
+
+                    <select
+                      id="international-shipping-mode"
+                      value={
+                        internationalShippingMode
+                      }
+                      disabled={isSaving}
+                      onChange={(event) =>
+                        setInternationalShippingMode(
+                          event.target
+                            .value as ShippingMode
+                        )
+                      }
+                    >
+                      <option value="free">
+                        Free Shipping
+                      </option>
+
+                      <option value="manual">
+                        Manual Amount
+                      </option>
+                    </select>
+                  </div>
+
+                  {internationalShippingMode ===
+                  "manual" ? (
+                    <div className="new-product-field">
+                      <label htmlFor="international-shipping-amount">
+                        Shipping Amount
+                      </label>
+
+                      <div className="new-product-price-input">
+                        <span>₹</span>
+
+                        <input
+                          id="international-shipping-amount"
+                          type="number"
+                          min="0"
+                          placeholder="900"
+                          value={
+                            internationalShippingAmount
+                          }
+                          disabled={isSaving}
+                          onChange={(event) =>
+                            setInternationalShippingAmount(
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="new-product-field">
+                      <label>Shipping Charge</label>
+
+                      <div
+                        style={{
+                          minHeight: "56px",
+                          border:
+                            "1px solid rgba(122, 62, 24, 0.14)",
+                          borderRadius: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "0 16px",
+                          fontWeight: 700,
+                          color: "#6e3d19",
+                          background: "#fff",
+                        }}
+                      >
+                        Free Shipping
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </section>

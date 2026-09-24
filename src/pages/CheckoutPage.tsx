@@ -1,4 +1,6 @@
-import {
+
+  import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -141,6 +143,172 @@ const PAYMENT_METHODS = {
   cod: false,
 };
 
+type ShippingMode = "free" | "manual";
+
+type ShippingRule = {
+  type?: ShippingMode;
+  amount?: number | string | null;
+};
+
+type ShippingDetails = {
+  tamilNadu?: ShippingRule;
+  withinIndia?: ShippingRule & {
+    freeLocations?: string[];
+  };
+  international?: ShippingRule;
+};
+
+type ShippingProductRow = {
+  slug: string;
+  shipping_details: ShippingDetails | null;
+};
+
+const normalizeLocation = (
+  value: unknown
+) => {
+  const normalized = String(
+    value ?? ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (
+    normalized === "bangalore" ||
+    normalized === "bengaluru" ||
+    normalized === "bangaluru"
+  ) {
+    return "bengaluru";
+  }
+
+  if (
+    normalized === "pondicherry" ||
+    normalized === "puducherry"
+  ) {
+    return "puducherry";
+  }
+
+  if (
+    normalized === "tamilnadu" ||
+    normalized === "tamil nadu"
+  ) {
+    return "tamil nadu";
+  }
+
+  return normalized;
+};
+
+const getSafeShippingAmount = (
+  value: unknown
+) => {
+  const amount = Number(value ?? 0);
+
+  if (
+    !Number.isFinite(amount) ||
+    amount < 0
+  ) {
+    return 0;
+  }
+
+  return (
+    Math.round(amount * 100) / 100
+  );
+};
+
+const getRuleCharge = (
+  rule: ShippingRule | undefined
+) => {
+  if (rule?.type === "free") {
+    return 0;
+  }
+
+  return getSafeShippingAmount(
+    rule?.amount
+  );
+};
+
+const isFreeIndiaLocation = (
+  details: ShippingDetails | null | undefined,
+  city: string,
+  state: string
+) => {
+  const freeLocations =
+    details?.withinIndia?.freeLocations;
+
+  if (
+    !Array.isArray(freeLocations) ||
+    freeLocations.length === 0
+  ) {
+    return false;
+  }
+
+  const normalizedCity =
+    normalizeLocation(city);
+
+  const normalizedState =
+    normalizeLocation(state);
+
+  return freeLocations.some(
+    (location) => {
+      const normalizedLocation =
+        normalizeLocation(location);
+
+      return (
+        normalizedLocation !== "" &&
+        (
+          normalizedLocation ===
+            normalizedCity ||
+          normalizedLocation ===
+            normalizedState
+        )
+      );
+    }
+  );
+};
+
+const getPerUnitShippingCharge = (
+  details: ShippingDetails | null | undefined,
+  city: string,
+  state: string
+) => {
+  /*
+   * Old products without shipping_details
+   * remain free until configured in admin.
+   */
+  if (!details) {
+    return 0;
+  }
+
+  const normalizedState =
+    normalizeLocation(state);
+
+  if (
+    normalizedState ===
+    "tamil nadu"
+  ) {
+    return getRuleCharge(
+      details.tamilNadu
+    );
+  }
+
+  if (
+    isFreeIndiaLocation(
+      details,
+      city,
+      state
+    )
+  ) {
+    return 0;
+  }
+
+  return getRuleCharge(
+    details.withinIndia
+  );
+};
+
 const RAZORPAY_SCRIPT_URL =
   "https://checkout.razorpay.com/v1/checkout.js";
 
@@ -238,6 +406,26 @@ export default function CheckoutPage({
     setSubmitError,
   ] = useState("");
 
+  const [
+    shippingDetailsBySlug,
+    setShippingDetailsBySlug,
+  ] = useState<
+    Record<
+      string,
+      ShippingDetails | null
+    >
+  >({});
+
+  const [
+    isLoadingShipping,
+    setIsLoadingShipping,
+  ] = useState(false);
+
+  const [
+    shippingPreviewError,
+    setShippingPreviewError,
+  ] = useState("");
+
   const [formData, setFormData] =
     useState({
       fullName: "",
@@ -250,6 +438,110 @@ export default function CheckoutPage({
       pincode: "",
       deliveryNote: "",
     });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const productSlugs = [
+      ...new Set(
+        cartItems
+          .map((item) =>
+            String(
+              item.slug ?? ""
+            ).trim()
+          )
+          .filter(Boolean)
+      ),
+    ];
+
+    if (
+      productSlugs.length === 0
+    ) {
+      setShippingDetailsBySlug({});
+      setShippingPreviewError("");
+      setIsLoadingShipping(false);
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const loadShippingDetails =
+      async () => {
+        setIsLoadingShipping(true);
+        setShippingPreviewError("");
+
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("products")
+          .select(
+            "slug, shipping_details"
+          )
+          .eq("status", "active")
+          .in(
+            "slug",
+            productSlugs
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        if (error) {
+          console.error(
+            "Shipping preview load error:",
+            error
+          );
+
+          setShippingDetailsBySlug(
+            {}
+          );
+
+          setShippingPreviewError(
+            "Shipping preview could not be loaded. The secure checkout will calculate the final shipping charge."
+          );
+
+          setIsLoadingShipping(
+            false
+          );
+
+          return;
+        }
+
+        const rows =
+          (data ??
+            []) as ShippingProductRow[];
+
+        const nextMap: Record<
+          string,
+          ShippingDetails | null
+        > = {};
+
+        rows.forEach((row) => {
+          nextMap[
+            String(row.slug)
+          ] =
+            row.shipping_details ??
+            null;
+        });
+
+        setShippingDetailsBySlug(
+          nextMap
+        );
+
+        setIsLoadingShipping(
+          false
+        );
+      };
+
+    void loadShippingDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartItems]);
 
   const totalQuantity = useMemo(
     () =>
@@ -272,10 +564,58 @@ export default function CheckoutPage({
     [cartItems]
   );
 
-  const shippingCharge = 0;
+  const shippingCharge =
+    useMemo(() => {
+      const total =
+        cartItems.reduce(
+          (currentTotal, item) => {
+            const slug =
+              String(
+                item.slug ?? ""
+              ).trim();
+
+            const details =
+              shippingDetailsBySlug[
+                slug
+              ];
+
+            const perUnitCharge =
+              getPerUnitShippingCharge(
+                details,
+                formData.city,
+                formData.state
+              );
+
+            return (
+              currentTotal +
+              perUnitCharge *
+                Number(
+                  item.quantity
+                )
+            );
+          },
+          0
+        );
+
+      return (
+        Math.round(
+          total * 100
+        ) / 100
+      );
+    }, [
+      cartItems,
+      shippingDetailsBySlug,
+      formData.city,
+      formData.state,
+    ]);
 
   const grandTotal =
-    subtotal + shippingCharge;
+    Math.round(
+      (
+        subtotal +
+        shippingCharge
+      ) * 100
+    ) / 100;
 
   const minimumQuantity =
     isWholesale ? 5 : 1;
@@ -294,7 +634,8 @@ export default function CheckoutPage({
     cartItems.length > 0 &&
     minimumReached &&
     !hasOutOfStockItem &&
-    !isSubmitting;
+    !isSubmitting &&
+    !isLoadingShipping;
 
   const updateField = (
     field: keyof typeof formData,
@@ -1013,6 +1354,15 @@ export default function CheckoutPage({
           </div>
         )}
 
+        {shippingPreviewError && (
+          <div className="checkout-minimum-warning">
+            <FiTruck />
+            <span>
+              {shippingPreviewError}
+            </span>
+          </div>
+        )}
+
         <form
           className="checkout-layout"
           onSubmit={handleSubmit}
@@ -1319,15 +1669,21 @@ export default function CheckoutPage({
                   </strong>
 
                   <span>
-                    Delivery timeline
-                    will be confirmed
-                    after order
-                    verification.
+                    Shipping charge is
+                    calculated from your
+                    delivery city/state and
+                    this product's shipping
+                    rules.
                   </span>
                 </div>
 
                 <span className="checkout-option-price">
-                  Free
+                  {isLoadingShipping
+                    ? "Calculating..."
+                    : shippingCharge ===
+                        0
+                      ? "Free"
+                      : `₹${shippingCharge}`}
                 </span>
               </label>
             </section>
@@ -1521,9 +1877,11 @@ export default function CheckoutPage({
               <span>Shipping</span>
 
               <strong>
-                {shippingCharge === 0
-                  ? "Free"
-                  : `₹${shippingCharge}`}
+                {isLoadingShipping
+                  ? "Calculating..."
+                  : shippingCharge === 0
+                    ? "Free"
+                    : `₹${shippingCharge}`}
               </strong>
             </div>
 
@@ -1544,15 +1902,17 @@ export default function CheckoutPage({
                 !canPlaceOrder
               }
             >
-              {isSubmitting
-                ? paymentMethod ===
-                  "razorpay"
-                  ? "Processing Payment..."
-                  : "Placing Order..."
-                : paymentMethod ===
-                  "razorpay"
-                  ? "Pay Securely"
-                  : "Place Order"}
+              {isLoadingShipping
+                ? "Calculating Shipping..."
+                : isSubmitting
+                  ? paymentMethod ===
+                    "razorpay"
+                    ? "Processing Payment..."
+                    : "Placing Order..."
+                  : paymentMethod ===
+                    "razorpay"
+                    ? "Pay Securely"
+                    : "Place Order"}
             </button>
 
             <Link
