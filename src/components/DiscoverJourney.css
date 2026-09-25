@@ -298,22 +298,25 @@
 
 @media (max-width: 700px) {
   .discover-journey {
-    padding: 42px 0 34px;
+    padding: 40px 0 32px;
   }
 
   .discover-journey-inner {
-    width: calc(100% - 32px);
+    width: calc(100% - 28px);
+    max-width: 520px;
+    margin: 0 auto;
+
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     gap: 0;
   }
 
-  /* Heading above image */
   .journey-mobile-heading {
     order: 1;
     display: block;
     width: 100%;
-    margin-bottom: 24px;
+    margin: 0 0 22px;
     text-align: center;
   }
 
@@ -331,18 +334,13 @@
   .journey-mobile-heading h2 {
     margin: 0;
     color: #58250d;
-    font-family:
-      "Cormorant Garamond",
-      Georgia,
-      serif;
-    font-size: clamp(27px, 7.2vw, 36px);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(29px, 7.2vw, 36px);
     font-weight: 600;
-    line-height: 1;
-    letter-spacing: -0.6px;
-    white-space: nowrap;
+    line-height: 1.05;
+    letter-spacing: -0.5px;
   }
 
-  /* Full uncropped image */
   .discover-journey-media {
     order: 2;
     width: 100%;
@@ -351,9 +349,10 @@
     border: 0;
     border-radius: 22px;
     overflow: hidden;
+    box-sizing: border-box;
     box-shadow:
-      0 20px 42px rgba(62, 27, 7, 0.17),
-      0 7px 16px rgba(62, 27, 7, 0.08);
+      0 18px 38px rgba(62, 27, 7, 0.15),
+      0 6px 14px rgba(62, 27, 7, 0.07);
   }
 
   .discover-journey-media img {
@@ -373,8 +372,8 @@
   .discover-journey-media:hover {
     transform: none;
     box-shadow:
-      0 20px 42px rgba(62, 27, 7, 0.17),
-      0 7px 16px rgba(62, 27, 7, 0.08);
+      0 18px 38px rgba(62, 27, 7, 0.15),
+      0 6px 14px rgba(62, 27, 7, 0.07);
   }
 
   .discover-journey-media:hover img {
@@ -382,16 +381,16 @@
     filter: none;
   }
 
-  /* Content below image */
   .discover-journey-content {
     order: 3;
     width: 100%;
-    padding: 38px 6px 0;
+    padding: 32px 0 0;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 26px;
+    gap: 24px;
     text-align: left;
+    box-sizing: border-box;
   }
 
   .discover-journey-eyebrow,
@@ -402,30 +401,31 @@
 
   .journey-mobile-description {
     display: block;
+    width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0 4px;
+    padding: 0;
     color: #7e4319;
-    font-family:
-      "Cormorant Garamond",
-      Georgia,
-      serif;
-    font-size: 21px;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 20px;
     font-weight: 500;
-    line-height: 1.3;
+    line-height: 1.32;
   }
 
   .discover-journey-button {
     width: 100%;
     min-width: 0;
-    min-height: 64px;
+    min-height: 62px;
     margin: 0;
-    padding: 0 26px;
+    padding: 0 22px;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
     border-radius: 18px;
-    font-size: 13px;
+    box-sizing: border-box;
+    font-size: 14px;
     box-shadow:
-      0 15px 30px rgba(103, 43, 3, 0.17);
+      0 14px 28px rgba(103, 43, 3, 0.16);
   }
 
   .discover-journey-button:hover {
@@ -439,32 +439,39 @@
 
 @media (max-width: 380px) {
   .discover-journey {
-    padding: 36px 0 30px;
+    padding: 34px 0 28px;
   }
 
   .discover-journey-inner {
-    width: calc(100% - 24px);
+    width: calc(100% - 22px);
+  }
+
+  .journey-mobile-heading {
+    margin-bottom: 20px;
   }
 
   .journey-mobile-heading h2 {
-    font-size: clamp(25px, 7vw, 30px);
+    font-size: 27px;
   }
 
   .discover-journey-media {
-    border-radius: 19px;
+    border-radius: 18px;
   }
 
   .discover-journey-content {
-    padding-top: 30px;
-    gap: 22px;
+    padding-top: 28px;
+    gap: 20px;
   }
 
   .journey-mobile-description {
     font-size: 19px;
+    line-height: 1.3;
   }
 
   .discover-journey-button {
-    min-height: 56px;
+    min-height: 58px;
+    padding: 0 20px;
+    font-size: 13px;
   }
 }
 
@@ -477,7 +484,7 @@
   .discover-journey-media img,
   .discover-journey-play,
   .discover-journey-button,
-  .discover-journey-button svg {
+ .discover-journey-button svg {
     transition: none;
   }
 }
