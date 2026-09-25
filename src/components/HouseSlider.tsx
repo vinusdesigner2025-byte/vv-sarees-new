@@ -1,5 +1,6 @@
-import {
-  useEffect,
+
+ import {
+ useEffect,
   useMemo,
   useRef,
   useState,
@@ -9,43 +10,27 @@ import { useWebsiteMedia } from "../context/WebsiteMediaContext";
 
 import "./HouseSlider.css";
 
-import houseLeftFallback from "../assets/house of left.jpg";
-import houseCenterFallback from "../assets/house of senter.png";
-import houseRightFallback from "../assets/house of right.jpg";
 
 type WebsiteMediaRow = {
-  id: number;
+  id: number | string;
   section: string | null;
   slot_key: string | null;
-  title: string | null;
-  image_url: string | null;
+  desktop_url: string | null;
+  mobile_url: string | null;
   display_order: number | null;
   is_active: boolean | null;
+  settings?: {
+    title?: string;
+    alt?: string;
+  } | null;
 };
 
 type HouseImage = {
   id: number | string;
-  image: string;
+  desktopImage: string;
+  mobileImage: string;
   alt: string;
 };
-
-const fallbackImages: HouseImage[] = [
-  {
-    id: "fallback-left",
-    image: houseLeftFallback,
-    alt: "VV Sarees showroom collection display",
-  },
-  {
-    id: "fallback-center",
-    image: houseCenterFallback,
-    alt: "VV Sarees showroom entrance",
-  },
-  {
-    id: "fallback-right",
-    image: houseRightFallback,
-    alt: "VV Sarees showroom interior",
-  },
-];
 
 export default function HouseOfVVSarees() {
   const {
@@ -60,19 +45,15 @@ export default function HouseOfVVSarees() {
     useRef<number | null>(null);
 
   const [activeIndex, setActiveIndex] =
-    useState(1);
+    useState(0);
 
   const houseImages =
     useMemo<HouseImage[]>(() => {
-      /*
-       * Supabase data varra varaikkum
-       * heavy fallback images load panna vendaam.
-       */
       if (loading) {
         return [];
       }
 
-      const rows = (
+      return (
         media as WebsiteMediaRow[]
       )
         .filter(
@@ -82,7 +63,10 @@ export default function HouseOfVVSarees() {
             row.slot_key ===
               "house-slide" &&
             row.is_active !== false &&
-            Boolean(row.image_url)
+            Boolean(
+              row.desktop_url ||
+                row.mobile_url
+            )
         )
         .sort(
           (first, second) =>
@@ -93,32 +77,29 @@ export default function HouseOfVVSarees() {
               second.display_order ?? 0
             )
         )
-        .map((row, index) => ({
-          id: row.id,
+        .map((row, index) => {
+          const desktopImage =
+            row.desktop_url ||
+            row.mobile_url ||
+            "";
 
-          image:
-            row.image_url ?? "",
+          const mobileImage =
+            row.mobile_url ||
+            row.desktop_url ||
+            "";
 
-          alt:
-            row.title?.trim() ||
-            `VV Sarees showroom image ${
-              index + 1
-            }`,
-        }));
-
-      /*
-       * Database-la images irundha
-       * actual images mattum use pannuvom.
-       */
-      if (rows.length > 0) {
-        return rows;
-      }
-
-      /*
-       * Supabase load complete aana apramum
-       * rows illa na mattum fallback.
-       */
-      return fallbackImages;
+          return {
+            id: row.id,
+            desktopImage,
+            mobileImage,
+            alt:
+              row.settings?.alt?.trim() ||
+              row.settings?.title?.trim() ||
+              `VV Sarees showroom image ${
+                index + 1
+              }`,
+          };
+        });
     }, [
       media,
       loading,
@@ -310,6 +291,27 @@ export default function HouseOfVVSarees() {
           />
         )}
 
+        {!loading &&
+          houseImages.length === 0 && (
+            <div
+              style={{
+                width: "100%",
+                minHeight: "220px",
+                borderRadius: "22px",
+                display: "grid",
+                placeItems: "center",
+                background: "#f5eadb",
+                color: "#7a4a2a",
+                textAlign: "center",
+                padding: "24px",
+              }}
+            >
+              <span>
+                Showroom images are being updated.
+              </span>
+            </div>
+          )}
+
         {/* =========================
             DESKTOP GALLERY
         ========================= */}
@@ -321,7 +323,7 @@ export default function HouseOfVVSarees() {
             <div className="house-desktop-gallery">
               <figure className="house-desktop-card house-desktop-card-small">
                 <img
-                  src={desktopLeft.image}
+                  src={desktopLeft.desktopImage}
                   alt={desktopLeft.alt}
                   loading="lazy"
                   decoding="async"
@@ -333,7 +335,7 @@ export default function HouseOfVVSarees() {
               <figure className="house-desktop-card house-desktop-card-main">
                 <img
                   src={
-                    desktopCenter.image
+                    desktopCenter.desktopImage
                   }
                   alt={
                     desktopCenter.alt
@@ -358,7 +360,7 @@ export default function HouseOfVVSarees() {
 
               <figure className="house-desktop-card house-desktop-card-small">
                 <img
-                  src={desktopRight.image}
+                  src={desktopRight.desktopImage}
                   alt={desktopRight.alt}
                   loading="lazy"
                   decoding="async"
@@ -396,18 +398,27 @@ export default function HouseOfVVSarees() {
                       }`}
                       key={item.id}
                     >
-                      <img
-                        src={
-                          item.image
-                        }
-                        alt={item.alt}
-                        loading="lazy"
-                        decoding="async"
-                        fetchPriority="low"
-                        draggable={
-                          false
-                        }
-                      />
+                      <picture>
+                        <source
+                          media="(max-width: 768px)"
+                          srcSet={
+                            item.mobileImage
+                          }
+                        />
+
+                        <img
+                          src={
+                            item.desktopImage
+                          }
+                          alt={item.alt}
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
+                          draggable={
+                            false
+                          }
+                        />
+                      </picture>
                     </figure>
                   )
                 )}
