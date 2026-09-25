@@ -7,6 +7,8 @@ export async function getWebsiteMedia() {
       id,
       section,
       slot_key,
+      title,
+      image_url,
       desktop_url,
       mobile_url,
       display_order,

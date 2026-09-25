@@ -1,6 +1,6 @@
 
- import {
- useEffect,
+  import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -15,20 +15,18 @@ type WebsiteMediaRow = {
   id: number | string;
   section: string | null;
   slot_key: string | null;
+  title: string | null;
+  image_url: string | null;
   desktop_url: string | null;
   mobile_url: string | null;
   display_order: number | null;
   is_active: boolean | null;
-  settings?: {
-    title?: string;
-    alt?: string;
-  } | null;
+  settings?: Record<string, unknown> | null;
 };
 
 type HouseImage = {
   id: number | string;
-  desktopImage: string;
-  mobileImage: string;
+  image: string;
   alt: string;
 };
 
@@ -64,7 +62,8 @@ export default function HouseOfVVSarees() {
               "house-slide" &&
             row.is_active !== false &&
             Boolean(
-              row.desktop_url ||
+              row.image_url ||
+                row.desktop_url ||
                 row.mobile_url
             )
         )
@@ -77,29 +76,21 @@ export default function HouseOfVVSarees() {
               second.display_order ?? 0
             )
         )
-        .map((row, index) => {
-          const desktopImage =
+        .map((row, index) => ({
+          id: row.id,
+
+          image:
+            row.image_url ||
             row.desktop_url ||
             row.mobile_url ||
-            "";
+            "",
 
-          const mobileImage =
-            row.mobile_url ||
-            row.desktop_url ||
-            "";
-
-          return {
-            id: row.id,
-            desktopImage,
-            mobileImage,
-            alt:
-              row.settings?.alt?.trim() ||
-              row.settings?.title?.trim() ||
-              `VV Sarees showroom image ${
-                index + 1
-              }`,
-          };
-        });
+          alt:
+            row.title?.trim() ||
+            `VV Sarees showroom image ${
+              index + 1
+            }`,
+        }));
     }, [
       media,
       loading,
@@ -323,7 +314,7 @@ export default function HouseOfVVSarees() {
             <div className="house-desktop-gallery">
               <figure className="house-desktop-card house-desktop-card-small">
                 <img
-                  src={desktopLeft.desktopImage}
+                  src={desktopLeft.image}
                   alt={desktopLeft.alt}
                   loading="lazy"
                   decoding="async"
@@ -335,7 +326,7 @@ export default function HouseOfVVSarees() {
               <figure className="house-desktop-card house-desktop-card-main">
                 <img
                   src={
-                    desktopCenter.desktopImage
+                    desktopCenter.image
                   }
                   alt={
                     desktopCenter.alt
@@ -360,7 +351,7 @@ export default function HouseOfVVSarees() {
 
               <figure className="house-desktop-card house-desktop-card-small">
                 <img
-                  src={desktopRight.desktopImage}
+                  src={desktopRight.image}
                   alt={desktopRight.alt}
                   loading="lazy"
                   decoding="async"
@@ -398,27 +389,14 @@ export default function HouseOfVVSarees() {
                       }`}
                       key={item.id}
                     >
-                      <picture>
-                        <source
-                          media="(max-width: 768px)"
-                          srcSet={
-                            item.mobileImage
-                          }
-                        />
-
-                        <img
-                          src={
-                            item.desktopImage
-                          }
-                          alt={item.alt}
-                          loading="lazy"
-                          decoding="async"
-                          fetchPriority="low"
-                          draggable={
-                            false
-                          }
-                        />
-                      </picture>
+                      <img
+                        src={item.image}
+                        alt={item.alt}
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
+                        draggable={false}
+                      />
                     </figure>
                   )
                 )}
