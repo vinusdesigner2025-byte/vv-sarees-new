@@ -1,13 +1,6 @@
+import { useEffect, useMemo, useState } from "react";
 
-  import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import type {
-  FormEvent,
-} from "react";
+import type { FormEvent } from "react";
 
 import {
   Link,
@@ -53,6 +46,7 @@ type RazorpayFailureResponse = {
     source?: string;
     step?: string;
     reason?: string;
+
     metadata?: {
       order_id?: string;
       payment_id?: string;
@@ -67,19 +61,23 @@ type RazorpayOptions = {
   name: string;
   description: string;
   order_id: string;
+
   prefill: {
     name: string;
     email: string;
     contact: string;
   };
+
   notes: {
     vv_order_id: string;
     vv_order_number: string;
     order_type: string;
   };
+
   handler: (
     response: RazorpaySuccessResponse
   ) => void | Promise<void>;
+
   modal?: {
     ondismiss?: () => void;
   };
@@ -87,6 +85,7 @@ type RazorpayOptions = {
 
 type RazorpayInstance = {
   open: () => void;
+
   on: (
     event: "payment.failed",
     callback: (
@@ -122,19 +121,32 @@ type RazorpayVerifyResponse = {
 
 type CheckoutCreateResponse = {
   success: boolean;
+
   order?: {
     id: string;
     orderNumber: string;
-    orderType: "wholesale" | "retail";
+
+    orderType:
+      | "wholesale"
+      | "retail";
+
     customerName: string;
+
     totalQuantity: number;
+
     subtotal: number;
+
     shippingCharge: number;
+
     grandTotal: number;
+
     paymentMethod: PaymentMethod;
+
     paymentStatus: string;
+
     orderStatus: string;
   };
+
   error?: string;
 };
 
@@ -143,57 +155,412 @@ const PAYMENT_METHODS = {
   cod: false,
 };
 
-type ShippingMode = "free" | "manual";
+/* =========================================
+   SHIPPING TYPES
+========================================= */
+
+type ShippingMode =
+  | "free"
+  | "manual";
 
 type ShippingRule = {
   type?: ShippingMode;
-  amount?: number | string | null;
+
+  amount?:
+    | number
+    | string
+    | null;
 };
 
 type ShippingDetails = {
   tamilNadu?: ShippingRule;
-  withinIndia?: ShippingRule & {
-    freeLocations?: string[];
-  };
+
+  withinIndia?:
+    ShippingRule & {
+      freeLocations?: string[];
+    };
+
   international?: ShippingRule;
 };
 
 type ShippingProductRow = {
   slug: string;
-  shipping_details: ShippingDetails | null;
+
+  shipping_details:
+    | ShippingDetails
+    | null;
 };
+
+/* =========================================
+   MASTER SHIPPING RATES
+========================================= */
+
+type ShippingRateMap =
+  Record<
+    string,
+    unknown
+  >;
+
+type MasterShippingRates = {
+  tamilNadu:
+    ShippingRateMap;
+
+  india:
+    ShippingRateMap;
+
+  international:
+    ShippingRateMap;
+};
+
+const EMPTY_MASTER_RATES:
+  MasterShippingRates = {
+    tamilNadu: {},
+    india: {},
+    international: {},
+  };
+
+/* =========================================
+   TAMIL NADU DISTRICTS
+========================================= */
+
+const TAMIL_NADU_DISTRICTS = [
+  "Ariyalur",
+  "Chengalpattu",
+  "Chennai",
+  "Coimbatore",
+  "Cuddalore",
+  "Dharmapuri",
+  "Dindigul",
+  "Erode",
+  "Kallakurichi",
+  "Kanchipuram",
+  "Kanniyakumari",
+  "Karur",
+  "Krishnagiri",
+  "Madurai",
+  "Mayiladuthurai",
+  "Nagapattinam",
+  "Namakkal",
+  "Nilgiris",
+  "Perambalur",
+  "Pudukkottai",
+  "Ramanathapuram",
+  "Ranipet",
+  "Salem",
+  "Sivaganga",
+  "Tenkasi",
+  "Thanjavur",
+  "Theni",
+  "Thoothukudi",
+  "Tiruchirappalli",
+  "Tirunelveli",
+  "Tirupathur",
+  "Tiruppur",
+  "Tiruvallur",
+  "Tiruvannamalai",
+  "Tiruvarur",
+  "Vellore",
+  "Viluppuram",
+  "Virudhunagar",
+] as const;
+
+/* =========================================
+   INDIA STATES + UNION TERRITORIES
+========================================= */
+
+const INDIA_STATES = [
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+] as const;
+
+/* =========================================
+   COUNTRIES
+========================================= */
+
+const COUNTRIES = [
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Andorra",
+  "Angola",
+  "Antigua and Barbuda",
+  "Argentina",
+  "Armenia",
+  "Australia",
+  "Austria",
+  "Azerbaijan",
+  "Bahamas",
+  "Bahrain",
+  "Bangladesh",
+  "Barbados",
+  "Belarus",
+  "Belgium",
+  "Belize",
+  "Benin",
+  "Bhutan",
+  "Bolivia",
+  "Bosnia and Herzegovina",
+  "Botswana",
+  "Brazil",
+  "Brunei",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Cabo Verde",
+  "Cambodia",
+  "Cameroon",
+  "Canada",
+  "Central African Republic",
+  "Chad",
+  "Chile",
+  "China",
+  "Colombia",
+  "Comoros",
+  "Congo",
+  "Costa Rica",
+  "Cote d'Ivoire",
+  "Croatia",
+  "Cuba",
+  "Cyprus",
+  "Czechia",
+  "Democratic Republic of the Congo",
+  "Denmark",
+  "Djibouti",
+  "Dominica",
+  "Dominican Republic",
+  "Ecuador",
+  "Egypt",
+  "El Salvador",
+  "Equatorial Guinea",
+  "Eritrea",
+  "Estonia",
+  "Eswatini",
+  "Ethiopia",
+  "Fiji",
+  "Finland",
+  "France",
+  "Gabon",
+  "Gambia",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "Grenada",
+  "Guatemala",
+  "Guinea",
+  "Guinea-Bissau",
+  "Guyana",
+  "Haiti",
+  "Honduras",
+  "Hungary",
+  "Iceland",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Jamaica",
+  "Japan",
+  "Jordan",
+  "Kazakhstan",
+  "Kenya",
+  "Kiribati",
+  "Kuwait",
+  "Kyrgyzstan",
+  "Laos",
+  "Latvia",
+  "Lebanon",
+  "Lesotho",
+  "Liberia",
+  "Libya",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Madagascar",
+  "Malawi",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Malta",
+  "Marshall Islands",
+  "Mauritania",
+  "Mauritius",
+  "Mexico",
+  "Micronesia",
+  "Moldova",
+  "Monaco",
+  "Mongolia",
+  "Montenegro",
+  "Morocco",
+  "Mozambique",
+  "Myanmar",
+  "Namibia",
+  "Nauru",
+  "Nepal",
+  "Netherlands",
+  "New Zealand",
+  "Nicaragua",
+  "Niger",
+  "Nigeria",
+  "North Korea",
+  "North Macedonia",
+  "Norway",
+  "Oman",
+  "Pakistan",
+  "Palau",
+  "Palestine",
+  "Panama",
+  "Papua New Guinea",
+  "Paraguay",
+  "Peru",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Qatar",
+  "Romania",
+  "Russia",
+  "Rwanda",
+  "Saint Kitts and Nevis",
+  "Saint Lucia",
+  "Saint Vincent and the Grenadines",
+  "Samoa",
+  "San Marino",
+  "Sao Tome and Principe",
+  "Saudi Arabia",
+  "Senegal",
+  "Serbia",
+  "Seychelles",
+  "Sierra Leone",
+  "Singapore",
+  "Slovakia",
+  "Slovenia",
+  "Solomon Islands",
+  "Somalia",
+  "South Africa",
+  "South Korea",
+  "South Sudan",
+  "Spain",
+  "Sri Lanka",
+  "Sudan",
+  "Suriname",
+  "Sweden",
+  "Switzerland",
+  "Syria",
+  "Tajikistan",
+  "Tanzania",
+  "Thailand",
+  "Timor-Leste",
+  "Togo",
+  "Tonga",
+  "Trinidad and Tobago",
+  "Tunisia",
+  "Turkey",
+  "Turkmenistan",
+  "Tuvalu",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+  "United States",
+  "Uruguay",
+  "Uzbekistan",
+  "Vanuatu",
+  "Vatican City",
+  "Venezuela",
+  "Vietnam",
+  "Yemen",
+  "Zambia",
+  "Zimbabwe",
+] as const;
+
+/* =========================================
+   LOCATION NORMALIZER
+========================================= */
 
 const normalizeLocation = (
   value: unknown
 ) => {
-  const normalized = String(
-    value ?? ""
-  )
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const normalized =
+    String(
+      value ?? ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(
+        /&/g,
+        "and"
+      )
+      .replace(
+        /[^a-z0-9]+/g,
+        " "
+      )
+      .replace(
+        /\s+/g,
+        " "
+      )
+      .trim();
 
   if (
-    normalized === "bangalore" ||
-    normalized === "bengaluru" ||
-    normalized === "bangaluru"
+    normalized ===
+      "bangalore" ||
+    normalized ===
+      "bengaluru" ||
+    normalized ===
+      "bangaluru"
   ) {
     return "bengaluru";
   }
 
   if (
-    normalized === "pondicherry" ||
-    normalized === "puducherry"
+    normalized ===
+      "pondicherry" ||
+    normalized ===
+      "puducherry"
   ) {
     return "puducherry";
   }
 
   if (
-    normalized === "tamilnadu" ||
-    normalized === "tamil nadu"
+    normalized ===
+      "tamilnadu" ||
+    normalized ===
+      "tamil nadu"
   ) {
     return "tamil nadu";
   }
@@ -201,63 +568,72 @@ const normalizeLocation = (
   return normalized;
 };
 
-const getSafeShippingAmount = (
+const isIndiaCountry = (
   value: unknown
 ) => {
-  const amount = Number(value ?? 0);
-
-  if (
-    !Number.isFinite(amount) ||
-    amount < 0
-  ) {
-    return 0;
-  }
+  const normalized =
+    normalizeLocation(
+      value
+    );
 
   return (
-    Math.round(amount * 100) / 100
+    normalized ===
+      "" ||
+    normalized ===
+      "india" ||
+    normalized ===
+      "in"
   );
 };
 
-const getRuleCharge = (
-  rule: ShippingRule | undefined
-) => {
-  if (rule?.type === "free") {
-    return 0;
-  }
-
-  return getSafeShippingAmount(
-    rule?.amount
-  );
-};
+/* =========================================
+   SPECIAL FREE LOCATION LOGIC
+========================================= */
 
 const isFreeIndiaLocation = (
-  details: ShippingDetails | null | undefined,
+  details:
+    | ShippingDetails
+    | null
+    | undefined,
+
   city: string,
   state: string
 ) => {
   const freeLocations =
-    details?.withinIndia?.freeLocations;
+    details
+      ?.withinIndia
+      ?.freeLocations;
 
   if (
-    !Array.isArray(freeLocations) ||
-    freeLocations.length === 0
+    !Array.isArray(
+      freeLocations
+    ) ||
+    freeLocations.length ===
+      0
   ) {
     return false;
   }
 
   const normalizedCity =
-    normalizeLocation(city);
+    normalizeLocation(
+      city
+    );
 
   const normalizedState =
-    normalizeLocation(state);
+    normalizeLocation(
+      state
+    );
 
   return freeLocations.some(
     (location) => {
       const normalizedLocation =
-        normalizeLocation(location);
+        normalizeLocation(
+          location
+        );
 
       return (
-        normalizedLocation !== "" &&
+        normalizedLocation !==
+          "" &&
         (
           normalizedLocation ===
             normalizedCity ||
@@ -269,28 +645,317 @@ const isFreeIndiaLocation = (
   );
 };
 
-const getPerUnitShippingCharge = (
-  details: ShippingDetails | null | undefined,
-  city: string,
-  state: string
-) => {
-  /*
-   * Old products without shipping_details
-   * remain free until configured in admin.
-   */
-  if (!details) {
-    return 0;
+/* =========================================
+   MASTER SHIPPING HELPERS
+========================================= */
+
+const normalizeMasterRates = (
+  value: unknown
+): MasterShippingRates => {
+  if (
+    typeof value !==
+      "object" ||
+    value === null ||
+    Array.isArray(
+      value
+    )
+  ) {
+    return {
+      ...EMPTY_MASTER_RATES,
+    };
+  }
+
+  const row =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  const getMap = (
+    mapValue: unknown
+  ): ShippingRateMap => {
+    if (
+      typeof mapValue !==
+        "object" ||
+      mapValue === null ||
+      Array.isArray(
+        mapValue
+      )
+    ) {
+      return {};
+    }
+
+    return mapValue as ShippingRateMap;
+  };
+
+  return {
+    tamilNadu:
+      getMap(
+        row.tamilNadu
+      ),
+
+    india:
+      getMap(
+        row.india
+      ),
+
+    international:
+      getMap(
+        row.international
+      ),
+  };
+};
+
+const getConfiguredAmount = (
+  value: unknown
+):
+  | number
+  | null => {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return null;
+  }
+
+  if (
+    typeof value ===
+    "string"
+  ) {
+    if (
+      !value.trim()
+    ) {
+      return null;
+    }
+
+    const amount =
+      Number(
+        value
+      );
+
+    if (
+      !Number.isFinite(
+        amount
+      ) ||
+      amount <
+        0
+    ) {
+      return null;
+    }
+
+    return (
+      Math.round(
+        amount *
+          100
+      ) /
+      100
+    );
+  }
+
+  if (
+    typeof value ===
+    "number"
+  ) {
+    if (
+      !Number.isFinite(
+        value
+      ) ||
+      value <
+        0
+    ) {
+      return null;
+    }
+
+    return (
+      Math.round(
+        value *
+          100
+      ) /
+      100
+    );
+  }
+
+  return null;
+};
+
+const findConfiguredRate = (
+  map:
+    ShippingRateMap,
+
+  location:
+    string
+):
+  | number
+  | null => {
+  if (
+    !location
+  ) {
+    return null;
+  }
+
+  if (
+    Object.prototype
+      .hasOwnProperty
+      .call(
+        map,
+        location
+      )
+  ) {
+    return getConfiguredAmount(
+      map[
+        location
+      ]
+    );
+  }
+
+  const wanted =
+    normalizeLocation(
+      location
+    );
+
+  const matchingEntry =
+    Object.entries(
+      map
+    ).find(
+      (
+        [
+          key,
+        ]
+      ) =>
+        normalizeLocation(
+          key
+        ) ===
+        wanted
+    );
+
+  if (
+    !matchingEntry
+  ) {
+    return null;
+  }
+
+  return getConfiguredAmount(
+    matchingEntry[
+      1
+    ]
+  );
+};
+
+const getMasterShippingRate = ({
+  rates,
+  country,
+  state,
+  district,
+}: {
+  rates:
+    MasterShippingRates;
+
+  country:
+    string;
+
+  state:
+    string;
+
+  district:
+    string;
+}):
+  | number
+  | null => {
+  if (
+    !isIndiaCountry(
+      country
+    )
+  ) {
+    return findConfiguredRate(
+      rates
+        .international,
+
+      country
+    );
+  }
+
+  if (
+    normalizeLocation(
+      state
+    ) ===
+    "tamil nadu"
+  ) {
+    return findConfiguredRate(
+      rates
+        .tamilNadu,
+
+      district
+    );
+  }
+
+  return findConfiguredRate(
+    rates.india,
+
+    state
+  );
+};
+
+/* =========================================
+   PRODUCT SHIPPING RULE
+
+   FREE:
+   no shipping charge.
+
+   MANUAL:
+   use master Shipping Details rate.
+
+   Puducherry / Bangalore:
+   special free location logic is preserved.
+========================================= */
+
+const productNeedsManualRate = ({
+  details,
+  city,
+  state,
+  country,
+}: {
+  details:
+    | ShippingDetails
+    | null
+    | undefined;
+
+  city: string;
+  state: string;
+  country: string;
+}) => {
+  if (
+    !details
+  ) {
+    return false;
+  }
+
+  if (
+    !isIndiaCountry(
+      country
+    )
+  ) {
+    return (
+      details
+        .international
+        ?.type ===
+      "manual"
+    );
   }
 
   const normalizedState =
-    normalizeLocation(state);
+    normalizeLocation(
+      state
+    );
 
   if (
     normalizedState ===
     "tamil nadu"
   ) {
-    return getRuleCharge(
-      details.tamilNadu
+    return (
+      details
+        .tamilNadu
+        ?.type ===
+      "manual"
     );
   }
 
@@ -301,1013 +966,1841 @@ const getPerUnitShippingCharge = (
       state
     )
   ) {
-    return 0;
+    return false;
   }
 
-  return getRuleCharge(
-    details.withinIndia
+  return (
+    details
+      .withinIndia
+      ?.type ===
+    "manual"
   );
 };
+
+/* =========================================
+   RAZORPAY
+========================================= */
 
 const RAZORPAY_SCRIPT_URL =
   "https://checkout.razorpay.com/v1/checkout.js";
 
-const loadRazorpayScript = () => {
-  return new Promise<boolean>(
-    (resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
+const loadRazorpayScript =
+  () => {
+    return new Promise<boolean>(
+      (resolve) => {
+        if (
+          window.Razorpay
+        ) {
+          resolve(
+            true
+          );
+
+          return;
+        }
+
+        const existingScript =
+          document.querySelector<HTMLScriptElement>(
+            `script[src="${RAZORPAY_SCRIPT_URL}"]`
+          );
+
+        if (
+          existingScript
+        ) {
+          existingScript.addEventListener(
+            "load",
+
+            () =>
+              resolve(
+                true
+              ),
+
+            {
+              once:
+                true,
+            }
+          );
+
+          existingScript.addEventListener(
+            "error",
+
+            () =>
+              resolve(
+                false
+              ),
+
+            {
+              once:
+                true,
+            }
+          );
+
+          return;
+        }
+
+        const script =
+          document.createElement(
+            "script"
+          );
+
+        script.src =
+          RAZORPAY_SCRIPT_URL;
+
+        script.async =
+          true;
+
+        script.onload =
+          () =>
+            resolve(
+              true
+            );
+
+        script.onerror =
+          () =>
+            resolve(
+              false
+            );
+
+        document.body.appendChild(
+          script
+        );
       }
+    );
+  };
 
-      const existingScript =
-        document.querySelector<HTMLScriptElement>(
-          `script[src="${RAZORPAY_SCRIPT_URL}"]`
-        );
-
-      if (existingScript) {
-        existingScript.addEventListener(
-          "load",
-          () => resolve(true),
-          { once: true }
-        );
-
-        existingScript.addEventListener(
-          "error",
-          () => resolve(false),
-          { once: true }
-        );
-
-        return;
-      }
-
-      const script =
-        document.createElement("script");
-
-      script.src =
-        RAZORPAY_SCRIPT_URL;
-
-      script.async = true;
-
-      script.onload = () =>
-        resolve(true);
-
-      script.onerror = () =>
-        resolve(false);
-
-      document.body.appendChild(
-        script
-      );
-    }
-  );
-};
-
-const getErrorMessage = (error: unknown) => {
+const getErrorMessage = (
+  error:
+    unknown
+) => {
   if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error
+    typeof error ===
+      "object" &&
+    error !==
+      null &&
+    "message" in
+      error
   ) {
-    return String(error.message);
+    return String(
+      error.message
+    );
   }
 
   return "Something went wrong. Please try again.";
 };
 
+/* =========================================
+   CHECKOUT
+========================================= */
+
 export default function CheckoutPage({
   mode,
 }: CheckoutPageProps) {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const isWholesale =
-    mode === "wholesale";
+    mode ===
+    "wholesale";
 
   const {
     retailCart,
     wholesaleCart,
-  } = useShop();
+  } =
+    useShop();
 
-  const cartItems = isWholesale
-    ? wholesaleCart
-    : retailCart;
+  const cartItems =
+    isWholesale
+      ? wholesaleCart
+      : retailCart;
 
   const [
     paymentMethod,
     setPaymentMethod,
-  ] = useState<PaymentMethod>("razorpay");
+  ] =
+    useState<PaymentMethod>(
+      "razorpay"
+    );
 
   const [
     isSubmitting,
     setIsSubmitting,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     submitError,
     setSubmitError,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
   const [
     shippingDetailsBySlug,
     setShippingDetailsBySlug,
-  ] = useState<
-    Record<
-      string,
-      ShippingDetails | null
-    >
-  >({});
+  ] =
+    useState<
+      Record<
+        string,
+        ShippingDetails | null
+      >
+    >(
+      {}
+    );
+
+  const [
+    masterShippingRates,
+    setMasterShippingRates,
+  ] =
+    useState<MasterShippingRates>(
+      EMPTY_MASTER_RATES
+    );
 
   const [
     isLoadingShipping,
     setIsLoadingShipping,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     shippingPreviewError,
     setShippingPreviewError,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
-  const [formData, setFormData] =
+  const [
+    formData,
+    setFormData,
+  ] =
     useState({
-      fullName: "",
-      phone: "",
-      email: "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      state: "Tamil Nadu",
-      pincode: "",
-      deliveryNote: "",
+      fullName:
+        "",
+
+      phone:
+        "",
+
+      email:
+        "",
+
+      addressLine1:
+        "",
+
+      addressLine2:
+        "",
+
+      country:
+        "India",
+
+      state:
+        "Tamil Nadu",
+
+      district:
+        "",
+
+      city:
+        "",
+
+      pincode:
+        "",
+
+      deliveryNote:
+        "",
     });
 
-  useEffect(() => {
-    let cancelled = false;
+  /* =========================================
+     LOAD SHIPPING RULES
+  ========================================= */
 
-    const productSlugs = [
-      ...new Set(
-        cartItems
-          .map((item) =>
-            String(
-              item.slug ?? ""
-            ).trim()
-          )
-          .filter(Boolean)
-      ),
-    ];
+  useEffect(
+    () => {
+      let cancelled =
+        false;
 
-    if (
-      productSlugs.length === 0
-    ) {
-      setShippingDetailsBySlug({});
-      setShippingPreviewError("");
-      setIsLoadingShipping(false);
+      const productSlugs =
+        [
+          ...new Set(
+            cartItems
+              .map(
+                (
+                  item
+                ) =>
+                  String(
+                    item.slug ??
+                      ""
+                  ).trim()
+              )
+              .filter(
+                Boolean
+              )
+          ),
+        ];
 
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const loadShippingDetails =
-      async () => {
-        setIsLoadingShipping(true);
-        setShippingPreviewError("");
-
-        const {
-          data,
-          error,
-        } = await supabase
-          .from("products")
-          .select(
-            "slug, shipping_details"
-          )
-          .eq("status", "active")
-          .in(
-            "slug",
-            productSlugs
-          );
-
-        if (cancelled) {
-          return;
-        }
-
-        if (error) {
-          console.error(
-            "Shipping preview load error:",
-            error
-          );
-
-          setShippingDetailsBySlug(
-            {}
-          );
-
-          setShippingPreviewError(
-            "Shipping preview could not be loaded. The secure checkout will calculate the final shipping charge."
-          );
-
-          setIsLoadingShipping(
-            false
-          );
-
-          return;
-        }
-
-        const rows =
-          (data ??
-            []) as ShippingProductRow[];
-
-        const nextMap: Record<
-          string,
-          ShippingDetails | null
-        > = {};
-
-        rows.forEach((row) => {
-          nextMap[
-            String(row.slug)
-          ] =
-            row.shipping_details ??
-            null;
-        });
-
+      if (
+        productSlugs.length ===
+        0
+      ) {
         setShippingDetailsBySlug(
-          nextMap
+          {}
+        );
+
+        setMasterShippingRates(
+          EMPTY_MASTER_RATES
+        );
+
+        setShippingPreviewError(
+          ""
         );
 
         setIsLoadingShipping(
           false
         );
+
+        return () => {
+          cancelled =
+            true;
+        };
+      }
+
+      const loadShipping =
+        async () => {
+          setIsLoadingShipping(
+            true
+          );
+
+          setShippingPreviewError(
+            ""
+          );
+
+          const [
+            productResult,
+            settingsResult,
+          ] =
+            await Promise.all(
+              [
+                supabase
+                  .from(
+                    "products"
+                  )
+                  .select(
+                    "slug, shipping_details"
+                  )
+                  .eq(
+                    "status",
+                    "active"
+                  )
+                  .in(
+                    "slug",
+                    productSlugs
+                  ),
+
+                supabase
+                  .from(
+                    "website_settings"
+                  )
+                  .select(
+                    "shipping_rates"
+                  )
+                  .eq(
+                    "id",
+                    "main"
+                  )
+                  .maybeSingle(),
+              ]
+            );
+
+          if (
+            cancelled
+          ) {
+            return;
+          }
+
+          if (
+            productResult.error
+          ) {
+            console.error(
+              "Product shipping rules load error:",
+
+              productResult.error
+            );
+
+            setShippingDetailsBySlug(
+              {}
+            );
+
+            setShippingPreviewError(
+              "Shipping preview could not be loaded. The secure checkout will calculate the final shipping charge."
+            );
+          } else {
+            const rows =
+              (
+                productResult.data ??
+                []
+              ) as ShippingProductRow[];
+
+            const nextMap:
+              Record<
+                string,
+                ShippingDetails | null
+              > = {};
+
+            rows.forEach(
+              (
+                row
+              ) => {
+                nextMap[
+                  String(
+                    row.slug
+                  )
+                ] =
+                  row.shipping_details ??
+                  null;
+              }
+            );
+
+            setShippingDetailsBySlug(
+              nextMap
+            );
+          }
+
+          if (
+            settingsResult.error
+          ) {
+            console.error(
+              "Master shipping rates load error:",
+
+              settingsResult.error
+            );
+
+            setMasterShippingRates(
+              EMPTY_MASTER_RATES
+            );
+
+            setShippingPreviewError(
+              "Shipping rates could not be loaded. The secure checkout will calculate the final shipping charge."
+            );
+          } else {
+            setMasterShippingRates(
+              normalizeMasterRates(
+                settingsResult
+                  .data
+                  ?.shipping_rates
+              )
+            );
+          }
+
+          setIsLoadingShipping(
+            false
+          );
+        };
+
+      void loadShipping();
+
+      return () => {
+        cancelled =
+          true;
       };
+    },
 
-    void loadShippingDetails();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cartItems]);
-
-  const totalQuantity = useMemo(
-    () =>
-      cartItems.reduce(
-        (total, item) =>
-          total + item.quantity,
-        0
-      ),
-    [cartItems]
+    [
+      cartItems,
+    ]
   );
 
-  const subtotal = useMemo(
-    () =>
-      cartItems.reduce(
-        (total, item) =>
-          total +
-          item.price * item.quantity,
-        0
-      ),
-    [cartItems]
-  );
+  /* =========================================
+     TOTALS
+  ========================================= */
+
+  const totalQuantity =
+    useMemo(
+      () =>
+        cartItems.reduce(
+          (
+            total,
+            item
+          ) =>
+            total +
+            Number(
+              item.quantity
+            ),
+
+          0
+        ),
+
+      [
+        cartItems,
+      ]
+    );
+
+  const subtotal =
+    useMemo(
+      () =>
+        cartItems.reduce(
+          (
+            total,
+            item
+          ) =>
+            total +
+            Number(
+              item.price
+            ) *
+              Number(
+                item.quantity
+              ),
+
+          0
+        ),
+
+      [
+        cartItems,
+      ]
+    );
+
+  /* =========================================
+     SHIPPING
+
+     IMPORTANT:
+     Master shipping is charged ONCE per order.
+  ========================================= */
+
+  const shippingCalculation =
+    useMemo(
+      () => {
+        let hasManualProduct =
+          false;
+
+        for (
+          const item of
+          cartItems
+        ) {
+          const slug =
+            String(
+              item.slug ??
+                ""
+            ).trim();
+
+          const details =
+            shippingDetailsBySlug[
+              slug
+            ];
+
+          const needsManualRate =
+            productNeedsManualRate(
+              {
+                details,
+
+                city:
+                  formData.city,
+
+                state:
+                  formData.state,
+
+                country:
+                  formData.country,
+              }
+            );
+
+          if (
+            needsManualRate
+          ) {
+            hasManualProduct =
+              true;
+
+            break;
+          }
+        }
+
+        if (
+          !hasManualProduct
+        ) {
+          return {
+            charge:
+              0,
+
+            hasManualProduct:
+              false,
+
+            isConfigured:
+              true,
+          };
+        }
+
+        const destinationRate =
+          getMasterShippingRate(
+            {
+              rates:
+                masterShippingRates,
+
+              country:
+                formData.country,
+
+              state:
+                formData.state,
+
+              district:
+                formData.district,
+            }
+          );
+
+        if (
+          destinationRate ===
+          null
+        ) {
+          return {
+            charge:
+              0,
+
+            hasManualProduct:
+              true,
+
+            isConfigured:
+              false,
+          };
+        }
+
+        return {
+          charge:
+            Math.round(
+              destinationRate *
+                100
+            ) /
+            100,
+
+          hasManualProduct:
+            true,
+
+          isConfigured:
+            true,
+        };
+      },
+
+      [
+        cartItems,
+        shippingDetailsBySlug,
+        masterShippingRates,
+        formData.city,
+        formData.state,
+        formData.country,
+        formData.district,
+      ]
+    );
 
   const shippingCharge =
-    useMemo(() => {
-      const total =
-        cartItems.reduce(
-          (currentTotal, item) => {
-            const slug =
-              String(
-                item.slug ?? ""
-              ).trim();
+    shippingCalculation
+      .charge;
 
-            const details =
-              shippingDetailsBySlug[
-                slug
-              ];
+  const shippingDisplay =
+    useMemo(
+      () => {
+        if (
+          isLoadingShipping
+        ) {
+          return "Calculating...";
+        }
 
-            const perUnitCharge =
-              getPerUnitShippingCharge(
-                details,
-                formData.city,
-                formData.state
-              );
+        if (
+          shippingPreviewError
+        ) {
+          return "At checkout";
+        }
 
-            return (
-              currentTotal +
-              perUnitCharge *
-                Number(
-                  item.quantity
-                )
-            );
-          },
+        if (
+          shippingCalculation
+            .hasManualProduct &&
+          !shippingCalculation
+            .isConfigured
+        ) {
+          if (
+            formData.country ===
+              "India" &&
+            formData.state ===
+              "Tamil Nadu" &&
+            !formData.district
+          ) {
+            return "Select district";
+          }
+
+          return "Not configured";
+        }
+
+        if (
+          shippingCharge ===
           0
-        );
+        ) {
+          return "Free";
+        }
 
-      return (
-        Math.round(
-          total * 100
-        ) / 100
-      );
-    }, [
-      cartItems,
-      shippingDetailsBySlug,
-      formData.city,
-      formData.state,
-    ]);
+        return `₹${shippingCharge}`;
+      },
+
+      [
+        isLoadingShipping,
+        shippingPreviewError,
+        shippingCalculation,
+        shippingCharge,
+        formData.country,
+        formData.state,
+        formData.district,
+      ]
+    );
 
   const grandTotal =
     Math.round(
       (
         subtotal +
         shippingCharge
-      ) * 100
-    ) / 100;
+      ) *
+        100
+    ) /
+    100;
+
+  /* =========================================
+     CONDITIONS
+  ========================================= */
 
   const minimumQuantity =
-    isWholesale ? 5 : 1;
+    isWholesale
+      ? 5
+      : 1;
 
   const minimumReached =
-    totalQuantity >= minimumQuantity;
+    totalQuantity >=
+    minimumQuantity;
 
   const hasOutOfStockItem =
     cartItems.some(
-      (item) =>
-        item.stock <= 0 ||
-        item.quantity > item.stock
+      (
+        item
+      ) =>
+        item.stock <=
+          0 ||
+        item.quantity >
+          item.stock
     );
 
+  const shippingReady =
+    Boolean(
+      shippingPreviewError
+    ) ||
+    !shippingCalculation
+      .hasManualProduct ||
+    shippingCalculation
+      .isConfigured;
+
   const canPlaceOrder =
-    cartItems.length > 0 &&
+    cartItems.length >
+      0 &&
     minimumReached &&
     !hasOutOfStockItem &&
     !isSubmitting &&
-    !isLoadingShipping;
+    !isLoadingShipping &&
+    shippingReady;
+
+  /* =========================================
+     UPDATE FORM
+  ========================================= */
 
   const updateField = (
-    field: keyof typeof formData,
-    value: string
+    field:
+      keyof typeof formData,
+
+    value:
+      string
   ) => {
-    setFormData((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  };
-
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      alert("Please enter your full name.");
-      return false;
-    }
-
     if (
-      !/^[0-9]{10}$/.test(
-        formData.phone.trim()
-      )
+      field ===
+      "country"
     ) {
-      alert(
-        "Please enter a valid 10-digit mobile number."
+      setFormData(
+        (
+          current
+        ) => ({
+          ...current,
+
+          country:
+            value,
+
+          state:
+            value ===
+            "India"
+              ? "Tamil Nadu"
+              : "",
+
+          district:
+            "",
+
+          pincode:
+            "",
+        })
       );
-      return false;
-    }
 
-    if (!formData.email.trim()) {
-      alert("Please enter your email address.");
-      return false;
-    }
-
-    if (!formData.addressLine1.trim()) {
-      alert("Please enter your delivery address.");
-      return false;
-    }
-
-    if (!formData.city.trim()) {
-      alert("Please enter your city.");
-      return false;
-    }
-
-    if (
-      !/^[0-9]{6}$/.test(
-        formData.pincode.trim()
-      )
-    ) {
-      alert(
-        "Please enter a valid 6-digit pincode."
-      );
-      return false;
-    }
-
-    if (cartItems.length === 0) {
-      alert("Your cart is empty.");
-      return false;
-    }
-
-    if (!minimumReached) {
-      alert(
-        isWholesale
-          ? "Wholesale orders require a minimum of 5 sarees."
-          : "Please add at least one product to your cart."
-      );
-      return false;
-    }
-
-    if (hasOutOfStockItem) {
-      alert(
-        "Please remove unavailable items or adjust their quantities before checkout."
-      );
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
-
-    if (
-      !validateForm() ||
-      isSubmitting
-    ) {
       return;
     }
 
-    setIsSubmitting(true);
-    setSubmitError("");
+    if (
+      field ===
+      "state"
+    ) {
+      setFormData(
+        (
+          current
+        ) => ({
+          ...current,
 
-    let createdOrderId:
-      | string
-      | null = null;
+          state:
+            value,
 
-    let createdOrderNumber = "";
-    let createdGrandTotal = 0;
-    let createdTotalQuantity = 0;
-    let gatewaySuccessReceived =
-      false;
-
-    try {
-      if (
-        paymentMethod ===
-        "razorpay"
-      ) {
-        const razorpayKeyId =
-          import.meta.env
-            .VITE_RAZORPAY_KEY_ID;
-
-        if (!razorpayKeyId) {
-          throw new Error(
-            "Payment configuration is unavailable. Please try again later."
-          );
-        }
-
-        const scriptLoaded =
-          await loadRazorpayScript();
-
-        if (!scriptLoaded) {
-          throw new Error(
-            "We could not load the secure payment window. Please check your internet connection and try again."
-          );
-        }
-      }
-
-      /*
-       * IMPORTANT:
-       * Orders are now created by the secure Edge Function.
-       * The browser no longer inserts directly into orders/order_items.
-       * Product prices are re-read from the database on the server.
-       */
-      const {
-        data: checkoutData,
-        error: checkoutError,
-      } = await supabase.functions.invoke(
-        "create-checkout-order",
-        {
-          body: {
-            orderType: mode,
-            customerName:
-              formData.fullName.trim(),
-            phone:
-              formData.phone.trim(),
-            email:
-              formData.email.trim(),
-            addressLine1:
-              formData.addressLine1.trim(),
-            addressLine2:
-              formData.addressLine2.trim(),
-            city:
-              formData.city.trim(),
-            state:
-              formData.state,
-            pincode:
-              formData.pincode.trim(),
-            deliveryNote:
-              formData.deliveryNote.trim(),
-            paymentMethod,
-            items: cartItems.map(
-  (item) => ({
-    productId:
-      String(item.id),
-
-    slug:
-      item.slug,
-
-    quantity:
-      Number(item.quantity),
-
-    colour:
-      item.colour ?? "",
-
-    imageUrl:
-      item.image ?? "",
-  })
-),
-          },
-        }
+          district:
+            value ===
+            "Tamil Nadu"
+              ? current.district
+              : "",
+        })
       );
 
-      if (checkoutError) {
-        throw checkoutError;
-      }
+      return;
+    }
 
-      const checkout =
-        checkoutData as
-          | CheckoutCreateResponse
-          | null;
+    setFormData(
+      (
+        current
+      ) => ({
+        ...current,
 
+        [field]:
+          value,
+      })
+    );
+  };
+
+  /* =========================================
+     VALIDATION
+  ========================================= */
+
+  const validateForm =
+    () => {
       if (
-        !checkout?.success ||
-        !checkout.order?.id ||
-        !checkout.order.orderNumber
+        !formData
+          .fullName
+          .trim()
       ) {
-        throw new Error(
-          checkout?.error ??
-            "We could not create your order. Please try again."
+        alert(
+          "Please enter your full name."
         );
+
+        return false;
       }
 
-      const secureOrder = checkout.order;
-
-      const createdOrder = {
-        id: secureOrder.id,
-        order_number:
-          secureOrder.orderNumber,
-      };
-
-      createdOrderId =
-        createdOrder.id;
-      createdOrderNumber =
-        createdOrder.order_number;
-      createdGrandTotal = Number(
-        secureOrder.grandTotal ?? 0
-      );
-      createdTotalQuantity = Number(
-        secureOrder.totalQuantity ?? 0
-      );
+      const cleanedPhone =
+        formData.phone
+          .replace(
+            /\D/g,
+            ""
+          );
 
       if (
-        paymentMethod ===
-        "razorpay"
+        formData.country ===
+        "India"
       ) {
+        if (
+          !/^[0-9]{10}$/.test(
+            cleanedPhone
+          )
+        ) {
+          alert(
+            "Please enter a valid 10-digit mobile number."
+          );
+
+          return false;
+        }
+      } else if (
+        !/^[0-9]{7,15}$/.test(
+          cleanedPhone
+        )
+      ) {
+        alert(
+          "Please enter a valid phone number."
+        );
+
+        return false;
+      }
+
+      if (
+        !formData
+          .email
+          .trim()
+      ) {
+        alert(
+          "Please enter your email address."
+        );
+
+        return false;
+      }
+
+      if (
+        !formData
+          .addressLine1
+          .trim()
+      ) {
+        alert(
+          "Please enter your delivery address."
+        );
+
+        return false;
+      }
+
+      if (
+        !formData.country
+      ) {
+        alert(
+          "Please select your country."
+        );
+
+        return false;
+      }
+
+      if (
+        formData.country ===
+          "India" &&
+        !formData.state
+      ) {
+        alert(
+          "Please select your state."
+        );
+
+        return false;
+      }
+
+      if (
+        formData.country ===
+          "India" &&
+        formData.state ===
+          "Tamil Nadu" &&
+        !formData.district
+      ) {
+        alert(
+          "Please select your district."
+        );
+
+        return false;
+      }
+
+      if (
+        !formData
+          .city
+          .trim()
+      ) {
+        alert(
+          "Please enter your city."
+        );
+
+        return false;
+      }
+
+      if (
+        formData.country ===
+        "India"
+      ) {
+        if (
+          !/^[0-9]{6}$/.test(
+            formData
+              .pincode
+              .trim()
+          )
+        ) {
+          alert(
+            "Please enter a valid 6-digit pincode."
+          );
+
+          return false;
+        }
+      } else if (
+        !formData
+          .pincode
+          .trim()
+      ) {
+        alert(
+          "Please enter your postal code."
+        );
+
+        return false;
+      }
+
+      if (
+        cartItems.length ===
+        0
+      ) {
+        alert(
+          "Your cart is empty."
+        );
+
+        return false;
+      }
+
+      if (
+        !minimumReached
+      ) {
+        alert(
+          isWholesale
+            ? "Wholesale orders require a minimum of 5 sarees."
+            : "Please add at least one product to your cart."
+        );
+
+        return false;
+      }
+
+      if (
+        hasOutOfStockItem
+      ) {
+        alert(
+          "Please remove unavailable items or adjust their quantities before checkout."
+        );
+
+        return false;
+      }
+
+      if (
+        shippingCalculation
+          .hasManualProduct &&
+        !shippingCalculation
+          .isConfigured &&
+        !shippingPreviewError
+      ) {
+        alert(
+          "Shipping is not configured for this delivery location. Please contact us before placing the order."
+        );
+
+        return false;
+      }
+
+      return true;
+    };
+
+  /* =========================================
+     SUBMIT ORDER
+  ========================================= */
+
+  const handleSubmit =
+    async (
+      event:
+        FormEvent<HTMLFormElement>
+    ) => {
+      event.preventDefault();
+
+      if (
+        !validateForm() ||
+        isSubmitting
+      ) {
+        return;
+      }
+
+      setIsSubmitting(
+        true
+      );
+
+      setSubmitError(
+        ""
+      );
+
+      let createdOrderId:
+        | string
+        | null =
+        null;
+
+      let createdOrderNumber =
+        "";
+
+      let createdGrandTotal =
+        0;
+
+      let createdTotalQuantity =
+        0;
+
+      let gatewaySuccessReceived =
+        false;
+
+      try {
+        if (
+          paymentMethod ===
+          "razorpay"
+        ) {
+          const razorpayKeyId =
+            import.meta.env
+              .VITE_RAZORPAY_KEY_ID;
+
+          if (
+            !razorpayKeyId
+          ) {
+            throw new Error(
+              "Payment configuration is unavailable. Please try again later."
+            );
+          }
+
+          const scriptLoaded =
+            await loadRazorpayScript();
+
+          if (
+            !scriptLoaded
+          ) {
+            throw new Error(
+              "We could not load the secure payment window. Please check your internet connection and try again."
+            );
+          }
+        }
+
         const {
           data:
-            razorpayOrderData,
-          error:
-            razorpayOrderError,
-        } =
-          await supabase.functions.invoke(
-            "razorpay-create-order",
-            {
-              body: {
-                orderId:
-                  createdOrder.id,
-              },
-            }
-          );
+            checkoutData,
 
-        if (razorpayOrderError) {
-          throw razorpayOrderError;
+          error:
+            checkoutError,
+        } =
+          await supabase
+            .functions
+            .invoke(
+              "create-checkout-order",
+
+              {
+                body: {
+                  orderType:
+                    mode,
+
+                  customerName:
+                    formData
+                      .fullName
+                      .trim(),
+
+                  phone:
+                    formData
+                      .phone
+                      .replace(
+                        /\D/g,
+                        ""
+                      ),
+
+                  email:
+                    formData
+                      .email
+                      .trim(),
+
+                  addressLine1:
+                    formData
+                      .addressLine1
+                      .trim(),
+
+                  addressLine2:
+                    formData
+                      .addressLine2
+                      .trim(),
+
+                  country:
+                    formData.country,
+
+                  state:
+                    formData.state,
+
+                  district:
+                    formData.district,
+
+                  city:
+                    formData
+                      .city
+                      .trim(),
+
+                  pincode:
+                    formData
+                      .pincode
+                      .trim(),
+
+                  deliveryNote:
+                    formData
+                      .deliveryNote
+                      .trim(),
+
+                  paymentMethod,
+
+                  items:
+                    cartItems.map(
+                      (
+                        item
+                      ) => ({
+                        productId:
+                          String(
+                            item.id
+                          ),
+
+                        slug:
+                          item.slug,
+
+                        quantity:
+                          Number(
+                            item.quantity
+                          ),
+
+                        colour:
+                          item.colour ??
+                          "",
+
+                        imageUrl:
+                          item.image ??
+                          "",
+                      })
+                    ),
+                },
+              }
+            );
+
+        if (
+          checkoutError
+        ) {
+          throw checkoutError;
         }
 
-        const razorpayOrder =
-          razorpayOrderData as
-            | RazorpayOrderResponse
+        const checkout =
+          checkoutData as
+            | CheckoutCreateResponse
             | null;
 
         if (
-          !razorpayOrder?.order_id ||
-          !razorpayOrder.amount ||
-          !razorpayOrder.currency
+          !checkout
+            ?.success ||
+          !checkout
+            .order
+            ?.id ||
+          !checkout
+            .order
+            .orderNumber
         ) {
           throw new Error(
-            "We could not initialize your payment. Please try again."
+            checkout?.error ??
+              "We could not create your order. Please try again."
           );
         }
 
-        const razorpayKeyId =
-          import.meta.env
-            .VITE_RAZORPAY_KEY_ID;
+        const secureOrder =
+          checkout.order;
 
-        const RazorpayConstructor =
-          window.Razorpay;
+        const createdOrder =
+          {
+            id:
+              secureOrder.id,
+
+            order_number:
+              secureOrder
+                .orderNumber,
+          };
+
+        createdOrderId =
+          createdOrder.id;
+
+        createdOrderNumber =
+          createdOrder
+            .order_number;
+
+        createdGrandTotal =
+          Number(
+            secureOrder
+              .grandTotal ??
+              0
+          );
+
+        createdTotalQuantity =
+          Number(
+            secureOrder
+              .totalQuantity ??
+              0
+          );
+
+        /* =========================================
+           RAZORPAY
+        ========================================= */
 
         if (
-          !razorpayKeyId ||
-          !RazorpayConstructor
+          paymentMethod ===
+          "razorpay"
         ) {
-          throw new Error(
-            "The secure payment window is not ready. Please refresh the page and try again."
-          );
-        }
+          const {
+            data:
+              razorpayOrderData,
 
-        await new Promise<void>(
-          (resolve, reject) => {
-            let paymentFlowSettled =
-              false;
+            error:
+              razorpayOrderError,
+          } =
+            await supabase
+              .functions
+              .invoke(
+                "razorpay-create-order",
 
-            const finishWithError = (
-              error: Error
-            ) => {
-              if (
-                paymentFlowSettled
-              ) {
-                return;
-              }
-
-              paymentFlowSettled =
-                true;
-
-              reject(error);
-            };
-
-            const finishSuccessfully =
-              () => {
-                if (
-                  paymentFlowSettled
-                ) {
-                  return;
-                }
-
-                paymentFlowSettled =
-                  true;
-
-                resolve();
-              };
-
-            const razorpay =
-              new RazorpayConstructor(
                 {
-                  key:
-                    razorpayKeyId,
-
-                  amount:
-                    Number(
-                      razorpayOrder.amount
-                    ),
-
-                  currency:
-                    razorpayOrder.currency,
-
-                  name:
-                    "VV Sarees",
-
-                  description:
-                    `${
-                      isWholesale
-                        ? "Wholesale"
-                        : "Retail"
-                    } Order ${createdOrder.order_number}`,
-
-                  order_id:
-                    razorpayOrder.order_id,
-
-                  prefill: {
-                    name:
-                      formData.fullName.trim(),
-
-                    email:
-                      formData.email.trim(),
-
-                    contact:
-                      formData.phone.trim(),
-                  },
-
-                  notes: {
-                    vv_order_id:
+                  body: {
+                    orderId:
                       createdOrder.id,
-
-                    vv_order_number:
-                      createdOrder.order_number,
-
-                    order_type:
-                      mode,
-                  },
-
-                  handler:
-                    async (
-                      response
-                    ) => {
-                      gatewaySuccessReceived =
-                        true;
-
-                      try {
-                        const {
-                          data:
-                            verifyData,
-                          error:
-                            verifyError,
-                        } =
-                          await supabase.functions.invoke(
-                            "razorpay-verify-payment",
-                            {
-                              body: {
-                                app_order_id:
-                                  createdOrder.id,
-
-                                razorpay_order_id:
-                                  response.razorpay_order_id,
-
-                                razorpay_payment_id:
-                                  response.razorpay_payment_id,
-
-                                razorpay_signature:
-                                  response.razorpay_signature,
-                              },
-                            }
-                          );
-
-                        if (
-                          verifyError
-                        ) {
-                          throw verifyError;
-                        }
-
-                        const verification =
-                          verifyData as
-                            | RazorpayVerifyResponse
-                            | null;
-
-                        if (
-                          !verification?.verified
-                        ) {
-                          throw new Error(
-                            verification?.error ??
-                              "Payment verification failed."
-                          );
-                        }
-
-                        const shiprocketPayload = {
-                          app_order_id:
-                            createdOrder.id,
-
-                          order_id:
-                            createdOrder.order_number,
-
-                          order_date: new Date()
-                            .toISOString()
-                            .slice(0, 19)
-                            .replace("T", " "),
-
-                          pickup_location:
-                            "work",
-
-                          billing_customer_name:
-                            formData.fullName.trim(),
-
-                          billing_last_name:
-                            "",
-
-                          billing_address:
-                            formData.addressLine1.trim(),
-
-                          billing_address_2:
-                            formData.addressLine2.trim(),
-
-                          billing_city:
-                            formData.city.trim(),
-
-                          billing_pincode:
-                            formData.pincode.trim(),
-
-                          billing_state:
-                            formData.state,
-
-                          billing_country:
-                            "India",
-
-                          billing_email:
-                            formData.email.trim(),
-
-                          billing_phone:
-                            formData.phone.trim(),
-
-                          shipping_is_billing:
-                            true,
-
-                          order_items:
-                            cartItems.map(
-                              (item) => ({
-                                name:
-                                  item.name,
-
-                                sku:
-                                  item.slug ||
-                                  String(
-                                    item.id
-                                  ),
-
-                                units:
-                                  Number(
-                                    item.quantity
-                                  ),
-
-                                selling_price:
-                                  Number(
-                                    item.price
-                                  ),
-                              })
-                            ),
-
-                          payment_method:
-                            "Prepaid",
-
-                          sub_total:
-                            Number(
-                              secureOrder.subtotal
-                            ),
-
-                          length: 30,
-                          breadth: 25,
-                          height: 5,
-                          weight: 0.5,
-                        };
-
-                        const {
-                          data:
-                            shiprocketData,
-                          error:
-                            shiprocketError,
-                        } =
-                          await supabase.functions.invoke(
-                            "shiprocket-create-order",
-                            {
-                              body:
-                                shiprocketPayload,
-                            }
-                          );
-
-                        if (
-                          shiprocketError
-                        ) {
-                          console.error(
-                            "Shiprocket order creation failed:",
-                            shiprocketError
-                          );
-                        } else {
-                          console.log(
-                            "Shiprocket order created:",
-                            shiprocketData
-                          );
-                        }
-
-                        finishSuccessfully();
-                      } catch (
-                        error
-                      ) {
-                        finishWithError(
-                          new Error(
-                            `Your payment response was received, but verification could not be completed: ${getErrorMessage(
-                              error
-                            )}`
-                          )
-                        );
-                      }
-                    },
-
-                  modal: {
-                    ondismiss:
-                      () => {
-                        finishWithError(
-                          new Error(
-                            `Payment cancelled. Order ${createdOrder.order_number} has been saved and is awaiting payment.`
-                          )
-                        );
-                      },
                   },
                 }
               );
 
-            razorpay.on(
-              "payment.failed",
-              (
-                response
-              ) => {
-                const description =
-                  response.error
-                    ?.description;
-
-                finishWithError(
-                  new Error(
-                    description ||
-                      `Payment was unsuccessful. Order ${createdOrder.order_number} has been saved and is awaiting payment.`
-                  )
-                );
-              }
-            );
-
-            razorpay.open();
+          if (
+            razorpayOrderError
+          ) {
+            throw razorpayOrderError;
           }
-        );
-      }
 
-      navigate(
-        `/order-success?order=${encodeURIComponent(
-          createdOrder.order_number
-        )}&mode=${mode}`,
-        {
-          state: {
-            orderId:
-              createdOrder.id,
+          const razorpayOrder =
+            razorpayOrderData as
+              | RazorpayOrderResponse
+              | null;
 
-            orderNumber:
-              createdOrder.order_number,
+          if (
+            !razorpayOrder
+              ?.order_id ||
+            !razorpayOrder
+              .amount ||
+            !razorpayOrder
+              .currency
+          ) {
+            throw new Error(
+              "We could not initialize your payment. Please try again."
+            );
+          }
 
-            mode,
-            customerName:
-              formData.fullName.trim(),
+          const razorpayKeyId =
+            import.meta.env
+              .VITE_RAZORPAY_KEY_ID;
 
-            totalQuantity:
-              createdTotalQuantity,
-            grandTotal:
-              createdGrandTotal,
-            paymentMethod,
-          },
+          const RazorpayConstructor =
+            window.Razorpay;
+
+          if (
+            !razorpayKeyId ||
+            !RazorpayConstructor
+          ) {
+            throw new Error(
+              "The secure payment window is not ready. Please refresh the page and try again."
+            );
+          }
+
+          await new Promise<void>(
+            (
+              resolve,
+              reject
+            ) => {
+              let paymentFlowSettled =
+                false;
+
+              const finishWithError =
+                (
+                  error:
+                    Error
+                ) => {
+                  if (
+                    paymentFlowSettled
+                  ) {
+                    return;
+                  }
+
+                  paymentFlowSettled =
+                    true;
+
+                  reject(
+                    error
+                  );
+                };
+
+              const finishSuccessfully =
+                () => {
+                  if (
+                    paymentFlowSettled
+                  ) {
+                    return;
+                  }
+
+                  paymentFlowSettled =
+                    true;
+
+                  resolve();
+                };
+
+              const razorpay =
+                new RazorpayConstructor(
+                  {
+                    key:
+                      razorpayKeyId,
+
+                    amount:
+                      Number(
+                        razorpayOrder
+                          .amount
+                      ),
+
+                    currency:
+                      razorpayOrder
+                        .currency,
+
+                    name:
+                      "VV Sarees",
+
+                    description:
+                      `${
+                        isWholesale
+                          ? "Wholesale"
+                          : "Retail"
+                      } Order ${
+                        createdOrder
+                          .order_number
+                      }`,
+
+                    order_id:
+                      razorpayOrder
+                        .order_id,
+
+                    prefill:
+                      {
+                        name:
+                          formData
+                            .fullName
+                            .trim(),
+
+                        email:
+                          formData
+                            .email
+                            .trim(),
+
+                        contact:
+                          formData
+                            .phone
+                            .replace(
+                              /\D/g,
+                              ""
+                            ),
+                      },
+
+                    notes:
+                      {
+                        vv_order_id:
+                          createdOrder.id,
+
+                        vv_order_number:
+                          createdOrder
+                            .order_number,
+
+                        order_type:
+                          mode,
+                      },
+
+                    handler:
+                      async (
+                        response
+                      ) => {
+                        gatewaySuccessReceived =
+                          true;
+
+                        try {
+                          const {
+                            data:
+                              verifyData,
+
+                            error:
+                              verifyError,
+                          } =
+                            await supabase
+                              .functions
+                              .invoke(
+                                "razorpay-verify-payment",
+
+                                {
+                                  body: {
+                                    app_order_id:
+                                      createdOrder.id,
+
+                                    razorpay_order_id:
+                                      response
+                                        .razorpay_order_id,
+
+                                    razorpay_payment_id:
+                                      response
+                                        .razorpay_payment_id,
+
+                                    razorpay_signature:
+                                      response
+                                        .razorpay_signature,
+                                  },
+                                }
+                              );
+
+                          if (
+                            verifyError
+                          ) {
+                            throw verifyError;
+                          }
+
+                          const verification =
+                            verifyData as
+                              | RazorpayVerifyResponse
+                              | null;
+
+                          if (
+                            !verification
+                              ?.verified
+                          ) {
+                            throw new Error(
+                              verification?.error ??
+                                "Payment verification failed."
+                            );
+                          }
+
+                          /* =========================================
+                             SHIPROCKET
+                          ========================================= */
+
+                          const shiprocketPayload =
+                            {
+                              app_order_id:
+                                createdOrder.id,
+
+                              order_id:
+                                createdOrder
+                                  .order_number,
+
+                              order_date:
+                                new Date()
+                                  .toISOString()
+                                  .slice(
+                                    0,
+                                    19
+                                  )
+                                  .replace(
+                                    "T",
+                                    " "
+                                  ),
+
+                              pickup_location:
+                                "work",
+
+                              billing_customer_name:
+                                formData
+                                  .fullName
+                                  .trim(),
+
+                              billing_last_name:
+                                "",
+
+                              billing_address:
+                                formData
+                                  .addressLine1
+                                  .trim(),
+
+                              billing_address_2:
+                                [
+                                  formData
+                                    .addressLine2
+                                    .trim(),
+
+                                  formData
+                                    .district,
+                                ]
+                                  .filter(
+                                    Boolean
+                                  )
+                                  .join(
+                                    ", "
+                                  ),
+
+                              billing_city:
+                                formData
+                                  .city
+                                  .trim(),
+
+                              billing_pincode:
+                                formData
+                                  .pincode
+                                  .trim(),
+
+                              billing_state:
+                                formData
+                                  .state,
+
+                              billing_country:
+                                formData
+                                  .country,
+
+                              billing_email:
+                                formData
+                                  .email
+                                  .trim(),
+
+                              billing_phone:
+                                formData
+                                  .phone
+                                  .replace(
+                                    /\D/g,
+                                    ""
+                                  ),
+
+                              shipping_is_billing:
+                                true,
+
+                              order_items:
+                                cartItems.map(
+                                  (
+                                    item
+                                  ) => ({
+                                    name:
+                                      item.name,
+
+                                    sku:
+                                      item.slug ||
+                                      String(
+                                        item.id
+                                      ),
+
+                                    units:
+                                      Number(
+                                        item.quantity
+                                      ),
+
+                                    selling_price:
+                                      Number(
+                                        item.price
+                                      ),
+                                  })
+                                ),
+
+                              payment_method:
+                                "Prepaid",
+
+                              sub_total:
+                                Number(
+                                  secureOrder
+                                    .subtotal
+                                ),
+
+                              length:
+                                30,
+
+                              breadth:
+                                25,
+
+                              height:
+                                5,
+
+                              weight:
+                                0.5,
+                            };
+
+                          const {
+                            data:
+                              shiprocketData,
+
+                            error:
+                              shiprocketError,
+                          } =
+                            await supabase
+                              .functions
+                              .invoke(
+                                "shiprocket-create-order",
+
+                                {
+                                  body:
+                                    shiprocketPayload,
+                                }
+                              );
+
+                          if (
+                            shiprocketError
+                          ) {
+                            console.error(
+                              "Shiprocket order creation failed:",
+
+                              shiprocketError
+                            );
+                          } else {
+                            console.log(
+                              "Shiprocket order created:",
+
+                              shiprocketData
+                            );
+                          }
+
+                          finishSuccessfully();
+                        } catch (
+                          error
+                        ) {
+                          finishWithError(
+                            new Error(
+                              `Your payment response was received, but verification could not be completed: ${getErrorMessage(
+                                error
+                              )}`
+                            )
+                          );
+                        }
+                      },
+
+                    modal:
+                      {
+                        ondismiss:
+                          () => {
+                            finishWithError(
+                              new Error(
+                                `Payment cancelled. Order ${createdOrder.order_number} has been saved and is awaiting payment.`
+                              )
+                            );
+                          },
+                      },
+                  }
+                );
+
+              razorpay.on(
+                "payment.failed",
+
+                (
+                  response
+                ) => {
+                  const description =
+                    response
+                      .error
+                      ?.description;
+
+                  finishWithError(
+                    new Error(
+                      description ||
+                        `Payment was unsuccessful. Order ${createdOrder.order_number} has been saved and is awaiting payment.`
+                    )
+                  );
+                }
+              );
+
+              razorpay.open();
+            }
+          );
         }
-      );
-    } catch (error) {
-      console.error(
-        "Checkout order/payment error:",
-        error
-      );
 
-      /*
-       * Do not delete orders from the browser.
-       * Public UPDATE/DELETE is intentionally blocked by RLS.
-       * A payment-success response is kept for reconciliation.
-       */
-      if (
-        gatewaySuccessReceived &&
-        createdOrderId &&
-        createdOrderNumber
-      ) {
-        setSubmitError(
-          `Your payment response was received, but verification could not be completed. Please do not make another payment. Order reference: ${createdOrderNumber}. ${getErrorMessage(
-            error
-          )}`
-        );
+        /* =========================================
+           SUCCESS
+        ========================================= */
 
         navigate(
           `/order-success?order=${encodeURIComponent(
-            createdOrderNumber
+            createdOrder
+              .order_number
           )}&mode=${mode}`,
+
           {
             state: {
               orderId:
-                createdOrderId,
+                createdOrder.id,
 
               orderNumber:
-                createdOrderNumber,
+                createdOrder
+                  .order_number,
 
               mode,
+
               customerName:
-                formData.fullName.trim(),
+                formData
+                  .fullName
+                  .trim(),
 
               totalQuantity:
                 createdTotalQuantity,
+
               grandTotal:
                 createdGrandTotal,
+
               paymentMethod,
             },
           }
         );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Checkout order/payment error:",
 
-        return;
+          error
+        );
+
+        if (
+          gatewaySuccessReceived &&
+          createdOrderId &&
+          createdOrderNumber
+        ) {
+          setSubmitError(
+            `Your payment response was received, but verification could not be completed. Please do not make another payment. Order reference: ${createdOrderNumber}. ${getErrorMessage(
+              error
+            )}`
+          );
+
+          navigate(
+            `/order-success?order=${encodeURIComponent(
+              createdOrderNumber
+            )}&mode=${mode}`,
+
+            {
+              state: {
+                orderId:
+                  createdOrderId,
+
+                orderNumber:
+                  createdOrderNumber,
+
+                mode,
+
+                customerName:
+                  formData
+                    .fullName
+                    .trim(),
+
+                totalQuantity:
+                  createdTotalQuantity,
+
+                grandTotal:
+                  createdGrandTotal,
+
+                paymentMethod,
+              },
+            }
+          );
+
+          return;
+        }
+
+        setSubmitError(
+          createdOrderNumber
+            ? `Order ${createdOrderNumber} was created, but payment was not completed. ${getErrorMessage(
+                error
+              )}`
+            : `We could not complete your order. ${getErrorMessage(
+                error
+              )}`
+        );
+      } finally {
+        setIsSubmitting(
+          false
+        );
       }
+    };
 
-      setSubmitError(
-        createdOrderNumber
-          ? `Order ${createdOrderNumber} was created, but payment was not completed. ${getErrorMessage(
-              error
-            )}`
-          : `We could not complete your order. ${getErrorMessage(
-              error
-            )}`
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  /* =========================================
+     UI
+  ========================================= */
 
   return (
     <div className="checkout-page">
-      <ProductHeader mode={mode} />
+      <ProductHeader
+        mode={
+          mode
+        }
+      />
 
       <main className="checkout-container">
         <div className="checkout-heading">
-          <span>VV SAREES</span>
+          <span>
+            VV SAREES
+          </span>
 
           <h1>
             {isWholesale
@@ -1317,8 +2810,8 @@ export default function CheckoutPage({
 
           <p>
             Complete your delivery
-            details and place your order
-            securely.
+            details and place your
+            order securely.
           </p>
         </div>
 
@@ -1339,10 +2832,11 @@ export default function CheckoutPage({
             <FiPackage />
 
             <span>
-              One or more cart items are
-              unavailable or exceed
-              available stock. Go back to
-              cart and update them.
+              One or more cart
+              items are unavailable
+              or exceed available
+              stock. Go back to cart
+              and update them.
             </span>
           </div>
         )}
@@ -1350,24 +2844,53 @@ export default function CheckoutPage({
         {submitError && (
           <div className="checkout-minimum-warning">
             <FiPackage />
-            <span>{submitError}</span>
+
+            <span>
+              {submitError}
+            </span>
           </div>
         )}
 
         {shippingPreviewError && (
           <div className="checkout-minimum-warning">
             <FiTruck />
+
             <span>
               {shippingPreviewError}
             </span>
           </div>
         )}
 
+        {shippingCalculation
+          .hasManualProduct &&
+          !shippingCalculation
+            .isConfigured &&
+          !shippingPreviewError &&
+          !isLoadingShipping && (
+            <div className="checkout-minimum-warning">
+              <FiTruck />
+
+              <span>
+                {formData.country ===
+                  "India" &&
+                formData.state ===
+                  "Tamil Nadu" &&
+                !formData.district
+                  ? "Select your district to calculate the shipping charge."
+                  : "Shipping is not configured for this delivery location."}
+              </span>
+            </div>
+          )}
+
         <form
           className="checkout-layout"
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
         >
           <div className="checkout-left">
+            {/* CUSTOMER DETAILS */}
+
             <section className="checkout-card">
               <div className="checkout-card-heading">
                 <span className="checkout-step-icon">
@@ -1375,7 +2898,9 @@ export default function CheckoutPage({
                 </span>
 
                 <div>
-                  <span>Step 1</span>
+                  <span>
+                    Step 1
+                  </span>
 
                   <h2>
                     Customer &amp;
@@ -1386,17 +2911,25 @@ export default function CheckoutPage({
 
               <div className="checkout-form-grid">
                 <label>
-                  <span>Full Name</span>
+                  <span>
+                    Full Name
+                  </span>
 
                   <input
                     type="text"
                     value={
-                      formData.fullName
+                      formData
+                        .fullName
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "fullName",
-                        event.target.value
+
+                        event
+                          .target
+                          .value
                       )
                     }
                     placeholder="Enter your full name"
@@ -1417,21 +2950,38 @@ export default function CheckoutPage({
                     value={
                       formData.phone
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "phone",
-                        event.target.value
+
+                        event
+                          .target
+                          .value
                           .replace(
                             /\D/g,
                             ""
                           )
-                          .slice(0, 10)
+                          .slice(
+                            0,
+                            15
+                          )
                       )
                     }
-                    placeholder="10-digit mobile number"
-                    pattern="[0-9]{10}"
+                    placeholder={
+                      formData.country ===
+                      "India"
+                        ? "10-digit mobile number"
+                        : "Enter phone number"
+                    }
                     inputMode="numeric"
-                    maxLength={10}
+                    maxLength={
+                      formData.country ===
+                      "India"
+                        ? 10
+                        : 15
+                    }
                     disabled={
                       isSubmitting
                     }
@@ -1449,10 +2999,15 @@ export default function CheckoutPage({
                     value={
                       formData.email
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "email",
-                        event.target.value
+
+                        event
+                          .target
+                          .value
                       )
                     }
                     placeholder="Enter your email"
@@ -1471,12 +3026,18 @@ export default function CheckoutPage({
                   <input
                     type="text"
                     value={
-                      formData.addressLine1
+                      formData
+                        .addressLine1
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "addressLine1",
-                        event.target.value
+
+                        event
+                          .target
+                          .value
                       )
                     }
                     placeholder="Door no, street name"
@@ -1495,12 +3056,18 @@ export default function CheckoutPage({
                   <input
                     type="text"
                     value={
-                      formData.addressLine2
+                      formData
+                        .addressLine2
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "addressLine2",
-                        event.target.value
+
+                        event
+                          .target
+                          .value
                       )
                     }
                     placeholder="Area, landmark (optional)"
@@ -1511,17 +3078,203 @@ export default function CheckoutPage({
                 </label>
 
                 <label>
-                  <span>City</span>
+                  <span>
+                    Country
+                  </span>
+
+                  <select
+                    value={
+                      formData.country
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      updateField(
+                        "country",
+
+                        event
+                          .target
+                          .value
+                      )
+                    }
+                    disabled={
+                      isSubmitting
+                    }
+                    required
+                  >
+                    {COUNTRIES.map(
+                      (
+                        country
+                      ) => (
+                        <option
+                          key={
+                            country
+                          }
+                          value={
+                            country
+                          }
+                        >
+                          {
+                            country
+                          }
+                        </option>
+                      )
+                    )}
+                  </select>
+                </label>
+
+                {formData.country ===
+                "India" ? (
+                  <label>
+                    <span>
+                      State
+                    </span>
+
+                    <select
+                      value={
+                        formData.state
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updateField(
+                          "state",
+
+                          event
+                            .target
+                            .value
+                        )
+                      }
+                      disabled={
+                        isSubmitting
+                      }
+                      required
+                    >
+                      {INDIA_STATES.map(
+                        (
+                          state
+                        ) => (
+                          <option
+                            key={
+                              state
+                            }
+                            value={
+                              state
+                            }
+                          >
+                            {
+                              state
+                            }
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </label>
+                ) : (
+                  <label>
+                    <span>
+                      State / Province
+                    </span>
+
+                    <input
+                      type="text"
+                      value={
+                        formData.state
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updateField(
+                          "state",
+
+                          event
+                            .target
+                            .value
+                        )
+                      }
+                      placeholder="State / Province (optional)"
+                      disabled={
+                        isSubmitting
+                      }
+                    />
+                  </label>
+                )}
+
+                {formData.country ===
+                  "India" &&
+                  formData.state ===
+                    "Tamil Nadu" && (
+                    <label>
+                      <span>
+                        District
+                      </span>
+
+                      <select
+                        value={
+                          formData
+                            .district
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          updateField(
+                            "district",
+
+                            event
+                              .target
+                              .value
+                          )
+                        }
+                        disabled={
+                          isSubmitting
+                        }
+                        required
+                      >
+                        <option value="">
+                          Select District
+                        </option>
+
+                        {TAMIL_NADU_DISTRICTS.map(
+                          (
+                            district
+                          ) => (
+                            <option
+                              key={
+                                district
+                              }
+                              value={
+                                district
+                              }
+                            >
+                              {
+                                district
+                              }
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </label>
+                  )}
+
+                <label>
+                  <span>
+                    City
+                  </span>
 
                   <input
                     type="text"
                     value={
                       formData.city
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "city",
-                        event.target.value
+
+                        event
+                          .target
+                          .value
                       )
                     }
                     placeholder="Enter city"
@@ -1533,79 +3286,68 @@ export default function CheckoutPage({
                 </label>
 
                 <label>
-                  <span>State</span>
-
-                  <select
-                    value={
-                      formData.state
-                    }
-                    onChange={(event) =>
-                      updateField(
-                        "state",
-                        event.target.value
-                      )
-                    }
-                    disabled={
-                      isSubmitting
-                    }
-                  >
-                    <option>
-                      Tamil Nadu
-                    </option>
-
-                    <option>
-                      Puducherry
-                    </option>
-
-                    <option>
-                      Kerala
-                    </option>
-
-                    <option>
-                      Karnataka
-                    </option>
-
-                    <option>
-                      Andhra Pradesh
-                    </option>
-
-                    <option>
-                      Maharashtra
-                    </option>
-
-                    <option>
-                      Rajasthan
-                    </option>
-
-                    <option>
-                      Uttar Pradesh
-                    </option>
-                  </select>
-                </label>
-
-                <label>
-                  <span>Pincode</span>
+                  <span>
+                    {formData.country ===
+                    "India"
+                      ? "Pincode"
+                      : "Postal Code"}
+                  </span>
 
                   <input
                     type="text"
                     value={
-                      formData.pincode
+                      formData
+                        .pincode
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) => {
+                      const nextValue =
+                        formData.country ===
+                        "India"
+                          ? event
+                              .target
+                              .value
+                              .replace(
+                                /\D/g,
+                                ""
+                              )
+                              .slice(
+                                0,
+                                6
+                              )
+                          : event
+                              .target
+                              .value
+                              .slice(
+                                0,
+                                16
+                              );
+
                       updateField(
                         "pincode",
-                        event.target.value
-                          .replace(
-                            /\D/g,
-                            ""
-                          )
-                          .slice(0, 6)
-                      )
+
+                        nextValue
+                      );
+                    }}
+                    placeholder={
+                      formData.country ===
+                      "India"
+                        ? "6-digit pincode"
+                        : "Postal code"
                     }
-                    placeholder="6-digit pincode"
-                    pattern="[0-9]{6}"
-                    inputMode="numeric"
-                    maxLength={6}
+                    inputMode={
+                      formData.country ===
+                      "India"
+                        ? "numeric"
+                        : "text"
+                    }
+                    maxLength={
+                      formData.country ===
+                      "India"
+                        ? 6
+                        : 16
+                    }
                     disabled={
                       isSubmitting
                     }
@@ -1615,21 +3357,30 @@ export default function CheckoutPage({
 
                 <label className="checkout-full-field">
                   <span>
-                    Delivery Instructions
+                    Delivery
+                    Instructions
                   </span>
 
                   <textarea
                     value={
-                      formData.deliveryNote
+                      formData
+                        .deliveryNote
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "deliveryNote",
-                        event.target.value
+
+                        event
+                          .target
+                          .value
                       )
                     }
                     placeholder="Landmark or delivery note (optional)"
-                    rows={4}
+                    rows={
+                      4
+                    }
                     disabled={
                       isSubmitting
                     }
@@ -1638,6 +3389,8 @@ export default function CheckoutPage({
               </div>
             </section>
 
+            {/* DELIVERY */}
+
             <section className="checkout-card">
               <div className="checkout-card-heading">
                 <span className="checkout-step-icon">
@@ -1645,7 +3398,10 @@ export default function CheckoutPage({
                 </span>
 
                 <div>
-                  <span>Step 2</span>
+                  <span>
+                    Step 2
+                  </span>
+
                   <h2>
                     Delivery Method
                   </h2>
@@ -1669,24 +3425,24 @@ export default function CheckoutPage({
                   </strong>
 
                   <span>
-                    Shipping charge is
-                    calculated from your
-                    delivery city/state and
-                    this product's shipping
-                    rules.
+                    Products marked
+                    Free Shipping remain
+                    free. Manual shipping
+                    is calculated from
+                    your district, state
+                    or country rate.
                   </span>
                 </div>
 
                 <span className="checkout-option-price">
-                  {isLoadingShipping
-                    ? "Calculating..."
-                    : shippingCharge ===
-                        0
-                      ? "Free"
-                      : `₹${shippingCharge}`}
+                  {
+                    shippingDisplay
+                  }
                 </span>
               </label>
             </section>
+
+            {/* PAYMENT */}
 
             <section className="checkout-card">
               <div className="checkout-card-heading">
@@ -1695,7 +3451,10 @@ export default function CheckoutPage({
                 </span>
 
                 <div>
-                  <span>Step 3</span>
+                  <span>
+                    Step 3
+                  </span>
+
                   <h2>
                     Payment Method
                   </h2>
@@ -1736,12 +3495,13 @@ export default function CheckoutPage({
                       </strong>
 
                       <span>
-                        Pay securely using
-                        Razorpay. UPI,
-                        cards and other
-                        available payment
-                        methods will open
-                        in the checkout.
+                        Pay securely
+                        using Razorpay.
+                        UPI, cards and
+                        other available
+                        payment methods
+                        will open in the
+                        checkout.
                       </span>
                     </div>
 
@@ -1783,7 +3543,8 @@ export default function CheckoutPage({
 
                       <span>
                         Pay when your
-                        order is delivered.
+                        order is
+                        delivered.
                       </span>
                     </div>
 
@@ -1796,61 +3557,90 @@ export default function CheckoutPage({
                 <FiLock />
 
                 <span>
-                  Your payment is processed
-                  securely through Razorpay.
+                  Your payment is
+                  processed securely
+                  through Razorpay.
                 </span>
               </div>
             </section>
           </div>
 
+          {/* ORDER SUMMARY */}
+
           <aside className="checkout-summary">
-            <h2>Order Summary</h2>
+            <h2>
+              Order Summary
+            </h2>
 
             <div className="checkout-summary-items">
-              {cartItems.map((item) => (
-                <div
-                  className="checkout-summary-item"
-                  key={item.id}
-                >
-                  <div className="checkout-summary-image">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit:
-                            "cover",
-                        }}
-                      />
-                    ) : (
-                      "Product Image"
-                    )}
-                  </div>
+              {cartItems.map(
+                (
+                  item
+                ) => (
+                  <div
+                    className="checkout-summary-item"
+                    key={
+                      item.id
+                    }
+                  >
+                    <div className="checkout-summary-image">
+                      {item.image ? (
+                        <img
+                          src={
+                            item.image
+                          }
+                          alt={
+                            item.name
+                          }
+                          style={{
+                            width:
+                              "100%",
 
-                  <div>
+                            height:
+                              "100%",
+
+                            objectFit:
+                              "cover",
+                          }}
+                        />
+                      ) : (
+                        "Product Image"
+                      )}
+                    </div>
+
+                    <div>
+                      <strong>
+                        {
+                          item.name
+                        }
+                      </strong>
+
+                      <span>
+                        {
+                          item.colour
+                        }
+                      </span>
+
+                      <small>
+                        Qty:{" "}
+                        {
+                          item.quantity
+                        }
+                      </small>
+                    </div>
+
                     <strong>
-                      {item.name}
+                      ₹
+                      {Number(
+                        item.price
+                      ) *
+                        Number(
+                          item.quantity
+                        )}
                     </strong>
-
-                    <span>
-                      {item.colour}
-                    </span>
-
-                    <small>
-                      Qty:{" "}
-                      {item.quantity}
-                    </small>
                   </div>
-
-                  <strong>
-                    ₹
-                    {item.price *
-                      item.quantity}
-                  </strong>
-                </div>
-              ))}
+                )
+              )}
             </div>
 
             <div className="checkout-summary-divider" />
@@ -1861,37 +3651,49 @@ export default function CheckoutPage({
               </span>
 
               <strong>
-                {totalQuantity}
+                {
+                  totalQuantity
+                }
               </strong>
             </div>
 
             <div className="checkout-summary-row">
-              <span>Subtotal</span>
+              <span>
+                Subtotal
+              </span>
 
               <strong>
-                ₹{subtotal}
+                ₹
+                {
+                  subtotal
+                }
               </strong>
             </div>
 
             <div className="checkout-summary-row">
-              <span>Shipping</span>
+              <span>
+                Shipping
+              </span>
 
               <strong>
-                {isLoadingShipping
-                  ? "Calculating..."
-                  : shippingCharge === 0
-                    ? "Free"
-                    : `₹${shippingCharge}`}
+                {
+                  shippingDisplay
+                }
               </strong>
             </div>
 
             <div className="checkout-summary-divider" />
 
             <div className="checkout-summary-total">
-              <span>Grand Total</span>
+              <span>
+                Grand Total
+              </span>
 
               <strong>
-                ₹{grandTotal}
+                ₹
+                {
+                  grandTotal
+                }
               </strong>
             </div>
 
@@ -1925,13 +3727,16 @@ export default function CheckoutPage({
             <div className="checkout-trust-list">
               <div>
                 <FiShield />
+
                 <span>
-                  100% Secure Checkout
+                  100% Secure
+                  Checkout
                 </span>
               </div>
 
               <div>
                 <FiTruck />
+
                 <span>
                   Safe Delivery
                 </span>
@@ -1939,8 +3744,10 @@ export default function CheckoutPage({
 
               <div>
                 <FiCheckCircle />
+
                 <span>
-                  Verified Order Details
+                  Verified Order
+                  Details
                 </span>
               </div>
             </div>

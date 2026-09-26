@@ -14,6 +14,7 @@ import {
   FiSettings,
   FiShoppingCart,
   FiStar,
+  FiTruck,
   FiUsers,
   FiX,
 } from "react-icons/fi";
@@ -57,6 +58,7 @@ const sidebarSections: SidebarSection[] = [
       },
     ],
   },
+
   {
     title: "Sales",
     items: [
@@ -65,18 +67,27 @@ const sidebarSections: SidebarSection[] = [
         path: "/admin/orders",
         icon: <FiShoppingCart />,
       },
+
       {
         label: "Customers",
         path: "/admin/customers",
         icon: <FiUsers />,
       },
+
       {
         label: "Wholesale Requests",
         path: "/admin/wholesale-applications",
         icon: <FiUsers />,
       },
+
+      {
+        label: "Shipping Details",
+        path: "/admin/shipping-details",
+        icon: <FiTruck />,
+      },
     ],
   },
+
   {
     title: "Website",
     items: [
@@ -85,6 +96,7 @@ const sidebarSections: SidebarSection[] = [
         path: "/admin/media",
         icon: <FiFolder />,
       },
+
       {
         label: "Reviews",
         path: "/admin/reviews",
@@ -100,28 +112,42 @@ export default function AdminSidebar({
   onToggleCollapse,
   onCloseMobile,
 }: AdminSidebarProps) {
-  const location = useLocation();
+  const location =
+    useLocation();
 
-  const isRouteActive = (path: string) => {
-    if (path === "/admin/dashboard") {
-      return location.pathname === path;
+  const isRouteActive = (
+    path: string
+  ) => {
+    if (
+      path ===
+      "/admin/dashboard"
+    ) {
+      return (
+        location.pathname ===
+        path
+      );
     }
 
-    return location.pathname.startsWith(path);
+    return location.pathname.startsWith(
+      path
+    );
   };
 
-  const handleNavigation = () => {
-    onCloseMobile();
-  };
+  const handleNavigation =
+    () => {
+      onCloseMobile();
+    };
 
   return (
     <>
       <aside
         className={[
           "admin-sidebar",
+
           isCollapsed
             ? "admin-sidebar-collapsed"
             : "",
+
           isMobileOpen
             ? "admin-sidebar-mobile-open"
             : "",
@@ -129,20 +155,33 @@ export default function AdminSidebar({
           .filter(Boolean)
           .join(" ")}
       >
+        {/* =================================
+            HEADER
+        ================================= */}
+
         <div className="admin-sidebar-header">
           <NavLink
             to="/admin/dashboard"
             className="admin-sidebar-brand"
-            onClick={handleNavigation}
+            onClick={
+              handleNavigation
+            }
           >
             <div className="admin-sidebar-logo">
-              <span>VV</span>
+              <span>
+                VV
+              </span>
             </div>
 
             {!isCollapsed && (
               <div className="admin-sidebar-brand-text">
-                <strong>VV Sarees</strong>
-                <span>Admin Panel</span>
+                <strong>
+                  VV Sarees
+                </strong>
+
+                <span>
+                  Admin Panel
+                </span>
               </div>
             )}
           </NavLink>
@@ -150,29 +189,44 @@ export default function AdminSidebar({
           <button
             type="button"
             className="admin-sidebar-mobile-close"
-            onClick={onCloseMobile}
+            onClick={
+              onCloseMobile
+            }
             aria-label="Close admin menu"
           >
             <FiX />
           </button>
         </div>
 
+        {/* =================================
+            NAVIGATION
+        ================================= */}
+
         <div className="admin-sidebar-scroll">
           <nav className="admin-sidebar-navigation">
+            {/* =============================
+                DASHBOARD
+            ============================= */}
+
             <div className="admin-sidebar-dashboard-section">
               <NavLink
                 to="/admin/dashboard"
-                onClick={handleNavigation}
+                onClick={
+                  handleNavigation
+                }
                 className={() =>
                   [
                     "admin-sidebar-link",
+
                     isRouteActive(
                       "/admin/dashboard"
                     )
                       ? "admin-sidebar-link-active"
                       : "",
                   ]
-                    .filter(Boolean)
+                    .filter(
+                      Boolean
+                    )
                     .join(" ")
                 }
                 title={
@@ -193,71 +247,110 @@ export default function AdminSidebar({
               </NavLink>
             </div>
 
-            {sidebarSections.map((section) => (
-              <div
-                className="admin-sidebar-section"
-                key={section.title}
-              >
-                {!isCollapsed && (
-                  <div className="admin-sidebar-section-heading">
-                    <span>{section.title}</span>
-                    <div />
-                  </div>
-                )}
+            {/* =============================
+                SECTIONS
+            ============================= */}
 
-                {isCollapsed && (
-                  <div
-                    className="admin-sidebar-section-divider"
-                    aria-hidden="true"
-                  />
-                )}
-
-                <div className="admin-sidebar-section-links">
-                  {section.items.map((item) => (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      onClick={handleNavigation}
-                      className={() =>
-                        [
-                          "admin-sidebar-link",
-                          isRouteActive(item.path)
-                            ? "admin-sidebar-link-active"
-                            : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")
-                      }
-                      title={
-                        isCollapsed
-                          ? item.label
-                          : undefined
-                      }
-                    >
-                      <span className="admin-sidebar-link-icon">
-                        {item.icon}
+            {sidebarSections.map(
+              (section) => (
+                <div
+                  className="admin-sidebar-section"
+                  key={
+                    section.title
+                  }
+                >
+                  {!isCollapsed && (
+                    <div className="admin-sidebar-section-heading">
+                      <span>
+                        {
+                          section.title
+                        }
                       </span>
 
-                      {!isCollapsed && (
-                        <span className="admin-sidebar-link-label">
-                          {item.label}
-                        </span>
-                      )}
-                    </NavLink>
-                  ))}
+                      <div />
+                    </div>
+                  )}
+
+                  {isCollapsed && (
+                    <div
+                      className="admin-sidebar-section-divider"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <div className="admin-sidebar-section-links">
+                    {section.items.map(
+                      (item) => (
+                        <NavLink
+                          key={
+                            item.path
+                          }
+                          to={
+                            item.path
+                          }
+                          onClick={
+                            handleNavigation
+                          }
+                          className={() =>
+                            [
+                              "admin-sidebar-link",
+
+                              isRouteActive(
+                                item.path
+                              )
+                                ? "admin-sidebar-link-active"
+                                : "",
+                            ]
+                              .filter(
+                                Boolean
+                              )
+                              .join(
+                                " "
+                              )
+                          }
+                          title={
+                            isCollapsed
+                              ? item.label
+                              : undefined
+                          }
+                        >
+                          <span className="admin-sidebar-link-icon">
+                            {
+                              item.icon
+                            }
+                          </span>
+
+                          {!isCollapsed && (
+                            <span className="admin-sidebar-link-label">
+                              {
+                                item.label
+                              }
+                            </span>
+                          )}
+                        </NavLink>
+                      )
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </nav>
         </div>
+
+        {/* =================================
+            FOOTER
+        ================================= */}
 
         <div className="admin-sidebar-footer">
           <NavLink
             to="/admin/settings"
-            onClick={handleNavigation}
+            onClick={
+              handleNavigation
+            }
             className={() =>
               [
                 "admin-sidebar-link",
+
                 isRouteActive(
                   "/admin/settings"
                 )
@@ -287,7 +380,9 @@ export default function AdminSidebar({
           <button
             type="button"
             className="admin-sidebar-collapse-button"
-            onClick={onToggleCollapse}
+            onClick={
+              onToggleCollapse
+            }
             aria-label={
               isCollapsed
                 ? "Expand sidebar"
@@ -299,6 +394,7 @@ export default function AdminSidebar({
             ) : (
               <>
                 <FiChevronLeft />
+
                 <span>
                   Collapse Sidebar
                 </span>
@@ -308,11 +404,17 @@ export default function AdminSidebar({
         </div>
       </aside>
 
+      {/* =================================
+          MOBILE OVERLAY
+      ================================= */}
+
       {isMobileOpen && (
         <button
           type="button"
           className="admin-sidebar-overlay"
-          onClick={onCloseMobile}
+          onClick={
+            onCloseMobile
+          }
           aria-label="Close admin navigation"
         />
       )}

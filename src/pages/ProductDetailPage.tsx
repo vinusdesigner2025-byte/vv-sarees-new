@@ -1,6 +1,5 @@
-
- import {
- useEffect,
+import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -53,18 +52,27 @@ type ProductVariantRow = {
     | null;
 };
 
-type ShippingMode = "free" | "manual";
+type ShippingMode =
+  | "free"
+  | "manual";
 
 type ShippingRule = {
   type?: ShippingMode;
-  amount?: number | string | null;
+
+  amount?:
+    | number
+    | string
+    | null;
 };
 
 type ProductShippingDetails = {
   tamilNadu?: ShippingRule;
-  withinIndia?: ShippingRule & {
-    freeLocations?: string[];
-  };
+
+  withinIndia?:
+    ShippingRule & {
+      freeLocations?: string[];
+    };
+
   international?: ShippingRule;
 };
 
@@ -73,13 +81,26 @@ type ProductRow = {
   slug: string;
   name: string;
   category: string;
-  state: string | null;
-  description: string | null;
+
+  state:
+    | string
+    | null;
+
+  description:
+    | string
+    | null;
+
   retail_price: number;
+
   wholesale_price: number;
+
   wholesale_minimum: number;
+
   status: string;
-  shipping_details: ProductShippingDetails | null;
+
+  shipping_details:
+    | ProductShippingDetails
+    | null;
 
   product_variants:
     | ProductVariantRow[]
@@ -106,91 +127,151 @@ type ProductDetail = {
   description: string;
   rating: number;
   wholesaleMinimum: number;
-  shippingDetails: ProductShippingDetails;
-  variants: ProductVariant[];
+
+  shippingDetails:
+    ProductShippingDetails;
+
+  variants:
+    ProductVariant[];
 };
 
 type ProductReview = {
   id: string;
   product_id: string;
   user_id: string;
-  customer_name: string | null;
+
+  customer_name:
+    | string
+    | null;
+
   rating: number;
-  review: string | null;
+
+  review:
+    | string
+    | null;
+
   created_at: string;
 };
 
-const REVIEWS_LIMIT = 10;
-const REVIEWS_LOAD_DELAY = 400;
+const REVIEWS_LIMIT =
+  10;
+
+const REVIEWS_LOAD_DELAY =
+  400;
+
+/* =========================================
+   SHIPPING NORMALIZER
+
+   IMPORTANT:
+   We only care about FREE / MANUAL mode
+   here.
+
+   Old fixed product shipping amounts are
+   intentionally ignored.
+
+   Manual shipping amount comes from the
+   master Shipping Details admin page.
+========================================= */
 
 const normalizeShippingDetails = (
-  details: ProductShippingDetails | null | undefined
+  details:
+    | ProductShippingDetails
+    | null
+    | undefined
 ): ProductShippingDetails => {
   const tamilNaduType =
-    details?.tamilNadu?.type === "manual"
+    details
+      ?.tamilNadu
+      ?.type ===
+    "manual"
       ? "manual"
       : "free";
 
   const indiaType =
-    details?.withinIndia?.type === "free"
+    details
+      ?.withinIndia
+      ?.type ===
+    "free"
       ? "free"
       : "manual";
 
   const internationalType =
-    details?.international?.type === "free"
+    details
+      ?.international
+      ?.type ===
+    "free"
       ? "free"
       : "manual";
 
   const savedLocations =
-    details?.withinIndia?.freeLocations;
+    details
+      ?.withinIndia
+      ?.freeLocations;
 
   return {
     tamilNadu: {
-      type: tamilNaduType,
+      type:
+        tamilNaduType,
+
       amount:
-        tamilNaduType === "free"
-          ? 0
-          : Number(details?.tamilNadu?.amount ?? 0),
+        0,
     },
 
     withinIndia: {
-      type: indiaType,
+      type:
+        indiaType,
+
       amount:
-        indiaType === "free"
-          ? 0
-          : Number(details?.withinIndia?.amount ?? 0),
+        0,
+
       freeLocations:
-        Array.isArray(savedLocations) &&
-        savedLocations.length > 0
+        Array.isArray(
+          savedLocations
+        ) &&
+        savedLocations.length >
+          0
           ? savedLocations
-          : ["Puducherry", "Bangalore"],
+          : [
+              "Puducherry",
+              "Bangalore",
+            ],
     },
 
     international: {
-      type: internationalType,
+      type:
+        internationalType,
+
       amount:
-        internationalType === "free"
-          ? 0
-          : Number(details?.international?.amount ?? 0),
+        0,
     },
   };
 };
 
+/* =========================================
+   SHIPPING DISPLAY
+
+   Free    -> Free Shipping
+   Manual  -> Calculated at checkout
+========================================= */
+
 const getShippingDisplay = (
-  rule: ShippingRule | undefined
+  rule:
+    | ShippingRule
+    | undefined
 ) => {
-  if (rule?.type === "free") {
+  if (
+    rule?.type ===
+    "free"
+  ) {
     return "Free Shipping";
   }
 
-  const amount = Number(
-    rule?.amount ?? 0
-  );
-
-  return amount > 0
-    ? `₹${amount}`
-    : "Calculated at checkout";
+  return "Calculated at checkout";
 };
+
+/* =========================================
+   PRODUCT ID HELPER
+========================================= */
 
 const createNumericProductId = (
   productId: string
@@ -198,369 +279,591 @@ const createNumericProductId = (
   return productId
     .split("")
     .reduce(
-      (total, character) =>
+      (
+        total,
+        character
+      ) =>
         (
-          total * 31 +
-          character.charCodeAt(0)
-        ) >>> 0,
+          total *
+            31 +
+          character.charCodeAt(
+            0
+          )
+        ) >>>
+        0,
+
       0
     );
 };
 
+/* =========================================
+   PRODUCT DETAIL PAGE
+========================================= */
+
 export default function ProductDetailPage({
   mode,
 }: ProductDetailPageProps) {
-  const { slug } = useParams();
-  const navigate = useNavigate();
+  const {
+    slug,
+  } =
+    useParams();
 
-  const { isLoggedIn } = useAuth();
+  const navigate =
+    useNavigate();
+
+  const {
+    isLoggedIn,
+  } =
+    useAuth();
 
   const {
     addToWishlist,
     addToCart,
     isInWishlist,
-  } = useShop();
+  } =
+    useShop();
 
-  const [product, setProduct] =
-    useState<ProductDetail | null>(null);
+  const [
+    product,
+    setProduct,
+  ] =
+    useState<
+      ProductDetail | null
+    >(
+      null
+    );
 
-  const [reviews, setReviews] =
-    useState<ProductReview[]>([]);
+  const [
+    reviews,
+    setReviews,
+  ] =
+    useState<
+      ProductReview[]
+    >(
+      []
+    );
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [
+    isLoading,
+    setIsLoading,
+  ] =
+    useState(
+      true
+    );
 
-  const [loadError, setLoadError] =
-    useState("");
+  const [
+    loadError,
+    setLoadError,
+  ] =
+    useState(
+      ""
+    );
 
   const [
     selectedVariantIndex,
     setSelectedVariantIndex,
-  ] = useState(0);
+  ] =
+    useState(
+      0
+    );
 
   const [
     selectedImageIndex,
     setSelectedImageIndex,
-  ] = useState(0);
+  ] =
+    useState(
+      0
+    );
 
   const [
     isLoginPopupOpen,
     setIsLoginPopupOpen,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     pendingAction,
     setPendingAction,
-  ] = useState<(() => void) | null>(null);
+  ] =
+    useState<
+      (() => void) | null
+    >(
+      null
+    );
 
   /* =====================================================
      LOAD SINGLE PRODUCT
-     ===================================================== */
+  ===================================================== */
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled =
+      false;
 
-    const loadProduct = async () => {
-      if (!slug) {
-        if (!cancelled) {
-          setProduct(null);
-          setReviews([]);
-          setIsLoading(false);
+    const loadProduct =
+      async () => {
+        if (
+          !slug
+        ) {
+          if (
+            !cancelled
+          ) {
+            setProduct(
+              null
+            );
+
+            setReviews(
+              []
+            );
+
+            setIsLoading(
+              false
+            );
+          }
+
+          return;
         }
 
-        return;
-      }
-
-      setIsLoading(true);
-      setLoadError("");
-      setReviews([]);
-
-      const { data, error } =
-        await supabase
-          .from("products")
-          .select(`
-            id,
-            slug,
-            name,
-            category,
-            state,
-            description,
-            retail_price,
-            wholesale_price,
-            wholesale_minimum,
-            status,
-            shipping_details,
-            product_variants (
-              id,
-              colour_name,
-              colour_code,
-              sku,
-              stock,
-              product_images (
-                id,
-                image_url,
-                display_order
-              )
-            )
-          `)
-          .eq("slug", slug)
-          .eq("status", "active")
-          .maybeSingle();
-
-      if (cancelled) {
-        return;
-      }
-
-      if (error) {
-        console.error(
-          "Product detail load error:",
-          error
+        setIsLoading(
+          true
         );
 
         setLoadError(
-          `Product load aagala: ${error.message}`
+          ""
         );
 
-        setProduct(null);
-        setIsLoading(false);
+        setReviews(
+          []
+        );
 
-        return;
-      }
-
-      if (!data) {
-        setProduct(null);
-        setIsLoading(false);
-
-        return;
-      }
-
-      const row = data as ProductRow;
-
-      const variants =
-        row.product_variants?.map(
-          (variant) => {
-            const sortedImages = [
-              ...(variant.product_images ??
-                []),
-            ].sort(
-              (
-                firstImage,
-                secondImage
-              ) =>
-                Number(
-                  firstImage.display_order ??
-                    0
-                ) -
-                Number(
-                  secondImage.display_order ??
-                    0
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "products"
+            )
+            .select(`
+              id,
+              slug,
+              name,
+              category,
+              state,
+              description,
+              retail_price,
+              wholesale_price,
+              wholesale_minimum,
+              status,
+              shipping_details,
+              product_variants (
+                id,
+                colour_name,
+                colour_code,
+                sku,
+                stock,
+                product_images (
+                  id,
+                  image_url,
+                  display_order
                 )
-            );
+              )
+            `)
+            .eq(
+              "slug",
+              slug
+            )
+            .eq(
+              "status",
+              "active"
+            )
+            .maybeSingle();
 
-            return {
-              id: variant.id,
+        if (
+          cancelled
+        ) {
+          return;
+        }
 
-              colorName:
-                variant.colour_name,
+        if (
+          error
+        ) {
+          console.error(
+            "Product detail load error:",
+            error
+          );
 
-              colorCode:
-                variant.colour_code,
+          setLoadError(
+            `Product could not be loaded: ${error.message}`
+          );
 
-              sku: variant.sku,
+          setProduct(
+            null
+          );
 
-              stock: Number(
-                variant.stock ?? 0
-              ),
+          setIsLoading(
+            false
+          );
 
-              price:
-                mode === "wholesale"
-                  ? Number(
-                      row.wholesale_price ??
-                        0
-                    )
-                  : Number(
-                      row.retail_price ??
+          return;
+        }
+
+        if (
+          !data
+        ) {
+          setProduct(
+            null
+          );
+
+          setIsLoading(
+            false
+          );
+
+          return;
+        }
+
+        const row =
+          data as ProductRow;
+
+        const variants =
+          row
+            .product_variants
+            ?.map(
+              (
+                variant
+              ) => {
+                const sortedImages =
+                  [
+                    ...(
+                      variant
+                        .product_images ??
+                      []
+                    ),
+                  ].sort(
+                    (
+                      firstImage,
+                      secondImage
+                    ) =>
+                      Number(
+                        firstImage
+                          .display_order ??
+                          0
+                      ) -
+                      Number(
+                        secondImage
+                          .display_order ??
+                          0
+                      )
+                  );
+
+                return {
+                  id:
+                    variant.id,
+
+                  colorName:
+                    variant
+                      .colour_name,
+
+                  colorCode:
+                    variant
+                      .colour_code,
+
+                  sku:
+                    variant.sku,
+
+                  stock:
+                    Number(
+                      variant.stock ??
                         0
                     ),
 
-              images: sortedImages
-                .map(
-                  (image) =>
-                    image.image_url
-                )
-                .filter(Boolean),
-            };
-          }
-        ) ?? [];
+                  price:
+                    mode ===
+                    "wholesale"
+                      ? Number(
+                          row
+                            .wholesale_price ??
+                            0
+                        )
+                      : Number(
+                          row
+                            .retail_price ??
+                            0
+                        ),
 
-      setProduct({
-        id: row.id,
+                  images:
+                    sortedImages
+                      .map(
+                        (
+                          image
+                        ) =>
+                          image
+                            .image_url
+                      )
+                      .filter(
+                        Boolean
+                      ),
+                };
+              }
+            ) ??
+          [];
 
-        slug: row.slug,
+        setProduct({
+          id:
+            row.id,
 
-        name: row.name,
+          slug:
+            row.slug,
 
-        category:
-          row.category ?? "",
+          name:
+            row.name,
 
-        fabric:
-          row.category ?? "",
+          category:
+            row.category ??
+            "",
 
-        state:
-          row.state ?? "",
+          fabric:
+            row.category ??
+            "",
 
-        description:
-          row.description ?? "",
+          state:
+            row.state ??
+            "",
 
-        rating: 0,
+          description:
+            row.description ??
+            "",
 
-        wholesaleMinimum: Number(
-          row.wholesale_minimum ?? 1
-        ),
+          rating:
+            0,
 
-        shippingDetails:
-          normalizeShippingDetails(
-            row.shipping_details
-          ),
+          wholesaleMinimum:
+            Number(
+              row
+                .wholesale_minimum ??
+                1
+            ),
 
-        variants,
-      });
+          shippingDetails:
+            normalizeShippingDetails(
+              row
+                .shipping_details
+            ),
 
-      setSelectedVariantIndex(0);
-      setSelectedImageIndex(0);
-      setIsLoading(false);
-    };
+          variants,
+        });
+
+        setSelectedVariantIndex(
+          0
+        );
+
+        setSelectedImageIndex(
+          0
+        );
+
+        setIsLoading(
+          false
+        );
+      };
 
     void loadProduct();
 
     return () => {
-      cancelled = true;
+      cancelled =
+        true;
     };
-  }, [slug, mode]);
+  }, [
+    slug,
+    mode,
+  ]);
 
   /* =====================================================
      LOAD REVIEWS AFTER PRODUCT
-     ===================================================== */
+  ===================================================== */
 
   useEffect(() => {
-    if (!product) {
-      setReviews([]);
+    if (
+      !product
+    ) {
+      setReviews(
+        []
+      );
+
       return;
     }
 
-    let cancelled = false;
+    let cancelled =
+      false;
 
-    const loadReviews = async () => {
-      const numericProductId =
-        createNumericProductId(
-          product.id
-        );
+    const loadReviews =
+      async () => {
+        const numericProductId =
+          createNumericProductId(
+            product.id
+          );
 
-      const { data, error } =
-        await supabase
-          .from("product_reviews")
-          .select(`
-            id,
-            product_id,
-            user_id,
-            customer_name,
-            rating,
-            review,
-            created_at
-          `)
-          .eq(
-            "product_id",
-            String(numericProductId)
-          )
-          .order("created_at", {
-            ascending: false,
-          })
-          .limit(REVIEWS_LIMIT);
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "product_reviews"
+            )
+            .select(`
+              id,
+              product_id,
+              user_id,
+              customer_name,
+              rating,
+              review,
+              created_at
+            `)
+            .eq(
+              "product_id",
 
-      if (cancelled) {
-        return;
-      }
+              String(
+                numericProductId
+              )
+            )
+            .order(
+              "created_at",
 
-      if (error) {
-        console.error(
-          "Review load error:",
+              {
+                ascending:
+                  false,
+              }
+            )
+            .limit(
+              REVIEWS_LIMIT
+            );
+
+        if (
+          cancelled
+        ) {
+          return;
+        }
+
+        if (
           error
+        ) {
+          console.error(
+            "Review load error:",
+            error
+          );
+
+          setReviews(
+            []
+          );
+
+          return;
+        }
+
+        setReviews(
+          (
+            data ??
+            []
+          ) as ProductReview[]
         );
-
-        setReviews([]);
-
-        return;
-      }
-
-      setReviews(
-        (data ?? []) as ProductReview[]
-      );
-    };
+      };
 
     /*
       Product / main image gets priority.
 
-      Reviews start a little later so they don't
-      compete with the initial product render.
+      Reviews start a little later so
+      they don't compete with the
+      initial product render.
     */
-    const timer = window.setTimeout(
-      () => {
-        void loadReviews();
-      },
-      REVIEWS_LOAD_DELAY
-    );
+
+    const timer =
+      window.setTimeout(
+        () => {
+          void loadReviews();
+        },
+
+        REVIEWS_LOAD_DELAY
+      );
 
     return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
+      cancelled =
+        true;
+
+      window.clearTimeout(
+        timer
+      );
     };
-  }, [product]);
+  }, [
+    product,
+  ]);
 
   /* =====================================================
      SELECTED VARIANT
-     ===================================================== */
+  ===================================================== */
 
   const selectedVariant =
-    useMemo(() => {
-      if (!product) {
-        return null;
-      }
+    useMemo(
+      () => {
+        if (
+          !product
+        ) {
+          return null;
+        }
 
-      return (
-        product.variants[
-          selectedVariantIndex
-        ] ??
-        product.variants[0] ??
-        null
-      );
-    }, [
-      product,
-      selectedVariantIndex,
-    ]);
+        return (
+          product
+            .variants[
+            selectedVariantIndex
+          ] ??
+          product
+            .variants[
+            0
+          ] ??
+          null
+        );
+      },
+
+      [
+        product,
+        selectedVariantIndex,
+      ]
+    );
 
   const selectedImage =
-    selectedVariant?.images[
+    selectedVariant
+      ?.images[
       selectedImageIndex
     ] ??
-    selectedVariant?.images[0] ??
+    selectedVariant
+      ?.images[
+      0
+    ] ??
     "";
 
   /* =====================================================
      LOADING
-     ===================================================== */
+  ===================================================== */
 
-  if (isLoading) {
+  if (
+    isLoading
+  ) {
     return (
       <div className="detail-page">
-        <ProductHeader mode={mode} />
+        <ProductHeader
+          mode={
+            mode
+          }
+        />
 
         <main className="detail-container">
           <div className="product-not-found">
-            <h1>Loading product...</h1>
+            <h1>
+              Loading product...
+            </h1>
 
             <p>
-              Product details load
-              aaguthu...
+              Loading product
+              details...
             </p>
           </div>
         </main>
@@ -570,23 +873,36 @@ export default function ProductDetailPage({
 
   /* =====================================================
      ERROR
-     ===================================================== */
+  ===================================================== */
 
-  if (loadError) {
+  if (
+    loadError
+  ) {
     return (
       <div className="detail-page">
-        <ProductHeader mode={mode} />
+        <ProductHeader
+          mode={
+            mode
+          }
+        />
 
         <main className="detail-container">
           <div className="product-not-found">
             <h1>
-              Product load aagala
+              Product could not
+              be loaded
             </h1>
 
-            <p>{loadError}</p>
+            <p>
+              {loadError}
+            </p>
 
-            <Link to={`/${mode}`}>
-              Back to {mode} collection
+            <Link
+              to={`/${mode}`}
+            >
+              Back to{" "}
+              {mode}{" "}
+              collection
             </Link>
           </div>
         </main>
@@ -598,12 +914,19 @@ export default function ProductDetailPage({
 
   /* =====================================================
      PRODUCT NOT FOUND
-     ===================================================== */
+  ===================================================== */
 
-  if (!product || !selectedVariant) {
+  if (
+    !product ||
+    !selectedVariant
+  ) {
     return (
       <div className="detail-page">
-        <ProductHeader mode={mode} />
+        <ProductHeader
+          mode={
+            mode
+          }
+        />
 
         <main className="detail-container">
           <div className="product-not-found">
@@ -611,8 +934,12 @@ export default function ProductDetailPage({
               Product not found
             </h1>
 
-            <Link to={`/${mode}`}>
-              Back to {mode} collection
+            <Link
+              to={`/${mode}`}
+            >
+              Back to{" "}
+              {mode}{" "}
+              collection
             </Link>
           </div>
         </main>
@@ -624,10 +951,12 @@ export default function ProductDetailPage({
 
   /* =====================================================
      PRODUCT VALUES
-     ===================================================== */
+  ===================================================== */
 
   const isInStock =
-    selectedVariant.stock > 0;
+    selectedVariant
+      .stock >
+    0;
 
   const numericProductId =
     createNumericProductId(
@@ -638,13 +967,21 @@ export default function ProductDetailPage({
     reviews.length;
 
   const averageRating =
-    reviewCount > 0
+    reviewCount >
+    0
       ? reviews.reduce(
-          (total, item) =>
+          (
+            total,
+            item
+          ) =>
             total +
-            Number(item.rating),
+            Number(
+              item.rating
+            ),
+
           0
-        ) / reviewCount
+        ) /
+        reviewCount
       : 0;
 
   const wishlistActive =
@@ -653,199 +990,268 @@ export default function ProductDetailPage({
       mode
     );
 
-  const selectedShopProduct = {
-    id: numericProductId,
+  const selectedShopProduct =
+    {
+      id:
+        numericProductId,
 
-    slug: product.slug,
+      slug:
+        product.slug,
 
-    name: product.name,
+      name:
+        product.name,
 
-    price:
-      selectedVariant.price,
+      price:
+        selectedVariant
+          .price,
 
-    rating:
-      averageRating,
+      rating:
+        averageRating,
 
-    stock:
-      selectedVariant.stock,
+      stock:
+        selectedVariant
+          .stock,
 
-    colour:
-      selectedVariant.colorName,
+      colour:
+        selectedVariant
+          .colorName,
 
-    image:
-      selectedVariant.images[0] ??
-      "",
+      image:
+        selectedVariant
+          .images[
+          0
+        ] ??
+        "",
 
-    shippingDetails:
-      product.shippingDetails,
-  };
+      shippingDetails:
+        product
+          .shippingDetails,
+    };
 
   /* =====================================================
      IMAGE GALLERY
-     ===================================================== */
+  ===================================================== */
 
-  const showPreviousImage = () => {
-    if (
-      selectedVariant.images
-        .length === 0
-    ) {
-      return;
-    }
+  const showPreviousImage =
+    () => {
+      if (
+        selectedVariant
+          .images
+          .length ===
+        0
+      ) {
+        return;
+      }
 
-    setSelectedImageIndex(
-      (current) =>
-        current === 0
-          ? selectedVariant
-              .images.length - 1
-          : current - 1
-    );
-  };
+      setSelectedImageIndex(
+        (
+          current
+        ) =>
+          current ===
+          0
+            ? selectedVariant
+                .images
+                .length -
+              1
+            : current -
+              1
+      );
+    };
 
-  const showNextImage = () => {
-    if (
-      selectedVariant.images
-        .length === 0
-    ) {
-      return;
-    }
+  const showNextImage =
+    () => {
+      if (
+        selectedVariant
+          .images
+          .length ===
+        0
+      ) {
+        return;
+      }
 
-    setSelectedImageIndex(
-      (current) =>
-        current ===
-        selectedVariant.images
-          .length -
-          1
-          ? 0
-          : current + 1
-    );
-  };
+      setSelectedImageIndex(
+        (
+          current
+        ) =>
+          current ===
+          selectedVariant
+            .images
+            .length -
+            1
+            ? 0
+            : current +
+              1
+      );
+    };
 
   const selectVariant = (
-    index: number
+    index:
+      number
   ) => {
-    setSelectedVariantIndex(index);
+    setSelectedVariantIndex(
+      index
+    );
 
-    setSelectedImageIndex(0);
+    setSelectedImageIndex(
+      0
+    );
   };
 
   /* =====================================================
      LOGIN PROTECTED ACTION
-     ===================================================== */
+  ===================================================== */
 
   const runProtectedAction = (
-    action: () => void
+    action:
+      () => void
   ) => {
-    if (isLoggedIn) {
+    if (
+      isLoggedIn
+    ) {
       action();
 
       return;
     }
 
     setPendingAction(
-      () => action
+      () =>
+        action
     );
 
-    setIsLoginPopupOpen(true);
+    setIsLoginPopupOpen(
+      true
+    );
   };
 
   /* =====================================================
      WISHLIST
-     ===================================================== */
+  ===================================================== */
 
-  const handleWishlist = () => {
-    runProtectedAction(() => {
-      addToWishlist(
-        selectedShopProduct,
-        mode
+  const handleWishlist =
+    () => {
+      runProtectedAction(
+        () => {
+          addToWishlist(
+            selectedShopProduct,
+            mode
+          );
+        }
       );
-    });
-  };
+    };
 
   /* =====================================================
      ADD TO CART
-     ===================================================== */
+  ===================================================== */
 
-  const handleAddToCart = () => {
-    if (!isInStock) {
-      return;
-    }
+  const handleAddToCart =
+    () => {
+      if (
+        !isInStock
+      ) {
+        return;
+      }
 
-    runProtectedAction(() => {
-      addToCart(
-        selectedShopProduct,
-        mode
+      runProtectedAction(
+        () => {
+          addToCart(
+            selectedShopProduct,
+            mode
+          );
+        }
       );
-    });
-  };
+    };
 
   /* =====================================================
      BUY NOW
-     ===================================================== */
+  ===================================================== */
 
-  const handleBuyNow = () => {
-    if (!isInStock) {
-      return;
-    }
+  const handleBuyNow =
+    () => {
+      if (
+        !isInStock
+      ) {
+        return;
+      }
 
-    runProtectedAction(() => {
-      addToCart(
-        selectedShopProduct,
-        mode
+      runProtectedAction(
+        () => {
+          addToCart(
+            selectedShopProduct,
+            mode
+          );
+
+          navigate(
+            mode ===
+            "wholesale"
+              ? "/wholesale/cart"
+              : "/retail/cart"
+          );
+        }
       );
-
-      navigate(
-        mode === "wholesale"
-          ? "/wholesale/cart"
-          : "/retail/cart"
-      );
-    });
-  };
+    };
 
   /* =====================================================
      LOGIN SUCCESS
-     ===================================================== */
+  ===================================================== */
 
   const handleLoginSuccess =
     () => {
       pendingAction?.();
 
-      setPendingAction(null);
+      setPendingAction(
+        null
+      );
 
-      setIsLoginPopupOpen(false);
+      setIsLoginPopupOpen(
+        false
+      );
     };
 
-  const closeLoginPopup = () => {
-    setIsLoginPopupOpen(false);
+  const closeLoginPopup =
+    () => {
+      setIsLoginPopupOpen(
+        false
+      );
 
-    setPendingAction(null);
-  };
+      setPendingAction(
+        null
+      );
+    };
 
   /* =====================================================
      PAGE
-     ===================================================== */
+  ===================================================== */
 
   return (
     <div className="detail-page">
-      <ProductHeader mode={mode} />
+      <ProductHeader
+        mode={
+          mode
+        }
+      />
 
       <main className="detail-container">
         <Link
           to={`/${mode}`}
           className="detail-back-link"
         >
-          ← Back to {mode} collection
+          ← Back to{" "}
+          {mode}{" "}
+          collection
         </Link>
 
         <section className="detail-main">
           {/* =========================
               PRODUCT GALLERY
-              ========================= */}
+          ========================= */}
 
           <div className="detail-gallery">
             <div className="detail-main-image-wrap">
               {selectedImage ? (
                 <img
-                  src={selectedImage}
+                  src={
+                    selectedImage
+                  }
                   alt={`${product.name} - ${selectedVariant.colorName}`}
                   className="detail-main-image"
                   loading="eager"
@@ -858,8 +1264,10 @@ export default function ProductDetailPage({
                 </div>
               )}
 
-              {selectedVariant.images
-                .length > 1 && (
+              {selectedVariant
+                .images
+                .length >
+                1 && (
                 <>
                   <button
                     type="button"
@@ -888,67 +1296,94 @@ export default function ProductDetailPage({
 
             {/* =========================
                 THUMBNAILS
-                ========================= */}
+            ========================= */}
 
-            {selectedVariant.images
-              .length > 0 && (
+            {selectedVariant
+              .images
+              .length >
+              0 && (
               <div className="detail-thumbnails">
-                {selectedVariant.images.map(
-                  (image, index) => (
-                    <button
-                      type="button"
-                      key={`${selectedVariant.id}-${index}`}
-                      className={`detail-thumbnail ${
-                        selectedImageIndex ===
-                        index
-                          ? "detail-thumbnail-active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        setSelectedImageIndex(
+                {selectedVariant
+                  .images
+                  .map(
+                    (
+                      image,
+                      index
+                    ) => (
+                      <button
+                        type="button"
+                        key={`${selectedVariant.id}-${index}`}
+                        className={`detail-thumbnail ${
+                          selectedImageIndex ===
                           index
-                        )
-                      }
-                      aria-label={`View image ${
-                        index + 1
-                      }`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${product.name} thumbnail ${
-                          index + 1
+                            ? "detail-thumbnail-active"
+                            : ""
                         }`}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </button>
-                  )
-                )}
+                        onClick={() =>
+                          setSelectedImageIndex(
+                            index
+                          )
+                        }
+                        aria-label={`View image ${
+                          index +
+                          1
+                        }`}
+                      >
+                        <img
+                          src={
+                            image
+                          }
+                          alt={`${product.name} thumbnail ${
+                            index +
+                            1
+                          }`}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </button>
+                    )
+                  )}
               </div>
             )}
           </div>
 
           {/* =========================
               PRODUCT INFO
-              ========================= */}
+          ========================= */}
 
           <div className="detail-info">
             <span className="detail-category">
-              {product.category}
+              {
+                product.category
+              }
             </span>
 
-            <h1>{product.name}</h1>
+            <h1>
+              {
+                product.name
+              }
+            </h1>
 
             {/* =========================
                 RATING
-                ========================= */}
+            ========================= */}
 
             <div className="detail-rating-row">
               <div className="detail-stars">
-                {[1, 2, 3, 4, 5].map(
-                  (star) => (
+                {[
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                ].map(
+                  (
+                    star
+                  ) => (
                     <FaStar
-                      key={star}
+                      key={
+                        star
+                      }
                       className={
                         star <=
                         Math.round(
@@ -963,11 +1398,13 @@ export default function ProductDetailPage({
               </div>
 
               <span>
-                {reviewCount > 0
+                {reviewCount >
+                0
                   ? `${averageRating.toFixed(
                       1
                     )} (${reviewCount} ${
-                      reviewCount === 1
+                      reviewCount ===
+                      1
                         ? "Review"
                         : "Reviews"
                     })`
@@ -977,16 +1414,19 @@ export default function ProductDetailPage({
 
             {/* =========================
                 PRICE
-                ========================= */}
+            ========================= */}
 
             <div className="detail-price">
               ₹
-              {selectedVariant.price}
+              {
+                selectedVariant
+                  .price
+              }
             </div>
 
             {/* =========================
                 STOCK
-                ========================= */}
+            ========================= */}
 
             <div className="detail-stock-row">
               <span
@@ -1003,9 +1443,11 @@ export default function ProductDetailPage({
 
               {isInStock && (
                 <span className="detail-available">
-                  Available Quantity:{" "}
+                  Available
+                  Quantity:{" "}
                   {
-                    selectedVariant.stock
+                    selectedVariant
+                      .stock
                   }
                 </span>
               )}
@@ -1015,65 +1457,72 @@ export default function ProductDetailPage({
 
             {/* =========================
                 COLOUR OPTIONS
-                ========================= */}
+            ========================= */}
 
             <div className="detail-colour-section">
               <div className="detail-label-row">
-                <span>Colour</span>
+                <span>
+                  Colour
+                </span>
 
                 <strong>
                   {
-                    selectedVariant.colorName
+                    selectedVariant
+                      .colorName
                   }
                 </strong>
               </div>
 
               <div className="detail-colour-options">
-                {product.variants.map(
-                  (
-                    variant,
-                    index
-                  ) => (
-                    <button
-                      type="button"
-                      key={
-                        variant.id
-                      }
-                      className={`detail-colour-option ${
-                        selectedVariantIndex ===
-                        index
-                          ? "detail-colour-option-active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        selectVariant(
-                          index
-                        )
-                      }
-                      aria-label={`Select ${variant.colorName}`}
-                    >
-                      <span
-                        className="detail-colour-swatch"
-                        style={{
-                          backgroundColor:
-                            variant.colorCode,
-                        }}
-                      />
-
-                      <span>
-                        {
-                          variant.colorName
+                {product
+                  .variants
+                  .map(
+                    (
+                      variant,
+                      index
+                    ) => (
+                      <button
+                        type="button"
+                        key={
+                          variant.id
                         }
-                      </span>
-                    </button>
-                  )
-                )}
+                        className={`detail-colour-option ${
+                          selectedVariantIndex ===
+                          index
+                            ? "detail-colour-option-active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          selectVariant(
+                            index
+                          )
+                        }
+                        aria-label={`Select ${variant.colorName}`}
+                      >
+                        <span
+                          className="detail-colour-swatch"
+                          style={{
+                            backgroundColor:
+                              variant
+                                .colorCode,
+                          }}
+                        />
+
+                        <span>
+                          {
+                            variant
+                              .colorName
+                          }
+                        </span>
+                      </button>
+                    )
+                  )}
               </div>
             </div>
 
             {/* =========================
                 SPECIFICATIONS
-                ========================= */}
+            ========================= */}
 
             <div className="detail-specifications">
               <div>
@@ -1105,7 +1554,8 @@ export default function ProductDetailPage({
 
                 <strong>
                   {
-                    selectedVariant.sku
+                    selectedVariant
+                      .sku
                   }
                 </strong>
               </div>
@@ -1126,23 +1576,27 @@ export default function ProductDetailPage({
 
             {/* =========================
                 WHOLESALE NOTE
-                ========================= */}
+            ========================= */}
 
-            {mode === "wholesale" && (
+            {mode ===
+              "wholesale" && (
               <div className="detail-wholesale-note">
-                Minimum wholesale
+                Minimum
+                wholesale
                 checkout: Any{" "}
                 {
-                  product.wholesaleMinimum
+                  product
+                    .wholesaleMinimum
                 }{" "}
-                sarees. Mix &amp;
-                Match allowed.
+                sarees. Mix
+                &amp; Match
+                allowed.
               </div>
             )}
 
             {/* =========================
                 ACTION BUTTONS
-                ========================= */}
+            ========================= */}
 
             <div className="detail-actions">
               <button
@@ -1198,7 +1652,7 @@ export default function ProductDetailPage({
 
         {/* =========================
             DESCRIPTION
-            ========================= */}
+        ========================= */}
 
         <section className="detail-description-section">
           <h2>
@@ -1213,7 +1667,7 @@ export default function ProductDetailPage({
 
         {/* =========================
             SHIPPING DETAILS
-            ========================= */}
+        ========================= */}
 
         <section
           className="detail-description-section"
@@ -1231,21 +1685,43 @@ export default function ProductDetailPage({
 
           <div
             style={{
-              display: "grid",
-              gap: "10px",
-              marginTop: "16px",
+              display:
+                "grid",
+
+              gap:
+                "10px",
+
+              marginTop:
+                "16px",
             }}
           >
+            {/* =====================
+                TAMIL NADU
+            ===================== */}
+
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "16px",
-                padding: "14px 16px",
+                display:
+                  "flex",
+
+                alignItems:
+                  "center",
+
+                justifyContent:
+                  "space-between",
+
+                gap:
+                  "16px",
+
+                padding:
+                  "14px 16px",
+
                 border:
                   "1px solid rgba(110, 61, 25, 0.12)",
-                borderRadius: "14px",
+
+                borderRadius:
+                  "14px",
+
                 background:
                   "rgba(255, 250, 244, 0.82)",
               }}
@@ -1253,8 +1729,11 @@ export default function ProductDetailPage({
               <div>
                 <strong
                   style={{
-                    display: "block",
-                    color: "#4b250e",
+                    display:
+                      "block",
+
+                    color:
+                      "#4b250e",
                   }}
                 >
                   Tamil Nadu
@@ -1262,40 +1741,66 @@ export default function ProductDetailPage({
 
                 <small
                   style={{
-                    color: "#8b7565",
+                    color:
+                      "#8b7565",
                   }}
                 >
-                  Delivery within Tamil Nadu
+                  Delivery
+                  within Tamil
+                  Nadu
                 </small>
               </div>
 
               <strong
                 style={{
                   color:
-                    product.shippingDetails
-                      .tamilNadu?.type === "free"
+                    product
+                      .shippingDetails
+                      .tamilNadu
+                      ?.type ===
+                    "free"
                       ? "#2f7d4a"
                       : "#6e3d19",
-                  whiteSpace: "nowrap",
+
+                  whiteSpace:
+                    "nowrap",
                 }}
               >
                 {getShippingDisplay(
-                  product.shippingDetails
+                  product
+                    .shippingDetails
                     .tamilNadu
                 )}
               </strong>
             </div>
 
+            {/* =====================
+                WITHIN INDIA
+            ===================== */}
+
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "16px",
-                padding: "14px 16px",
+                display:
+                  "flex",
+
+                alignItems:
+                  "center",
+
+                justifyContent:
+                  "space-between",
+
+                gap:
+                  "16px",
+
+                padding:
+                  "14px 16px",
+
                 border:
                   "1px solid rgba(110, 61, 25, 0.12)",
-                borderRadius: "14px",
+
+                borderRadius:
+                  "14px",
+
                 background:
                   "rgba(255, 250, 244, 0.82)",
               }}
@@ -1303,8 +1808,11 @@ export default function ProductDetailPage({
               <div>
                 <strong
                   style={{
-                    display: "block",
-                    color: "#4b250e",
+                    display:
+                      "block",
+
+                    color:
+                      "#4b250e",
                   }}
                 >
                   Within India
@@ -1312,49 +1820,73 @@ export default function ProductDetailPage({
 
                 <small
                   style={{
-                    color: "#8b7565",
+                    color:
+                      "#8b7565",
                   }}
                 >
-                  Other Indian locations
+                  Other Indian
+                  locations
                 </small>
               </div>
 
               <strong
                 style={{
                   color:
-                    product.shippingDetails
-                      .withinIndia?.type === "free"
+                    product
+                      .shippingDetails
+                      .withinIndia
+                      ?.type ===
+                    "free"
                       ? "#2f7d4a"
                       : "#6e3d19",
-                  whiteSpace: "nowrap",
+
+                  whiteSpace:
+                    "nowrap",
                 }}
               >
                 {getShippingDisplay(
-                  product.shippingDetails
+                  product
+                    .shippingDetails
                     .withinIndia
                 )}
               </strong>
             </div>
 
-            {product.shippingDetails
-              .withinIndia?.type === "manual" &&
+            {/* =====================
+                FREE LOCATIONS
+            ===================== */}
+
+            {product
+              .shippingDetails
+              .withinIndia
+              ?.type ===
+              "manual" &&
               Array.isArray(
-                product.shippingDetails
-                  .withinIndia?.freeLocations
+                product
+                  .shippingDetails
+                  .withinIndia
+                  ?.freeLocations
               ) &&
               (
-                product.shippingDetails
-                  .withinIndia?.freeLocations
-                  ?.length ?? 0
-              ) > 0 && (
+                product
+                  .shippingDetails
+                  .withinIndia
+                  ?.freeLocations
+                  ?.length ??
+                0
+              ) >
+                0 && (
                 <div
                   style={{
                     padding:
                       "14px 16px",
+
                     border:
                       "1px solid rgba(110, 61, 25, 0.12)",
+
                     borderRadius:
                       "14px",
+
                     background:
                       "rgba(255, 250, 244, 0.82)",
                   }}
@@ -1363,27 +1895,35 @@ export default function ProductDetailPage({
                     style={{
                       display:
                         "block",
+
                       marginBottom:
                         "10px",
+
                       color:
                         "#4b250e",
                     }}
                   >
-                    Free Shipping Locations
+                    Free Shipping
+                    Locations
                   </strong>
 
                   <div
                     style={{
                       display:
                         "flex",
+
                       flexWrap:
                         "wrap",
-                      gap: "8px",
+
+                      gap:
+                        "8px",
                     }}
                   >
-                    {product.shippingDetails
+                    {product
+                      .shippingDetails
                       .withinIndia
-                      ?.freeLocations?.map(
+                      ?.freeLocations
+                      ?.map(
                         (
                           location,
                           index
@@ -1393,19 +1933,26 @@ export default function ProductDetailPage({
                             style={{
                               padding:
                                 "7px 10px",
+
                               borderRadius:
                                 "999px",
+
                               background:
                                 "#f6eadc",
+
                               color:
                                 "#6e3d19",
+
                               fontSize:
                                 "12px",
+
                               fontWeight:
                                 700,
                             }}
                           >
-                            {location}
+                            {
+                              location
+                            }
                           </span>
                         )
                       )}
@@ -1413,16 +1960,33 @@ export default function ProductDetailPage({
                 </div>
               )}
 
+            {/* =====================
+                INTERNATIONAL
+            ===================== */}
+
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "16px",
-                padding: "14px 16px",
+                display:
+                  "flex",
+
+                alignItems:
+                  "center",
+
+                justifyContent:
+                  "space-between",
+
+                gap:
+                  "16px",
+
+                padding:
+                  "14px 16px",
+
                 border:
                   "1px solid rgba(110, 61, 25, 0.12)",
-                borderRadius: "14px",
+
+                borderRadius:
+                  "14px",
+
                 background:
                   "rgba(255, 250, 244, 0.82)",
               }}
@@ -1430,8 +1994,11 @@ export default function ProductDetailPage({
               <div>
                 <strong
                   style={{
-                    display: "block",
-                    color: "#4b250e",
+                    display:
+                      "block",
+
+                    color:
+                      "#4b250e",
                   }}
                 >
                   International
@@ -1439,7 +2006,8 @@ export default function ProductDetailPage({
 
                 <small
                   style={{
-                    color: "#8b7565",
+                    color:
+                      "#8b7565",
                   }}
                 >
                   Outside India
@@ -1449,15 +2017,21 @@ export default function ProductDetailPage({
               <strong
                 style={{
                   color:
-                    product.shippingDetails
-                      .international?.type === "free"
+                    product
+                      .shippingDetails
+                      .international
+                      ?.type ===
+                    "free"
                       ? "#2f7d4a"
                       : "#6e3d19",
-                  whiteSpace: "nowrap",
+
+                  whiteSpace:
+                    "nowrap",
                 }}
               >
                 {getShippingDisplay(
-                  product.shippingDetails
+                  product
+                    .shippingDetails
                     .international
                 )}
               </strong>
@@ -1468,23 +2042,28 @@ export default function ProductDetailPage({
             style={{
               margin:
                 "14px 0 0",
+
               color:
                 "#8b7565",
+
               fontSize:
                 "12px",
+
               lineHeight:
                 1.6,
             }}
           >
-            Final shipping charge is
-            applied according to the
-            delivery address at checkout.
+            Final shipping
+            charge is calculated
+            from your district,
+            state or country at
+            checkout.
           </p>
         </section>
 
         {/* =========================
             REVIEWS
-            ========================= */}
+        ========================= */}
 
         <section className="detail-reviews-section">
           <div className="detail-section-heading">
@@ -1494,19 +2073,32 @@ export default function ProductDetailPage({
 
             <span>
               {reviewCount}{" "}
-              {reviewCount === 1
+
+              {reviewCount ===
+              1
                 ? "Review"
                 : "Reviews"}
             </span>
           </div>
 
-          {reviewCount === 0 ? (
+          {reviewCount ===
+          0 ? (
             <div className="detail-empty-reviews">
               <div className="detail-stars">
-                {[1, 2, 3, 4, 5].map(
-                  (star) => (
+                {[
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                ].map(
+                  (
+                    star
+                  ) => (
                     <FaStar
-                      key={star}
+                      key={
+                        star
+                      }
                       className="detail-star"
                     />
                   )
@@ -1520,10 +2112,14 @@ export default function ProductDetailPage({
           ) : (
             <div className="detail-reviews-list">
               {reviews.map(
-                (item) => (
+                (
+                  item
+                ) => (
                   <article
                     className="detail-review-card"
-                    key={item.id}
+                    key={
+                      item.id
+                    }
                   >
                     <div className="detail-review-top">
                       <div className="detail-review-customer">
@@ -1540,14 +2136,20 @@ export default function ProductDetailPage({
 
                       <span className="detail-review-date">
                         {new Date(
-                          item.created_at
+                          item
+                            .created_at
                         ).toLocaleDateString(
                           "en-IN",
+
                           {
-                            day: "2-digit",
+                            day:
+                              "2-digit",
+
                             month:
                               "short",
-                            year: "numeric",
+
+                            year:
+                              "numeric",
                           }
                         )}
                       </span>
@@ -1555,9 +2157,15 @@ export default function ProductDetailPage({
 
                     <div className="detail-stars detail-review-stars">
                       {[
-                        1, 2, 3, 4, 5,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
                       ].map(
-                        (star) => (
+                        (
+                          star
+                        ) => (
                           <FaStar
                             key={
                               star
@@ -1565,7 +2173,8 @@ export default function ProductDetailPage({
                             className={
                               star <=
                               Number(
-                                item.rating
+                                item
+                                  .rating
                               )
                                 ? "detail-star detail-star-active"
                                 : "detail-star"

@@ -15,12 +15,6 @@ import {
 
 /* =========================================
    HOME PAGE - FIRST SCREEN
-   =========================================
-
-   Header + Hero mattum first screen-la
-   immediately venum.
-
-   So ivanga eager import.
 ========================================= */
 
 import Header from "./components/Header";
@@ -31,8 +25,6 @@ import SeoManager from "./components/SeoManager";
 
 /* =========================================
    HOME PAGE - LAZY SECTIONS
-
-   Initial bundle-la ellame load aaga vendam.
 ========================================= */
 
 const WholesaleRetail = lazy(
@@ -78,7 +70,7 @@ const Footer = lazy(
 );
 
 /* =========================================
-   LAZY LOADED PUBLIC PAGES
+   PUBLIC PAGES
 ========================================= */
 
 const WholesalePage = lazy(
@@ -364,10 +356,18 @@ const WholesaleApplications = lazy(
 );
 
 /* =========================================
-   DEFER BELOW-FOLD HOME SECTIONS
+   SHIPPING DETAILS - NEW
+========================================= */
 
-   Customer section pakkathula scroll pannumbodhu
-   mattum component mount aagum.
+const ShippingDetails = lazy(
+  () =>
+    import(
+      "./admin/pages/ShippingDetails"
+    )
+);
+
+/* =========================================
+   DEFER BELOW-FOLD HOME SECTIONS
 ========================================= */
 
 type DeferredSectionProps = {
@@ -397,10 +397,6 @@ function DeferredSection({
       return;
     }
 
-    /*
-      IntersectionObserver support illadha
-      old browser-na direct render panniduvom.
-    */
     if (
       !(
         "IntersectionObserver" in
@@ -408,7 +404,6 @@ function DeferredSection({
       )
     ) {
       setShouldRender(true);
-
       return;
     }
 
@@ -426,17 +421,9 @@ function DeferredSection({
 
           setShouldRender(true);
 
-          /*
-            Once loaded, again observe panna
-            thevai illa.
-          */
           observer.disconnect();
         },
         {
-          /*
-            User section-ku varradhukku munnaadiye
-            500px distance-la preload start.
-          */
           rootMargin:
             "500px 0px",
         }
@@ -471,9 +458,6 @@ function DeferredSection({
 
 /* =========================================
    HOME SECTION PLACEHOLDER
-
-   Section load aagumbodhu page layout jump
-   aagaama approximate space reserve pannum.
 ========================================= */
 
 function HomeSectionLoader({
@@ -498,20 +482,9 @@ function HomeSectionLoader({
 function HomePage() {
   return (
     <>
-      {/* =================================
-          FIRST SCREEN - IMMEDIATE
-          ================================= */}
-
       <Header />
 
       <Hero />
-
-      {/* =================================
-          WHOLESALE / RETAIL
-
-          Hero-ku directly keela irukku.
-          Separate chunk, but immediate load.
-          ================================= */}
 
       <Suspense
         fallback={
@@ -522,13 +495,6 @@ function HomePage() {
       >
         <WholesaleRetail />
       </Suspense>
-
-      {/* =================================
-          STATE MARQUEE
-
-          Customer scroll close varumbodhu dhaan
-          mount aagum.
-          ================================= */}
 
       <DeferredSection
         minHeight={110}
@@ -544,10 +510,6 @@ function HomePage() {
         </Suspense>
       </DeferredSection>
 
-      {/* =================================
-          JOURNEY SECTION
-          ================================= */}
-
       <DeferredSection
         minHeight={650}
       >
@@ -561,10 +523,6 @@ function HomePage() {
           <DiscoverJourney />
         </Suspense>
       </DeferredSection>
-
-      {/* =================================
-          HOUSE SLIDER
-          ================================= */}
 
       <DeferredSection
         minHeight={520}
@@ -580,10 +538,6 @@ function HomePage() {
         </Suspense>
       </DeferredSection>
 
-      {/* =================================
-          FINAL CTA
-          ================================= */}
-
       <DeferredSection
         minHeight={350}
       >
@@ -597,10 +551,6 @@ function HomePage() {
           <FinalCTA />
         </Suspense>
       </DeferredSection>
-
-      {/* =================================
-          FOOTER
-          ================================= */}
 
       <DeferredSection
         minHeight={320}
@@ -662,16 +612,12 @@ function AdminComingSoon({
     <div
       style={{
         padding: "32px",
-
         border:
           "1px solid rgba(110, 61, 25, 0.1)",
-
         borderRadius:
           "18px",
-
         background:
           "#ffffff",
-
         boxShadow:
           "0 10px 28px rgba(73, 35, 11, 0.055)",
       }}
@@ -680,19 +626,14 @@ function AdminComingSoon({
         style={{
           margin:
             "0 0 8px",
-
           color:
             "#9b7b62",
-
           fontSize:
             "10px",
-
           fontWeight:
             700,
-
           letterSpacing:
             "1px",
-
           textTransform:
             "uppercase",
         }}
@@ -703,13 +644,10 @@ function AdminComingSoon({
       <h1
         style={{
           margin: 0,
-
           color:
             "#4b250e",
-
           fontFamily:
             '"Cormorant Garamond", Georgia, serif',
-
           fontSize:
             "34px",
         }}
@@ -721,10 +659,8 @@ function AdminComingSoon({
         style={{
           margin:
             "10px 0 0",
-
           color:
             "#8b7565",
-
           fontSize:
             "12px",
         }}
@@ -745,19 +681,19 @@ export default function App() {
     <>
       {/* =================================
           SEO
-          ================================= */}
+      ================================= */}
 
       <SeoManager />
 
       {/* =================================
           REVIEW POPUP
-          ================================= */}
+      ================================= */}
 
       <ReviewPopup />
 
       {/* =================================
           ROUTES
-          ================================= */}
+      ================================= */}
 
       <Suspense
         fallback={
@@ -765,9 +701,9 @@ export default function App() {
         }
       >
         <Routes>
-          {/* =====================================
+          {/* =============================
               HOME
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/"
@@ -776,9 +712,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               WHOLESALE AUTHENTICATION
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/wholesale-login"
@@ -801,9 +737,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               PROTECTED WHOLESALE AREA
-              ===================================== */}
+          ============================= */}
 
           <Route
             element={
@@ -850,9 +786,9 @@ export default function App() {
             />
           </Route>
 
-          {/* =====================================
+          {/* =============================
               RETAIL
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/retail"
@@ -893,9 +829,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               ORDER
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/order-success"
@@ -911,9 +847,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               CUSTOMER AUTHENTICATION
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/login"
@@ -950,9 +886,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               STATE PRODUCTS
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/state/:state"
@@ -961,9 +897,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               INFORMATION PAGES
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/policies"
@@ -986,9 +922,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               ADMIN LOGIN
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="/admin/login"
@@ -997,9 +933,9 @@ export default function App() {
             }
           />
 
-          {/* =====================================
+          {/* =============================
               PROTECTED ADMIN
-              ===================================== */}
+          ============================= */}
 
           <Route
             element={
@@ -1012,9 +948,9 @@ export default function App() {
                 <AdminLayout />
               }
             >
-              {/* =============================
+              {/* =========================
                   DEFAULT ADMIN ROUTE
-                  ============================= */}
+              ========================= */}
 
               <Route
                 index
@@ -1026,9 +962,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   DASHBOARD
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="dashboard"
@@ -1037,9 +973,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   PRODUCTS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="products"
@@ -1071,9 +1007,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   CATEGORIES
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="categories"
@@ -1082,9 +1018,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   COLLECTIONS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="collections"
@@ -1093,9 +1029,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   ORDERS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="orders"
@@ -1104,9 +1040,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   CUSTOMERS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="customers"
@@ -1115,9 +1051,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   WHOLESALE APPLICATIONS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="wholesale-applications"
@@ -1126,9 +1062,20 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
+                  SHIPPING DETAILS
+              ========================= */}
+
+              <Route
+                path="shipping-details"
+                element={
+                  <ShippingDetails />
+                }
+              />
+
+              {/* =========================
                   HOME CONTENT
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="website/home"
@@ -1139,9 +1086,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   MEDIA LIBRARY
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="media"
@@ -1150,9 +1097,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   COUPONS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="coupons"
@@ -1163,9 +1110,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   REVIEWS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="reviews"
@@ -1174,9 +1121,9 @@ export default function App() {
                 }
               />
 
-              {/* =============================
+              {/* =========================
                   SETTINGS
-                  ============================= */}
+              ========================= */}
 
               <Route
                 path="settings"
@@ -1187,9 +1134,9 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* =====================================
+          {/* =============================
               UNKNOWN URL
-              ===================================== */}
+          ============================= */}
 
           <Route
             path="*"

@@ -1,5 +1,4 @@
-
-  import {
+import {
   useEffect,
   useState,
 } from "react";
@@ -7,9 +6,12 @@
 import type {
   ChangeEvent,
   FormEvent,
+  ReactNode,
 } from "react";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import {
   FiArrowLeft,
@@ -20,9 +22,15 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { adminSupabase as supabase } from "../../lib/adminSupabase";
+import {
+  adminSupabase as supabase,
+} from "../../lib/adminSupabase";
 
 import "../css/NewProduct.css";
+
+/* =========================================
+   TYPES
+========================================= */
 
 type VariantImage = {
   id: string;
@@ -53,31 +61,56 @@ type ProductDraftVariant = {
   stock: string;
 };
 
-type ShippingMode = "free" | "manual";
+type ShippingMode =
+  | "free"
+  | "manual";
 
 type ProductDraft = {
   productName: string;
   category: string;
   state: string;
   description: string;
+
   retailPrice: string;
   wholesalePrice: string;
   wholesaleMinimum: string;
-  tamilNaduShippingMode: ShippingMode;
-  tamilNaduShippingAmount: string;
-  indiaShippingMode: ShippingMode;
-  indiaShippingAmount: string;
-  freeShippingLocations: string[];
-  internationalShippingMode: ShippingMode;
-  internationalShippingAmount: string;
+
+  tamilNaduShippingMode:
+    ShippingMode;
+
+  indiaShippingMode:
+    ShippingMode;
+
+  freeShippingLocations:
+    string[];
+
+  internationalShippingMode:
+    ShippingMode;
+
   isFeatured: boolean;
   isNewArrival: boolean;
   status: string;
-  variants: ProductDraftVariant[];
+
+  variants:
+    ProductDraftVariant[];
 };
+
+type ShippingStatusBoxProps = {
+  children: ReactNode;
+};
+
+/* =========================================
+   CONSTANTS
+========================================= */
 
 const NEW_PRODUCT_DRAFT_KEY =
   "vv-admin-new-product-draft";
+
+const PRODUCT_IMAGE_MAX_DIMENSION =
+  1600;
+
+const PRODUCT_IMAGE_WEBP_QUALITY =
+  0.82;
 
 const INDIA_REGIONS = [
   "Andhra Pradesh",
@@ -118,86 +151,181 @@ const INDIA_REGIONS = [
   "Puducherry",
 ] as const;
 
-const createEmptyVariant = (): ColourVariant => ({
-  id: crypto.randomUUID(),
-  colourName: "",
-  colourCode: "#7a3e18",
-  sku: "",
-  stock: "",
-  images: [],
-});
+/* =========================================
+   HELPERS
+========================================= */
 
-const createSlug = (value: string) => {
+const createEmptyVariant =
+  (): ColourVariant => ({
+    id:
+      crypto.randomUUID(),
+
+    colourName: "",
+
+    colourCode:
+      "#7a3e18",
+
+    sku: "",
+
+    stock: "",
+
+    images: [],
+  });
+
+const createSlug = (
+  value: string
+) => {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(
+      /[^a-z0-9]+/g,
+      "-"
+    )
+    .replace(
+      /^-+|-+$/g,
+      ""
+    );
 };
 
-const getErrorMessage = (error: unknown) => {
+const getErrorMessage = (
+  error: unknown
+) => {
   if (
-    typeof error === "object" &&
+    typeof error ===
+      "object" &&
     error !== null &&
-    "message" in error
+    "message" in
+      error
   ) {
-    return String(error.message);
+    return String(
+      error.message
+    );
   }
 
   return "Unknown error";
 };
 
+/* =========================================
+   IMAGE COMPRESSION
+========================================= */
 
-const PRODUCT_IMAGE_MAX_DIMENSION = 1600;
-const PRODUCT_IMAGE_WEBP_QUALITY = 0.82;
-
-async function compressProductImage(file: File): Promise<File> {
-  const imageBitmap = await createImageBitmap(file);
-
-  try {
-    const scale = Math.min(
-      1,
-      PRODUCT_IMAGE_MAX_DIMENSION / Math.max(imageBitmap.width, imageBitmap.height)
+async function compressProductImage(
+  file: File
+): Promise<File> {
+  const imageBitmap =
+    await createImageBitmap(
+      file
     );
 
-    const width = Math.max(1, Math.round(imageBitmap.width * scale));
-    const height = Math.max(1, Math.round(imageBitmap.height * scale));
+  try {
+    const scale =
+      Math.min(
+        1,
 
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
+        PRODUCT_IMAGE_MAX_DIMENSION /
+          Math.max(
+            imageBitmap.width,
+            imageBitmap.height
+          )
+      );
 
-    const context = canvas.getContext("2d");
+    const width =
+      Math.max(
+        1,
+
+        Math.round(
+          imageBitmap.width *
+            scale
+        )
+      );
+
+    const height =
+      Math.max(
+        1,
+
+        Math.round(
+          imageBitmap.height *
+            scale
+        )
+      );
+
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
+
+    canvas.width =
+      width;
+
+    canvas.height =
+      height;
+
+    const context =
+      canvas.getContext(
+        "2d"
+      );
 
     if (!context) {
-      throw new Error("Image compression initialize aagala.");
+      throw new Error(
+        "Unable to initialize image compression."
+      );
     }
 
-    context.drawImage(imageBitmap, 0, 0, width, height);
+    context.drawImage(
+      imageBitmap,
+      0,
+      0,
+      width,
+      height
+    );
 
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (result) => {
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error("Image compression aagala."));
-          }
-        },
-        "image/webp",
-        PRODUCT_IMAGE_WEBP_QUALITY
+    const blob =
+      await new Promise<Blob>(
+        (
+          resolve,
+          reject
+        ) => {
+          canvas.toBlob(
+            (result) => {
+              if (result) {
+                resolve(
+                  result
+                );
+              } else {
+                reject(
+                  new Error(
+                    "Image compression failed."
+                  )
+                );
+              }
+            },
+
+            "image/webp",
+
+            PRODUCT_IMAGE_WEBP_QUALITY
+          );
+        }
       );
-    });
 
     const originalBaseName =
-      file.name.replace(/\.[^/.]+$/, "") || "product-image";
+      file.name.replace(
+        /\.[^/.]+$/,
+        ""
+      ) ||
+      "product-image";
 
     return new File(
       [blob],
+
       `${originalBaseName}.webp`,
+
       {
-        type: "image/webp",
-        lastModified: Date.now(),
+        type:
+          "image/webp",
+
+        lastModified:
+          Date.now(),
       }
     );
   } finally {
@@ -205,275 +333,454 @@ async function compressProductImage(file: File): Promise<File> {
   }
 }
 
+/* =========================================
+   SHIPPING STATUS DISPLAY
+========================================= */
+
+function ShippingStatusBox({
+  children,
+}: ShippingStatusBoxProps) {
+  return (
+    <div
+      style={{
+        minHeight:
+          "56px",
+
+        border:
+          "1px solid rgba(122, 62, 24, 0.14)",
+
+        borderRadius:
+          "12px",
+
+        display:
+          "flex",
+
+        alignItems:
+          "center",
+
+        padding:
+          "0 16px",
+
+        fontWeight:
+          700,
+
+        color:
+          "#6e3d19",
+
+        background:
+          "#fff",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* =========================================
+   COMPONENT
+========================================= */
+
 export default function NewProduct() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const [productName, setProductName] =
+  /* =======================================
+     PRODUCT INFORMATION
+  ======================================= */
+
+  const [
+    productName,
+    setProductName,
+  ] =
     useState("");
 
-  const [category, setCategory] =
+  const [
+    category,
+    setCategory,
+  ] =
     useState("");
 
-  const [state, setState] =
+  const [
+    state,
+    setState,
+  ] =
     useState("");
 
-  const [categories, setCategories] =
-    useState<ProductCategory[]>([]);
+  const [
+    categories,
+    setCategories,
+  ] =
+    useState<
+      ProductCategory[]
+    >([]);
 
   const [
     isLoadingCategories,
     setIsLoadingCategories,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
     categoryError,
     setCategoryError,
-  ] = useState("");
-
-  const [description, setDescription] =
+  ] =
     useState("");
 
-  const [retailPrice, setRetailPrice] =
+  const [
+    description,
+    setDescription,
+  ] =
+    useState("");
+
+  /* =======================================
+     PRICING
+  ======================================= */
+
+  const [
+    retailPrice,
+    setRetailPrice,
+  ] =
     useState("");
 
   const [
     wholesalePrice,
     setWholesalePrice,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     wholesaleMinimum,
     setWholesaleMinimum,
-  ] = useState("5");
+  ] =
+    useState("5");
+
+  /* =======================================
+     SHIPPING
+  ======================================= */
 
   const [
     tamilNaduShippingMode,
     setTamilNaduShippingMode,
-  ] = useState<ShippingMode>("free");
-
-  const [
-    tamilNaduShippingAmount,
-    setTamilNaduShippingAmount,
-  ] = useState("");
+  ] =
+    useState<ShippingMode>(
+      "free"
+    );
 
   const [
     indiaShippingMode,
     setIndiaShippingMode,
-  ] = useState<ShippingMode>("manual");
-
-  const [
-    indiaShippingAmount,
-    setIndiaShippingAmount,
-  ] = useState("");
+  ] =
+    useState<ShippingMode>(
+      "manual"
+    );
 
   const [
     freeShippingLocations,
     setFreeShippingLocations,
-  ] = useState<string[]>([
-    "Puducherry",
-    "Bangalore",
-  ]);
+  ] =
+    useState<string[]>([
+      "Puducherry",
+      "Bangalore",
+    ]);
 
   const [
     freeShippingLocationInput,
     setFreeShippingLocationInput,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     internationalShippingMode,
     setInternationalShippingMode,
-  ] = useState<ShippingMode>("manual");
+  ] =
+    useState<ShippingMode>(
+      "manual"
+    );
+
+  /* =======================================
+     PRODUCT OPTIONS
+  ======================================= */
 
   const [
-    internationalShippingAmount,
-    setInternationalShippingAmount,
-  ] = useState("");
-
-  const [isFeatured, setIsFeatured] =
+    isFeatured,
+    setIsFeatured,
+  ] =
     useState(false);
 
-  const [isNewArrival, setIsNewArrival] =
+  const [
+    isNewArrival,
+    setIsNewArrival,
+  ] =
     useState(false);
 
-  const [status, setStatus] =
-    useState("active");
+  const [
+    status,
+    setStatus,
+  ] =
+    useState(
+      "active"
+    );
 
-  const [isSaving, setIsSaving] =
+  /* =======================================
+     VARIANTS
+  ======================================= */
+
+  const [
+    variants,
+    setVariants,
+  ] =
+    useState<
+      ColourVariant[]
+    >([
+      createEmptyVariant(),
+    ]);
+
+  /* =======================================
+     SAVING
+  ======================================= */
+
+  const [
+    isSaving,
+    setIsSaving,
+  ] =
     useState(false);
 
-  const [variants, setVariants] = useState<
-    ColourVariant[]
-  >([createEmptyVariant()]);
-
-  const [isDraftLoaded, setIsDraftLoaded] =
+  const [
+    isDraftLoaded,
+    setIsDraftLoaded,
+  ] =
     useState(false);
+
+  /* =======================================
+     RESTORE DRAFT
+  ======================================= */
 
   useEffect(() => {
     try {
-      const savedDraft = localStorage.getItem(
-        NEW_PRODUCT_DRAFT_KEY
-      );
+      const savedDraft =
+        localStorage.getItem(
+          NEW_PRODUCT_DRAFT_KEY
+        );
 
-      if (savedDraft) {
-        const draft = JSON.parse(
-          savedDraft
-        ) as Partial<ProductDraft>;
+      if (
+        savedDraft
+      ) {
+        const draft =
+          JSON.parse(
+            savedDraft
+          ) as Partial<ProductDraft>;
 
         setProductName(
-          typeof draft.productName === "string"
+          typeof draft
+            .productName ===
+            "string"
             ? draft.productName
             : ""
         );
 
         setCategory(
-          typeof draft.category === "string"
+          typeof draft
+            .category ===
+            "string"
             ? draft.category
             : ""
         );
 
         setState(
-          typeof draft.state === "string"
+          typeof draft
+            .state ===
+            "string"
             ? draft.state
             : ""
         );
 
         setDescription(
-          typeof draft.description === "string"
+          typeof draft
+            .description ===
+            "string"
             ? draft.description
             : ""
         );
 
         setRetailPrice(
-          typeof draft.retailPrice === "string"
+          typeof draft
+            .retailPrice ===
+            "string"
             ? draft.retailPrice
             : ""
         );
 
         setWholesalePrice(
-          typeof draft.wholesalePrice === "string"
+          typeof draft
+            .wholesalePrice ===
+            "string"
             ? draft.wholesalePrice
             : ""
         );
 
         setWholesaleMinimum(
-          typeof draft.wholesaleMinimum === "string"
+          typeof draft
+            .wholesaleMinimum ===
+            "string"
             ? draft.wholesaleMinimum
             : "5"
         );
 
         setTamilNaduShippingMode(
-          draft.tamilNaduShippingMode === "manual"
+          draft
+            .tamilNaduShippingMode ===
+            "manual"
             ? "manual"
             : "free"
         );
 
-        setTamilNaduShippingAmount(
-          typeof draft.tamilNaduShippingAmount === "string"
-            ? draft.tamilNaduShippingAmount
-            : ""
-        );
-
         setIndiaShippingMode(
-          draft.indiaShippingMode === "free"
+          draft
+            .indiaShippingMode ===
+            "free"
             ? "free"
             : "manual"
-        );
-
-        setIndiaShippingAmount(
-          typeof draft.indiaShippingAmount === "string"
-            ? draft.indiaShippingAmount
-            : ""
-        );
-
-        setFreeShippingLocations(
-          Array.isArray(draft.freeShippingLocations)
-            ? draft.freeShippingLocations.filter(
-                (location): location is string =>
-                  typeof location === "string" &&
-                  Boolean(location.trim())
-              )
-            : ["Puducherry", "Bangalore"]
         );
 
         setInternationalShippingMode(
-          draft.internationalShippingMode === "free"
+          draft
+            .internationalShippingMode ===
+            "free"
             ? "free"
             : "manual"
         );
 
-        setInternationalShippingAmount(
-          typeof draft.internationalShippingAmount === "string"
-            ? draft.internationalShippingAmount
-            : ""
+        setFreeShippingLocations(
+          Array.isArray(
+            draft
+              .freeShippingLocations
+          )
+            ? draft
+                .freeShippingLocations
+                .filter(
+                  (
+                    location
+                  ): location is string =>
+                    typeof location ===
+                      "string" &&
+                    Boolean(
+                      location.trim()
+                    )
+                )
+            : [
+                "Puducherry",
+                "Bangalore",
+              ]
         );
 
         setIsFeatured(
-          typeof draft.isFeatured === "boolean"
+          typeof draft
+            .isFeatured ===
+            "boolean"
             ? draft.isFeatured
             : false
         );
 
         setIsNewArrival(
-          typeof draft.isNewArrival === "boolean"
+          typeof draft
+            .isNewArrival ===
+            "boolean"
             ? draft.isNewArrival
             : false
         );
 
         setStatus(
-          typeof draft.status === "string"
+          typeof draft
+            .status ===
+            "string"
             ? draft.status
             : "active"
         );
 
         if (
-          Array.isArray(draft.variants) &&
-          draft.variants.length > 0
+          Array.isArray(
+            draft.variants
+          ) &&
+          draft
+            .variants
+            .length >
+            0
         ) {
           setVariants(
-            draft.variants.map((variant) => ({
-              id:
-                typeof variant.id === "string"
-                  ? variant.id
-                  : crypto.randomUUID(),
-              colourName:
-                typeof variant.colourName ===
-                "string"
-                  ? variant.colourName
-                  : "",
-              colourCode:
-                typeof variant.colourCode ===
-                "string"
-                  ? variant.colourCode
-                  : "#7a3e18",
-              sku:
-                typeof variant.sku === "string"
-                  ? variant.sku
-                  : "",
-              stock:
-                typeof variant.stock === "string"
-                  ? variant.stock
-                  : "",
-              images: [],
-            }))
+            draft.variants.map(
+              (
+                variant
+              ) => ({
+                id:
+                  typeof variant
+                    .id ===
+                    "string"
+                    ? variant.id
+                    : crypto.randomUUID(),
+
+                colourName:
+                  typeof variant
+                    .colourName ===
+                    "string"
+                    ? variant.colourName
+                    : "",
+
+                colourCode:
+                  typeof variant
+                    .colourCode ===
+                    "string"
+                    ? variant.colourCode
+                    : "#7a3e18",
+
+                sku:
+                  typeof variant
+                    .sku ===
+                    "string"
+                    ? variant.sku
+                    : "",
+
+                stock:
+                  typeof variant
+                    .stock ===
+                    "string"
+                    ? variant.stock
+                    : "",
+
+                images:
+                  [],
+              })
+            )
           );
         }
       }
-    } catch (error) {
+    } catch (
+      error
+    ) {
       console.error(
         "New product draft restore error:",
         error
       );
     } finally {
-      setIsDraftLoaded(true);
+      setIsDraftLoaded(
+        true
+      );
     }
   }, []);
 
+  /* =======================================
+     SAVE DRAFT
+  ======================================= */
+
   useEffect(() => {
-    if (!isDraftLoaded || isSaving) {
+    if (
+      !isDraftLoaded ||
+      isSaving
+    ) {
       return;
     }
 
-    const draft: ProductDraft = {
+    const draft:
+      ProductDraft = {
       productName,
       category,
       state,
@@ -481,31 +788,48 @@ export default function NewProduct() {
       retailPrice,
       wholesalePrice,
       wholesaleMinimum,
+
       tamilNaduShippingMode,
-      tamilNaduShippingAmount,
+
       indiaShippingMode,
-      indiaShippingAmount,
+
       freeShippingLocations,
+
       internationalShippingMode,
-      internationalShippingAmount,
+
       isFeatured,
       isNewArrival,
       status,
-      variants: variants.map((variant) => ({
-        id: variant.id,
-        colourName: variant.colourName,
-        colourCode: variant.colourCode,
-        sku: variant.sku,
-        stock: variant.stock,
-      })),
+
+      variants:
+        variants.map(
+          ({
+            id,
+            colourName,
+            colourCode,
+            sku,
+            stock,
+          }) => ({
+            id,
+            colourName,
+            colourCode,
+            sku,
+            stock,
+          })
+        ),
     };
 
     try {
       localStorage.setItem(
         NEW_PRODUCT_DRAFT_KEY,
-        JSON.stringify(draft)
+
+        JSON.stringify(
+          draft
+        )
       );
-    } catch (error) {
+    } catch (
+      error
+    ) {
       console.error(
         "New product draft save error:",
         error
@@ -514,774 +838,1157 @@ export default function NewProduct() {
   }, [
     isDraftLoaded,
     isSaving,
+
     productName,
     category,
     state,
     description,
+
     retailPrice,
     wholesalePrice,
     wholesaleMinimum,
+
     tamilNaduShippingMode,
-    tamilNaduShippingAmount,
+
     indiaShippingMode,
-    indiaShippingAmount,
+
     freeShippingLocations,
+
     internationalShippingMode,
-    internationalShippingAmount,
+
     isFeatured,
     isNewArrival,
     status,
+
     variants,
   ]);
 
+  /* =======================================
+     LOAD CATEGORIES
+  ======================================= */
+
   useEffect(() => {
-    const loadCategories = async () => {
-      setIsLoadingCategories(true);
-      setCategoryError("");
-
-      const { data, error } =
-        await supabase
-          .from("categories")
-          .select("id, name, slug")
-          .eq("status", "active")
-          .order("name", {
-            ascending: true,
-          });
-
-      if (error) {
-        console.error(
-          "Categories load error:",
-          error
+    const loadCategories =
+      async () => {
+        setIsLoadingCategories(
+          true
         );
 
         setCategoryError(
-          `Categories load aagala: ${error.message}`
+          ""
         );
 
-        setCategories([]);
-        setCategory("");
-        setIsLoadingCategories(false);
-        return;
-      }
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "categories"
+            )
+            .select(
+              "id, name, slug"
+            )
+            .eq(
+              "status",
+              "active"
+            )
+            .order(
+              "name",
+              {
+                ascending:
+                  true,
+              }
+            );
 
-      const loadedCategories =
-        (data ?? []) as ProductCategory[];
+        if (error) {
+          console.error(
+            "Categories load error:",
+            error
+          );
 
-      setCategories(loadedCategories);
+          setCategoryError(
+            `Unable to load categories: ${error.message}`
+          );
 
-      if (loadedCategories.length > 0) {
+          setCategories(
+            []
+          );
+
+          setCategory(
+            ""
+          );
+
+          setIsLoadingCategories(
+            false
+          );
+
+          return;
+        }
+
+        const loadedCategories =
+          (
+            data ??
+            []
+          ) as ProductCategory[];
+
+        setCategories(
+          loadedCategories
+        );
+
         setCategory(
-          (currentCategory) =>
-            currentCategory ||
-            loadedCategories[0].name
-        );
-      } else {
-        setCategory("");
-      }
+          (
+            currentCategory
+          ) => {
+            const exists =
+              loadedCategories.some(
+                (
+                  item
+                ) =>
+                  item.name ===
+                  currentCategory
+              );
 
-      setIsLoadingCategories(false);
-    };
+            if (
+              currentCategory &&
+              exists
+            ) {
+              return currentCategory;
+            }
+
+            return (
+              loadedCategories[
+                0
+              ]?.name ??
+              ""
+            );
+          }
+        );
+
+        setIsLoadingCategories(
+          false
+        );
+      };
 
     void loadCategories();
   }, []);
 
+  /* =======================================
+     VARIANT HELPERS
+  ======================================= */
+
   const updateVariant = (
     variantId: string,
-    field: keyof Omit<
-      ColourVariant,
-      "id" | "images"
-    >,
+
+    field:
+      keyof Omit<
+        ColourVariant,
+        "id" | "images"
+      >,
+
     value: string
   ) => {
-    setVariants((currentVariants) =>
-      currentVariants.map((variant) =>
-        variant.id === variantId
-          ? {
-              ...variant,
-              [field]: value,
-            }
-          : variant
-      )
+    setVariants(
+      (
+        currentVariants
+      ) =>
+        currentVariants.map(
+          (
+            variant
+          ) =>
+            variant.id ===
+            variantId
+              ? {
+                  ...variant,
+
+                  [field]:
+                    value,
+                }
+              : variant
+        )
     );
   };
 
-  const addVariant = () => {
-    setVariants((currentVariants) => [
-      ...currentVariants,
-      createEmptyVariant(),
-    ]);
-  };
+  const addVariant =
+    () => {
+      setVariants(
+        (
+          currentVariants
+        ) => [
+          ...currentVariants,
+
+          createEmptyVariant(),
+        ]
+      );
+    };
 
   const removeVariant = (
     variantId: string
   ) => {
-    setVariants((currentVariants) => {
-      if (currentVariants.length === 1) {
-        alert(
-          "At least one colour variant is required."
+    setVariants(
+      (
+        currentVariants
+      ) => {
+        if (
+          currentVariants.length ===
+          1
+        ) {
+          alert(
+            "At least one colour variant is required."
+          );
+
+          return currentVariants;
+        }
+
+        const variantToRemove =
+          currentVariants.find(
+            (
+              variant
+            ) =>
+              variant.id ===
+              variantId
+          );
+
+        variantToRemove
+          ?.images
+          .forEach(
+            (
+              image
+            ) => {
+              URL.revokeObjectURL(
+                image.preview
+              );
+            }
+          );
+
+        return currentVariants.filter(
+          (
+            variant
+          ) =>
+            variant.id !==
+            variantId
+        );
+      }
+    );
+  };
+
+  /* =======================================
+     IMAGE UPLOAD
+  ======================================= */
+
+  const handleImageUpload =
+    async (
+      variantId:
+        string,
+
+      event:
+        ChangeEvent<HTMLInputElement>
+    ) => {
+      const input =
+        event.currentTarget;
+
+      const files =
+        Array.from(
+          input.files ??
+            []
         );
 
-        return currentVariants;
+      input.value =
+        "";
+
+      if (
+        files.length ===
+        0
+      ) {
+        return;
       }
 
-      const variantToRemove =
-        currentVariants.find(
-          (variant) =>
-            variant.id === variantId
+      const invalidFile =
+        files.find(
+          (
+            file
+          ) =>
+            ![
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+            ].includes(
+              file.type
+            )
         );
 
-      variantToRemove?.images.forEach(
-        (image) => {
-          URL.revokeObjectURL(
-            image.preview
+      if (
+        invalidFile
+      ) {
+        alert(
+          "Please upload only JPG, PNG or WEBP images."
+        );
+
+        return;
+      }
+
+      const oversizedFile =
+        files.find(
+          (
+            file
+          ) =>
+            file.size >
+            10 *
+              1024 *
+              1024
+        );
+
+      if (
+        oversizedFile
+      ) {
+        alert(
+          "Each image must be 10 MB or smaller."
+        );
+
+        return;
+      }
+
+      try {
+        const compressedFiles =
+          await Promise.all(
+            files.map(
+              (
+                file
+              ) =>
+                compressProductImage(
+                  file
+                )
+            )
           );
-        }
-      );
 
-      return currentVariants.filter(
-        (variant) =>
-          variant.id !== variantId
-      );
-    });
-  };
+        const newImages:
+          VariantImage[] =
+          compressedFiles.map(
+            (
+              file
+            ) => ({
+              id:
+                crypto.randomUUID(),
 
-  const handleImageUpload = async (
-    variantId: string,
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    const input = event.currentTarget;
-    const files = Array.from(input.files ?? []);
+              file,
 
-    input.value = "";
+              preview:
+                URL.createObjectURL(
+                  file
+                ),
+            })
+          );
 
-    if (files.length === 0) return;
+        setVariants(
+          (
+            currentVariants
+          ) =>
+            currentVariants.map(
+              (
+                variant
+              ) =>
+                variant.id ===
+                variantId
+                  ? {
+                      ...variant,
 
-    const invalidFile = files.find(
-      (file) =>
-        ![
-          "image/png",
-          "image/jpeg",
-          "image/webp",
-        ].includes(file.type)
-    );
+                      images:
+                        [
+                          ...variant.images,
 
-    if (invalidFile) {
-      alert(
-        "JPG, PNG or WEBP image mattum upload pannu."
-      );
-      return;
-    }
-
-    const oversizedFile = files.find(
-      (file) =>
-        file.size >
-        10 * 1024 * 1024
-    );
-
-    if (oversizedFile) {
-      alert(
-        "Oru image maximum 10 MB-kulla irukanum."
-      );
-      return;
-    }
-
-    try {
-      const compressedFiles = await Promise.all(
-        files.map((file) =>
-          compressProductImage(file)
-        )
-      );
-
-      const newImages: VariantImage[] =
-        compressedFiles.map((file) => ({
-          id: crypto.randomUUID(),
-          file,
-          preview: URL.createObjectURL(file),
-        }));
-
-      setVariants((currentVariants) =>
-        currentVariants.map((variant) =>
-          variant.id === variantId
-            ? {
-                ...variant,
-                images: [
-                  ...variant.images,
-                  ...newImages,
-                ],
-              }
-            : variant
-        )
-      );
-    } catch (error) {
-      console.error(
-        "Product image compression error:",
+                          ...newImages,
+                        ],
+                    }
+                  : variant
+            )
+        );
+      } catch (
         error
-      );
-
-      alert(
-        `Image compress aagala: ${getErrorMessage(
+      ) {
+        console.error(
+          "Product image compression error:",
           error
-        )}`
-      );
-    }
-  };
+        );
+
+        alert(
+          `Image compression failed: ${getErrorMessage(
+            error
+          )}`
+        );
+      }
+    };
 
   const removeImage = (
-    variantId: string,
-    imageId: string
+    variantId:
+      string,
+
+    imageId:
+      string
   ) => {
-    setVariants((currentVariants) =>
-      currentVariants.map((variant) => {
-        if (
-          variant.id !== variantId
-        ) {
-          return variant;
-        }
+    setVariants(
+      (
+        currentVariants
+      ) =>
+        currentVariants.map(
+          (
+            variant
+          ) => {
+            if (
+              variant.id !==
+              variantId
+            ) {
+              return variant;
+            }
 
-        const imageToRemove =
-          variant.images.find(
-            (image) =>
-              image.id === imageId
-          );
+            const imageToRemove =
+              variant.images.find(
+                (
+                  image
+                ) =>
+                  image.id ===
+                  imageId
+              );
 
-        if (imageToRemove) {
-          URL.revokeObjectURL(
-            imageToRemove.preview
-          );
-        }
+            if (
+              imageToRemove
+            ) {
+              URL.revokeObjectURL(
+                imageToRemove.preview
+              );
+            }
 
-        return {
-          ...variant,
-          images:
-            variant.images.filter(
-              (image) =>
-                image.id !== imageId
-            ),
-        };
-      })
+            return {
+              ...variant,
+
+              images:
+                variant.images.filter(
+                  (
+                    image
+                  ) =>
+                    image.id !==
+                    imageId
+                ),
+            };
+          }
+        )
     );
   };
 
-  const addFreeShippingLocation = () => {
-    const nextLocation = freeShippingLocationInput
-      .trim()
-      .replace(/\s+/g, " ");
+  /* =======================================
+     FREE SHIPPING LOCATIONS
+  ======================================= */
 
-    if (!nextLocation) {
-      return;
-    }
+  const addFreeShippingLocation =
+    () => {
+      const nextLocation =
+        freeShippingLocationInput
+          .trim()
+          .replace(
+            /\s+/g,
+            " "
+          );
 
-    if (
-      nextLocation.toLowerCase() ===
-      "tamil nadu"
-    ) {
-      alert(
-        "Tamil Nadu-ku mela irukkura separate shipping setting use pannu."
+      if (
+        !nextLocation
+      ) {
+        return;
+      }
+
+      if (
+        nextLocation.toLowerCase() ===
+        "tamil nadu"
+      ) {
+        alert(
+          "Use the separate Tamil Nadu shipping setting above."
+        );
+
+        return;
+      }
+
+      const alreadyExists =
+        freeShippingLocations.some(
+          (
+            location
+          ) =>
+            location.toLowerCase() ===
+            nextLocation.toLowerCase()
+        );
+
+      if (
+        !alreadyExists
+      ) {
+        setFreeShippingLocations(
+          (
+            currentLocations
+          ) => [
+            ...currentLocations,
+
+            nextLocation,
+          ]
+        );
+      }
+
+      setFreeShippingLocationInput(
+        ""
       );
-      return;
-    }
-
-    const alreadyExists =
-      freeShippingLocations.some(
-        (location) =>
-          location.toLowerCase() ===
-          nextLocation.toLowerCase()
-      );
-
-    if (alreadyExists) {
-      setFreeShippingLocationInput("");
-      return;
-    }
-
-    setFreeShippingLocations(
-      (currentLocations) => [
-        ...currentLocations,
-        nextLocation,
-      ]
-    );
-
-    setFreeShippingLocationInput("");
-  };
+    };
 
   const removeFreeShippingLocation = (
-    locationToRemove: string
+    locationToRemove:
+      string
   ) => {
     setFreeShippingLocations(
-      (currentLocations) =>
+      (
+        currentLocations
+      ) =>
         currentLocations.filter(
-          (location) =>
+          (
+            location
+          ) =>
             location !==
             locationToRemove
         )
     );
   };
 
-  const validateForm = () => {
-    if (!productName.trim()) {
-      alert(
-        "Product name is required."
-      );
+  /* =======================================
+     VALIDATION
+  ======================================= */
 
-      return false;
-    }
-
-    if (!category) {
-      alert(
-        "First Categories page-la oru active category add pannu."
-      );
-
-      return false;
-    }
-
-    if (!state) {
-      alert(
-        "Product state select pannu."
-      );
-
-      return false;
-    }
-
-    if (
-      !retailPrice ||
-      Number(retailPrice) <= 0
-    ) {
-      alert(
-        "Enter a valid retail price."
-      );
-
-      return false;
-    }
-
-    if (
-      !wholesalePrice ||
-      Number(wholesalePrice) <= 0
-    ) {
-      alert(
-        "Enter a valid wholesale price."
-      );
-
-      return false;
-    }
-
-    if (
-      !wholesaleMinimum ||
-      Number(wholesaleMinimum) < 1
-    ) {
-      alert(
-        "Enter a valid wholesale minimum quantity."
-      );
-
-      return false;
-    }
-
-    if (
-      tamilNaduShippingMode === "manual" &&
-      (tamilNaduShippingAmount === "" ||
-        Number(tamilNaduShippingAmount) <= 0)
-    ) {
-      alert(
-        "Tamil Nadu manual shipping amount enter pannu."
-      );
-
-      return false;
-    }
-
-    if (
-      indiaShippingMode === "manual" &&
-      (indiaShippingAmount === "" ||
-        Number(indiaShippingAmount) <= 0)
-    ) {
-      alert(
-        "Within India manual shipping amount enter pannu."
-      );
-
-      return false;
-    }
-
-    if (
-      internationalShippingMode === "manual" &&
-      (internationalShippingAmount === "" ||
-        Number(internationalShippingAmount) <= 0)
-    ) {
-      alert(
-        "International manual shipping amount enter pannu."
-      );
-
-      return false;
-    }
-
-    for (
-      let index = 0;
-      index < variants.length;
-      index += 1
-    ) {
-      const variant = variants[index];
-
+  const validateForm =
+    () => {
       if (
-        !variant.colourName.trim()
+        !productName.trim()
       ) {
         alert(
-          `Enter colour name for variant ${
-            index + 1
-          }.`
-        );
-
-        return false;
-      }
-
-      if (!variant.sku.trim()) {
-        alert(
-          `Enter SKU for ${variant.colourName}.`
+          "Product name is required."
         );
 
         return false;
       }
 
       if (
-        variant.stock === "" ||
-        Number(variant.stock) < 0
+        !category
       ) {
         alert(
-          `Enter valid stock for ${variant.colourName}.`
+          "Please add at least one active category first."
         );
 
         return false;
       }
 
       if (
-        variant.images.length === 0
+        !state
       ) {
         alert(
-          `Upload at least one image for ${variant.colourName}.`
+          "Please select the product state."
         );
 
         return false;
       }
-    }
 
-    return true;
-  };
-
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
-
-    if (
-      !validateForm() ||
-      isSaving
-    ) {
-      return;
-    }
-
-    setIsSaving(true);
-
-    let createdProductId:
-      | string
-      | null = null;
-
-    const uploadedFilePaths: string[] =
-      [];
-
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      console.log("ADMIN USER:", user);
-      console.log("ADMIN USER ERROR:", userError);
-
-      const {
-        data: adminCheck,
-        error: adminCheckError,
-      } = await supabase.rpc("is_admin");
-
-      console.log("LIVE IS ADMIN:", adminCheck);
-      console.log("LIVE IS ADMIN ERROR:", adminCheckError);
-
-      if (userError || !user) {
-        throw new Error(
-          "Admin session missing. Please logout and login again."
+      if (
+        !retailPrice ||
+        Number(
+          retailPrice
+        ) <=
+          0
+      ) {
+        alert(
+          "Enter a valid retail price."
         );
+
+        return false;
       }
 
-      if (adminCheckError) {
-        throw adminCheckError;
-      }
-
-      if (adminCheck !== true) {
-        throw new Error(
-          `Admin permission failed. Logged user: ${user.email ?? user.id}`
+      if (
+        !wholesalePrice ||
+        Number(
+          wholesalePrice
+        ) <=
+          0
+      ) {
+        alert(
+          "Enter a valid wholesale price."
         );
+
+        return false;
       }
 
-      const slugBase =
-        createSlug(productName) ||
-        "product";
-
-      const slug =
-        `${slugBase}-${Date.now()}`;
-
-      const {
-        data: product,
-        error: productError,
-      } = await supabase
-        .from("products")
-        .insert({
-          name: productName.trim(),
-          slug,
-          category,
-          state,
-          collection: "",
-          description:
-            description.trim(),
-
-          retail_price:
-            Number(retailPrice),
-
-          wholesale_price:
-            Number(wholesalePrice),
-
-          wholesale_minimum:
-            Number(wholesaleMinimum),
-
-          shipping_details: {
-            tamilNadu: {
-              type: tamilNaduShippingMode,
-              amount:
-                tamilNaduShippingMode === "free"
-                  ? 0
-                  : Number(
-                      tamilNaduShippingAmount
-                    ),
-            },
-
-            withinIndia: {
-              type: indiaShippingMode,
-              amount:
-                indiaShippingMode === "free"
-                  ? 0
-                  : Number(
-                      indiaShippingAmount
-                    ),
-              freeLocations:
-                freeShippingLocations,
-            },
-
-            international: {
-              type:
-                internationalShippingMode,
-              amount:
-                internationalShippingMode ===
-                "free"
-                  ? 0
-                  : Number(
-                      internationalShippingAmount
-                    ),
-            },
-          },
-
-          status,
-
-          is_featured:
-            isFeatured,
-
-          is_new_arrival:
-            isNewArrival,
-
-          updated_at:
-            new Date().toISOString(),
-        })
-        .select("id")
-        .single();
-
-      if (productError) {
-        throw productError;
-      }
-
-      if (!product?.id) {
-        throw new Error(
-          "Product ID create aagala."
+      if (
+        !wholesaleMinimum ||
+        Number(
+          wholesaleMinimum
+        ) <
+          1
+      ) {
+        alert(
+          "Enter a valid wholesale minimum quantity."
         );
+
+        return false;
       }
 
-      createdProductId = product.id;
+      /*
+       * Manual shipping amount validation
+       * is intentionally NOT required here.
+       *
+       * Manual now means:
+       * use rates from Shipping Details page.
+       */
 
       for (
-        const variant of variants
+        let index =
+          0;
+
+        index <
+        variants.length;
+
+        index +=
+          1
       ) {
-        const {
-          data: savedVariant,
-          error: variantError,
-        } = await supabase
-          .from("product_variants")
-          .insert({
-            product_id:
-              createdProductId,
+        const variant =
+          variants[
+            index
+          ];
 
-            colour_name:
-              variant.colourName.trim(),
-
-            colour_code:
-              variant.colourCode,
-
-            sku:
-              variant.sku.trim(),
-
-            stock:
-              Number(variant.stock),
-          })
-          .select("id")
-          .single();
-
-        if (variantError) {
-          throw variantError;
-        }
-
-        if (!savedVariant?.id) {
-          throw new Error(
-            "Variant ID create aagala."
-          );
-        }
-
-        for (
-          let imageIndex = 0;
-          imageIndex <
-          variant.images.length;
-          imageIndex += 1
+        if (
+          !variant
+            .colourName
+            .trim()
         ) {
-          const image =
-            variant.images[
-              imageIndex
-            ];
-
-          const fileName =
-            `${crypto.randomUUID()}.webp`;
-
-          const filePath = [
-            createdProductId,
-            savedVariant.id,
-            fileName,
-          ].join("/");
-
-          const {
-            error: uploadError,
-          } =
-            await supabase.storage
-              .from("product-images")
-              .upload(
-                filePath,
-                image.file,
-                {
-                  cacheControl:
-                    "3600",
-
-                  upsert: false,
-
-                  contentType:
-                    "image/webp",
-                }
-              );
-
-          if (uploadError) {
-            throw uploadError;
-          }
-
-          uploadedFilePaths.push(
-            filePath
+          alert(
+            `Enter colour name for variant ${
+              index +
+              1
+            }.`
           );
 
-          const {
-            data: publicUrlData,
-          } =
-            supabase.storage
-              .from("product-images")
-              .getPublicUrl(
-                filePath
-              );
+          return false;
+        }
 
-          const {
-            error: imageError,
-          } = await supabase
-            .from("product_images")
-            .insert({
-              variant_id:
-                savedVariant.id,
+        if (
+          !variant
+            .sku
+            .trim()
+        ) {
+          alert(
+            `Enter SKU for ${variant.colourName}.`
+          );
 
-              image_url:
-                publicUrlData.publicUrl,
+          return false;
+        }
 
-              display_order:
-                imageIndex,
-            });
+        if (
+          variant.stock ===
+            "" ||
+          Number(
+            variant.stock
+          ) <
+            0
+        ) {
+          alert(
+            `Enter valid stock for ${variant.colourName}.`
+          );
 
-          if (imageError) {
-            throw imageError;
-          }
+          return false;
+        }
+
+        if (
+          variant
+            .images
+            .length ===
+          0
+        ) {
+          alert(
+            `Upload at least one image for ${variant.colourName}.`
+          );
+
+          return false;
         }
       }
 
-      variants.forEach(
-        (variant) => {
-          variant.images.forEach(
-            (image) => {
-              URL.revokeObjectURL(
-                image.preview
-              );
-            }
-          );
-        }
-      );
+      return true;
+    };
 
-      localStorage.removeItem(
-        NEW_PRODUCT_DRAFT_KEY
-      );
+  /* =======================================
+     SAVE PRODUCT
+  ======================================= */
 
-      alert(
-        "Product successfully saved!"
-      );
-
-      navigate("/admin/products");
-    } catch (error) {
-      console.error(
-        "Product save error:",
-        error
-      );
+  const handleSubmit =
+    async (
+      event:
+        FormEvent<HTMLFormElement>
+    ) => {
+      event.preventDefault();
 
       if (
-        uploadedFilePaths.length > 0
+        !validateForm() ||
+        isSaving
       ) {
-        await supabase.storage
-          .from("product-images")
-          .remove(uploadedFilePaths);
+        return;
       }
 
-      if (createdProductId) {
-        await supabase
-          .from("products")
-          .delete()
-          .eq(
-            "id",
-            createdProductId
-          );
-      }
-
-      alert(
-        `Product save aagala: ${getErrorMessage(
-          error
-        )}`
+      setIsSaving(
+        true
       );
-    } finally {
-      setIsSaving(false);
-    }
-  };
+
+      let createdProductId:
+        | string
+        | null =
+        null;
+
+      const uploadedFilePaths:
+        string[] =
+        [];
+
+      try {
+        const {
+          data: {
+            user,
+          },
+
+          error:
+            userError,
+        } =
+          await supabase
+            .auth
+            .getUser();
+
+        const {
+          data:
+            adminCheck,
+
+          error:
+            adminCheckError,
+        } =
+          await supabase.rpc(
+            "is_admin"
+          );
+
+        if (
+          userError ||
+          !user
+        ) {
+          throw new Error(
+            "Admin session missing. Please logout and login again."
+          );
+        }
+
+        if (
+          adminCheckError
+        ) {
+          throw adminCheckError;
+        }
+
+        if (
+          adminCheck !==
+          true
+        ) {
+          throw new Error(
+            `Admin permission failed. Logged user: ${
+              user.email ??
+              user.id
+            }`
+          );
+        }
+
+        const slugBase =
+          createSlug(
+            productName
+          ) ||
+          "product";
+
+        const slug =
+          `${slugBase}-${Date.now()}`;
+
+        const {
+          data:
+            product,
+
+          error:
+            productError,
+        } =
+          await supabase
+            .from(
+              "products"
+            )
+            .insert({
+              name:
+                productName.trim(),
+
+              slug,
+
+              category,
+
+              state,
+
+              collection:
+                "",
+
+              description:
+                description.trim(),
+
+              retail_price:
+                Number(
+                  retailPrice
+                ),
+
+              wholesale_price:
+                Number(
+                  wholesalePrice
+                ),
+
+              wholesale_minimum:
+                Number(
+                  wholesaleMinimum
+                ),
+
+              /*
+               * IMPORTANT:
+               *
+               * Keep Free / Manual
+               * mode per product.
+               *
+               * Fixed manual amount
+               * is no longer stored.
+               *
+               * Manual means master
+               * Shipping Details rate.
+               */
+
+              shipping_details:
+                {
+                  tamilNadu:
+                    {
+                      type:
+                        tamilNaduShippingMode,
+
+                      amount:
+                        0,
+                    },
+
+                  withinIndia:
+                    {
+                      type:
+                        indiaShippingMode,
+
+                      amount:
+                        0,
+
+                      freeLocations:
+                        freeShippingLocations,
+                    },
+
+                  international:
+                    {
+                      type:
+                        internationalShippingMode,
+
+                      amount:
+                        0,
+                    },
+                },
+
+              status,
+
+              is_featured:
+                isFeatured,
+
+              is_new_arrival:
+                isNewArrival,
+
+              updated_at:
+                new Date()
+                  .toISOString(),
+            })
+            .select(
+              "id"
+            )
+            .single();
+
+        if (
+          productError
+        ) {
+          throw productError;
+        }
+
+        if (
+          !product?.id
+        ) {
+          throw new Error(
+            "Product ID could not be created."
+          );
+        }
+
+        createdProductId =
+          product.id;
+
+        /* =================================
+           SAVE VARIANTS
+        ================================= */
+
+        for (
+          const variant of
+          variants
+        ) {
+          const {
+            data:
+              savedVariant,
+
+            error:
+              variantError,
+          } =
+            await supabase
+              .from(
+                "product_variants"
+              )
+              .insert({
+                product_id:
+                  createdProductId,
+
+                colour_name:
+                  variant
+                    .colourName
+                    .trim(),
+
+                colour_code:
+                  variant
+                    .colourCode,
+
+                sku:
+                  variant
+                    .sku
+                    .trim(),
+
+                stock:
+                  Number(
+                    variant.stock
+                  ),
+              })
+              .select(
+                "id"
+              )
+              .single();
+
+          if (
+            variantError
+          ) {
+            throw variantError;
+          }
+
+          if (
+            !savedVariant
+              ?.id
+          ) {
+            throw new Error(
+              "Variant ID could not be created."
+            );
+          }
+
+          /* =============================
+             SAVE IMAGES
+          ============================= */
+
+          for (
+            let imageIndex =
+              0;
+
+            imageIndex <
+            variant
+              .images
+              .length;
+
+            imageIndex +=
+              1
+          ) {
+            const image =
+              variant
+                .images[
+                imageIndex
+              ];
+
+            const fileName =
+              `${crypto.randomUUID()}.webp`;
+
+            const filePath =
+              [
+                createdProductId,
+
+                savedVariant.id,
+
+                fileName,
+              ].join(
+                "/"
+              );
+
+            const {
+              error:
+                uploadError,
+            } =
+              await supabase
+                .storage
+                .from(
+                  "product-images"
+                )
+                .upload(
+                  filePath,
+
+                  image.file,
+
+                  {
+                    cacheControl:
+                      "3600",
+
+                    upsert:
+                      false,
+
+                    contentType:
+                      "image/webp",
+                  }
+                );
+
+            if (
+              uploadError
+            ) {
+              throw uploadError;
+            }
+
+            uploadedFilePaths.push(
+              filePath
+            );
+
+            const {
+              data:
+                publicUrlData,
+            } =
+              supabase
+                .storage
+                .from(
+                  "product-images"
+                )
+                .getPublicUrl(
+                  filePath
+                );
+
+            const {
+              error:
+                imageError,
+            } =
+              await supabase
+                .from(
+                  "product_images"
+                )
+                .insert({
+                  variant_id:
+                    savedVariant.id,
+
+                  image_url:
+                    publicUrlData
+                      .publicUrl,
+
+                  display_order:
+                    imageIndex,
+                });
+
+            if (
+              imageError
+            ) {
+              throw imageError;
+            }
+          }
+        }
+
+        variants.forEach(
+          (
+            variant
+          ) => {
+            variant.images.forEach(
+              (
+                image
+              ) => {
+                URL.revokeObjectURL(
+                  image.preview
+                );
+              }
+            );
+          }
+        );
+
+        localStorage.removeItem(
+          NEW_PRODUCT_DRAFT_KEY
+        );
+
+        alert(
+          "Product successfully saved!"
+        );
+
+        navigate(
+          "/admin/products"
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Product save error:",
+          error
+        );
+
+        if (
+          uploadedFilePaths.length >
+          0
+        ) {
+          await supabase
+            .storage
+            .from(
+              "product-images"
+            )
+            .remove(
+              uploadedFilePaths
+            );
+        }
+
+        if (
+          createdProductId
+        ) {
+          await supabase
+            .from(
+              "products"
+            )
+            .delete()
+            .eq(
+              "id",
+              createdProductId
+            );
+        }
+
+        alert(
+          `Product could not be saved: ${getErrorMessage(
+            error
+          )}`
+        );
+      } finally {
+        setIsSaving(
+          false
+        );
+      }
+    };
+
+  /* =========================================
+     UI
+  ========================================= */
 
   return (
     <form
       className="new-product-page"
-      onSubmit={handleSubmit}
+      onSubmit={
+        handleSubmit
+      }
     >
+      {/* =================================
+          TOP BAR
+      ================================= */}
+
       <div className="new-product-topbar">
         <div className="new-product-heading">
           <button
@@ -1293,7 +2000,9 @@ export default function NewProduct() {
               )
             }
             aria-label="Back to products"
-            disabled={isSaving}
+            disabled={
+              isSaving
+            }
           >
             <FiArrowLeft />
           </button>
@@ -1304,8 +2013,9 @@ export default function NewProduct() {
             </h1>
 
             <p>
-              Add product information
-              and colour variants.
+              Add product
+              information and
+              colour variants.
             </p>
           </div>
         </div>
@@ -1319,7 +2029,9 @@ export default function NewProduct() {
                 "/admin/products"
               )
             }
-            disabled={isSaving}
+            disabled={
+              isSaving
+            }
           >
             Cancel
           </button>
@@ -1330,7 +2042,8 @@ export default function NewProduct() {
             disabled={
               isSaving ||
               isLoadingCategories ||
-              categories.length === 0
+              categories.length ===
+                0
             }
           >
             {isSaving
@@ -1340,18 +2053,36 @@ export default function NewProduct() {
         </div>
       </div>
 
+      {/* =================================
+          CATEGORY ERROR
+      ================================= */}
+
       {categoryError && (
         <div
           style={{
-            marginBottom: "18px",
+            marginBottom:
+              "18px",
+
             border:
               "1px solid #efc7c2",
-            borderRadius: "10px",
-            background: "#fff3f1",
-            color: "#a13e35",
-            padding: "12px 14px",
-            fontSize: "12px",
-            fontWeight: 700,
+
+            borderRadius:
+              "10px",
+
+            background:
+              "#fff3f1",
+
+            color:
+              "#a13e35",
+
+            padding:
+              "12px 14px",
+
+            fontSize:
+              "12px",
+
+            fontWeight:
+              700,
           }}
         >
           {categoryError}
@@ -1360,6 +2091,10 @@ export default function NewProduct() {
 
       <div className="new-product-layout">
         <div className="new-product-main">
+          {/* =============================
+              PRODUCT INFORMATION
+          ============================= */}
+
           <section className="new-product-card">
             <div className="new-product-card-heading">
               <h2>
@@ -1367,7 +2102,8 @@ export default function NewProduct() {
               </h2>
 
               <p>
-                Enter the general saree
+                Enter the
+                general saree
                 details.
               </p>
             </div>
@@ -1382,15 +2118,25 @@ export default function NewProduct() {
                   id="product-name"
                   type="text"
                   placeholder="Example: Premium Khadi Cotton Saree"
-                  value={productName}
-                  disabled={isSaving}
-                  onChange={(event) =>
+                  value={
+                    productName
+                  }
+                  disabled={
+                    isSaving
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setProductName(
-                      event.target.value
+                      event
+                        .target
+                        .value
                     )
                   }
                 />
               </div>
+
+              {/* CATEGORY */}
 
               <div className="new-product-field">
                 <label htmlFor="product-category">
@@ -1399,15 +2145,22 @@ export default function NewProduct() {
 
                 <select
                   id="product-category"
-                  value={category}
+                  value={
+                    category
+                  }
                   disabled={
                     isSaving ||
                     isLoadingCategories ||
-                    categories.length === 0
+                    categories.length ===
+                      0
                   }
-                  onChange={(event) =>
+                  onChange={(
+                    event
+                  ) =>
                     setCategory(
-                      event.target.value
+                      event
+                        .target
+                        .value
                     )
                   }
                 >
@@ -1422,12 +2175,20 @@ export default function NewProduct() {
                     </option>
                   ) : (
                     categories.map(
-                      (item) => (
+                      (
+                        item
+                      ) => (
                         <option
-                          key={item.id}
-                          value={item.name}
+                          key={
+                            item.id
+                          }
+                          value={
+                            item.name
+                          }
                         >
-                          {item.name}
+                          {
+                            item.name
+                          }
                         </option>
                       )
                     )
@@ -1435,37 +2196,59 @@ export default function NewProduct() {
                 </select>
               </div>
 
+              {/* PRODUCT STATE */}
+
               <div className="new-product-field">
                 <label htmlFor="product-state">
-                  State / Union Territory
+                  State / Union
+                  Territory
                 </label>
 
                 <select
                   id="product-state"
-                  value={state}
-                  disabled={isSaving}
-                  onChange={(event) =>
+                  value={
+                    state
+                  }
+                  disabled={
+                    isSaving
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setState(
-                      event.target.value
+                      event
+                        .target
+                        .value
                     )
                   }
                 >
                   <option value="">
-                    Select State / UT
+                    Select State /
+                    UT
                   </option>
 
                   {INDIA_REGIONS.map(
-                    (region) => (
+                    (
+                      region
+                    ) => (
                       <option
-                        key={region}
-                        value={region}
+                        key={
+                          region
+                        }
+                        value={
+                          region
+                        }
                       >
-                        {region}
+                        {
+                          region
+                        }
                       </option>
                     )
                   )}
                 </select>
               </div>
+
+              {/* STATUS */}
 
               <div className="new-product-field">
                 <label htmlFor="product-status">
@@ -1474,11 +2257,19 @@ export default function NewProduct() {
 
                 <select
                   id="product-status"
-                  value={status}
-                  disabled={isSaving}
-                  onChange={(event) =>
+                  value={
+                    status
+                  }
+                  disabled={
+                    isSaving
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setStatus(
-                      event.target.value
+                      event
+                        .target
+                        .value
                     )
                   }
                 >
@@ -1492,6 +2283,8 @@ export default function NewProduct() {
                 </select>
               </div>
 
+              {/* DESCRIPTION */}
+
               <div className="new-product-field new-product-full">
                 <label htmlFor="product-description">
                   Description
@@ -1501,11 +2294,19 @@ export default function NewProduct() {
                   id="product-description"
                   rows={6}
                   placeholder="Mention fabric, length, blouse piece, wash care and other details..."
-                  value={description}
-                  disabled={isSaving}
-                  onChange={(event) =>
+                  value={
+                    description
+                  }
+                  disabled={
+                    isSaving
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setDescription(
-                      event.target.value
+                      event
+                        .target
+                        .value
                     )
                   }
                 />
@@ -1513,13 +2314,20 @@ export default function NewProduct() {
             </div>
           </section>
 
+          {/* =============================
+              PRICING
+          ============================= */}
+
           <section className="new-product-card">
             <div className="new-product-card-heading">
-              <h2>Pricing</h2>
+              <h2>
+                Pricing
+              </h2>
 
               <p>
-                Retail and wholesale
-                prices for this product.
+                Retail and
+                wholesale prices
+                for this product.
               </p>
             </div>
 
@@ -1530,18 +2338,28 @@ export default function NewProduct() {
                 </label>
 
                 <div className="new-product-price-input">
-                  <span>₹</span>
+                  <span>
+                    ₹
+                  </span>
 
                   <input
                     id="retail-price"
                     type="number"
                     min="0"
                     placeholder="799"
-                    value={retailPrice}
-                    disabled={isSaving}
-                    onChange={(event) =>
+                    value={
+                      retailPrice
+                    }
+                    disabled={
+                      isSaving
+                    }
+                    onChange={(
+                      event
+                    ) =>
                       setRetailPrice(
-                        event.target.value
+                        event
+                          .target
+                          .value
                       )
                     }
                   />
@@ -1554,7 +2372,9 @@ export default function NewProduct() {
                 </label>
 
                 <div className="new-product-price-input">
-                  <span>₹</span>
+                  <span>
+                    ₹
+                  </span>
 
                   <input
                     id="wholesale-price"
@@ -1564,10 +2384,16 @@ export default function NewProduct() {
                     value={
                       wholesalePrice
                     }
-                    disabled={isSaving}
-                    onChange={(event) =>
+                    disabled={
+                      isSaving
+                    }
+                    onChange={(
+                      event
+                    ) =>
                       setWholesalePrice(
-                        event.target.value
+                        event
+                          .target
+                          .value
                       )
                     }
                   />
@@ -1588,10 +2414,16 @@ export default function NewProduct() {
                   value={
                     wholesaleMinimum
                   }
-                  disabled={isSaving}
-                  onChange={(event) =>
+                  disabled={
+                    isSaving
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setWholesaleMinimum(
-                      event.target.value
+                      event
+                        .target
+                        .value
                     )
                   }
                 />
@@ -1599,29 +2431,51 @@ export default function NewProduct() {
             </div>
           </section>
 
+          {/* =============================
+              SHIPPING DETAILS
+          ============================= */}
+
           <section className="new-product-card">
             <div className="new-product-card-heading">
-              <h2>Shipping Details</h2>
+              <h2>
+                Shipping Details
+              </h2>
 
               <p>
-                Set free or manual shipping
-                charges for this product.
+                Choose Free
+                Shipping or use
+                location-wise rates
+                from the Shipping
+                Details page.
               </p>
             </div>
 
             <div
               style={{
-                display: "grid",
-                gap: "22px",
+                display:
+                  "grid",
+
+                gap:
+                  "22px",
               }}
             >
+              {/* =========================
+                  TAMIL NADU
+              ========================= */}
+
               <div
                 style={{
                   border:
                     "1px solid rgba(122, 62, 24, 0.14)",
-                  borderRadius: "16px",
-                  padding: "18px",
-                  background: "#fffdfa",
+
+                  borderRadius:
+                    "16px",
+
+                  padding:
+                    "18px",
+
+                  background:
+                    "#fffdfa",
                 }}
               >
                 <div className="new-product-form-grid">
@@ -1632,11 +2486,18 @@ export default function NewProduct() {
 
                     <select
                       id="tamil-nadu-shipping-mode"
-                      value={tamilNaduShippingMode}
-                      disabled={isSaving}
-                      onChange={(event) =>
+                      value={
+                        tamilNaduShippingMode
+                      }
+                      disabled={
+                        isSaving
+                      }
+                      onChange={(
+                        event
+                      ) =>
                         setTamilNaduShippingMode(
-                          event.target
+                          event
+                            .target
                             .value as ShippingMode
                         )
                       }
@@ -1651,65 +2512,38 @@ export default function NewProduct() {
                     </select>
                   </div>
 
-                  {tamilNaduShippingMode ===
-                  "manual" ? (
-                    <div className="new-product-field">
-                      <label htmlFor="tamil-nadu-shipping-amount">
-                        Shipping Amount
-                      </label>
+                  <div className="new-product-field">
+                    <label>
+                      Shipping Charge
+                    </label>
 
-                      <div className="new-product-price-input">
-                        <span>₹</span>
-
-                        <input
-                          id="tamil-nadu-shipping-amount"
-                          type="number"
-                          min="0"
-                          placeholder="80"
-                          value={
-                            tamilNaduShippingAmount
-                          }
-                          disabled={isSaving}
-                          onChange={(event) =>
-                            setTamilNaduShippingAmount(
-                              event.target.value
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="new-product-field">
-                      <label>Shipping Charge</label>
-
-                      <div
-                        style={{
-                          minHeight: "56px",
-                          border:
-                            "1px solid rgba(122, 62, 24, 0.14)",
-                          borderRadius: "12px",
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "0 16px",
-                          fontWeight: 700,
-                          color: "#6e3d19",
-                          background: "#fff",
-                        }}
-                      >
-                        Free Shipping
-                      </div>
-                    </div>
-                  )}
+                    <ShippingStatusBox>
+                      {tamilNaduShippingMode ===
+                      "free"
+                        ? "Free Shipping"
+                        : "Calculated from Shipping Details"}
+                    </ShippingStatusBox>
+                  </div>
                 </div>
               </div>
+
+              {/* =========================
+                  WITHIN INDIA
+              ========================= */}
 
               <div
                 style={{
                   border:
                     "1px solid rgba(122, 62, 24, 0.14)",
-                  borderRadius: "16px",
-                  padding: "18px",
-                  background: "#fffdfa",
+
+                  borderRadius:
+                    "16px",
+
+                  padding:
+                    "18px",
+
+                  background:
+                    "#fffdfa",
                 }}
               >
                 <div className="new-product-form-grid">
@@ -1720,11 +2554,18 @@ export default function NewProduct() {
 
                     <select
                       id="india-shipping-mode"
-                      value={indiaShippingMode}
-                      disabled={isSaving}
-                      onChange={(event) =>
+                      value={
+                        indiaShippingMode
+                      }
+                      disabled={
+                        isSaving
+                      }
+                      onChange={(
+                        event
+                      ) =>
                         setIndiaShippingMode(
-                          event.target
+                          event
+                            .target
                             .value as ShippingMode
                         )
                       }
@@ -1739,88 +2580,70 @@ export default function NewProduct() {
                     </select>
                   </div>
 
-                  {indiaShippingMode ===
-                  "manual" ? (
-                    <div className="new-product-field">
-                      <label htmlFor="india-shipping-amount">
-                        Shipping Amount
-                      </label>
+                  <div className="new-product-field">
+                    <label>
+                      Shipping Charge
+                    </label>
 
-                      <div className="new-product-price-input">
-                        <span>₹</span>
-
-                        <input
-                          id="india-shipping-amount"
-                          type="number"
-                          min="0"
-                          placeholder="120"
-                          value={
-                            indiaShippingAmount
-                          }
-                          disabled={isSaving}
-                          onChange={(event) =>
-                            setIndiaShippingAmount(
-                              event.target.value
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="new-product-field">
-                      <label>Shipping Charge</label>
-
-                      <div
-                        style={{
-                          minHeight: "56px",
-                          border:
-                            "1px solid rgba(122, 62, 24, 0.14)",
-                          borderRadius: "12px",
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "0 16px",
-                          fontWeight: 700,
-                          color: "#6e3d19",
-                          background: "#fff",
-                        }}
-                      >
-                        Free Shipping Across India
-                      </div>
-                    </div>
-                  )}
+                    <ShippingStatusBox>
+                      {indiaShippingMode ===
+                      "free"
+                        ? "Free Shipping Across India"
+                        : "Calculated from Shipping Details"}
+                    </ShippingStatusBox>
+                  </div>
                 </div>
 
-                {indiaShippingMode === "manual" && (
+                {/* =========================
+                    SPECIAL FREE LOCATIONS
+                ========================= */}
+
+                {indiaShippingMode ===
+                  "manual" && (
                   <div
                     className="new-product-field"
                     style={{
-                      marginTop: "18px",
+                      marginTop:
+                        "18px",
                     }}
                   >
                     <label htmlFor="free-shipping-location">
-                      Free Shipping Locations
+                      Free Shipping
+                      Locations
                     </label>
 
                     <p
                       style={{
                         margin:
                           "0 0 10px",
-                        color: "#9b7b62",
-                        fontSize: "12px",
+
+                        color:
+                          "#9b7b62",
+
+                        fontSize:
+                          "12px",
                       }}
                     >
-                      Manual India shipping charge-la
-                      irundhu free-a irukkanum cities /
-                      states inga add pannu. Example:
-                      Puducherry, Bangalore.
+                      Add cities or
+                      states that should
+                      stay free even when
+                      Within India is set
+                      to Manual Amount.
+                      Example:
+                      Puducherry,
+                      Bangalore.
                     </p>
 
                     <div
                       style={{
-                        display: "grid",
+                        display:
+                          "grid",
+
                         gridTemplateColumns:
                           "minmax(0, 1fr) auto",
-                        gap: "10px",
+
+                        gap:
+                          "10px",
                       }}
                     >
                       <input
@@ -1830,15 +2653,27 @@ export default function NewProduct() {
                         value={
                           freeShippingLocationInput
                         }
-                        disabled={isSaving}
-                        onChange={(event) =>
+                        disabled={
+                          isSaving
+                        }
+                        onChange={(
+                          event
+                        ) =>
                           setFreeShippingLocationInput(
-                            event.target.value
+                            event
+                              .target
+                              .value
                           )
                         }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
+                        onKeyDown={(
+                          event
+                        ) => {
+                          if (
+                            event.key ===
+                            "Enter"
+                          ) {
                             event.preventDefault();
+
                             addFreeShippingLocation();
                           }
                         }}
@@ -1850,13 +2685,19 @@ export default function NewProduct() {
                         onClick={
                           addFreeShippingLocation
                         }
-                        disabled={isSaving}
+                        disabled={
+                          isSaving
+                        }
                         style={{
-                          alignSelf: "stretch",
-                          whiteSpace: "nowrap",
+                          alignSelf:
+                            "stretch",
+
+                          whiteSpace:
+                            "nowrap",
                         }}
                       >
                         <FiPlus />
+
                         Add Location
                       </button>
                     </div>
@@ -1865,32 +2706,62 @@ export default function NewProduct() {
                     0 ? (
                       <div
                         style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "8px",
-                          marginTop: "12px",
+                          display:
+                            "flex",
+
+                          flexWrap:
+                            "wrap",
+
+                          gap:
+                            "8px",
+
+                          marginTop:
+                            "12px",
                         }}
                       >
                         {freeShippingLocations.map(
-                          (location) => (
+                          (
+                            location
+                          ) => (
                             <span
-                              key={location}
+                              key={
+                                location
+                              }
                               style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "8px",
+                                display:
+                                  "inline-flex",
+
+                                alignItems:
+                                  "center",
+
+                                gap:
+                                  "8px",
+
                                 border:
                                   "1px solid rgba(122, 62, 24, 0.18)",
-                                borderRadius: "999px",
+
+                                borderRadius:
+                                  "999px",
+
                                 padding:
                                   "7px 10px 7px 12px",
-                                background: "#fff",
-                                color: "#6e3d19",
-                                fontSize: "12px",
-                                fontWeight: 700,
+
+                                background:
+                                  "#fff",
+
+                                color:
+                                  "#6e3d19",
+
+                                fontSize:
+                                  "12px",
+
+                                fontWeight:
+                                  700,
                               }}
                             >
-                              {location}
+                              {
+                                location
+                              }
 
                               <button
                                 type="button"
@@ -1899,19 +2770,37 @@ export default function NewProduct() {
                                     location
                                   )
                                 }
-                                disabled={isSaving}
+                                disabled={
+                                  isSaving
+                                }
                                 aria-label={`Remove ${location}`}
                                 style={{
-                                  width: "22px",
-                                  height: "22px",
-                                  border: "none",
-                                  borderRadius: "50%",
-                                  display: "grid",
-                                  placeItems: "center",
+                                  width:
+                                    "22px",
+
+                                  height:
+                                    "22px",
+
+                                  border:
+                                    "none",
+
+                                  borderRadius:
+                                    "50%",
+
+                                  display:
+                                    "grid",
+
+                                  placeItems:
+                                    "center",
+
                                   background:
                                     "rgba(122, 62, 24, 0.08)",
-                                  color: "#6e3d19",
-                                  cursor: "pointer",
+
+                                  color:
+                                    "#6e3d19",
+
+                                  cursor:
+                                    "pointer",
                                 }}
                               >
                                 <FiX />
@@ -1923,25 +2812,43 @@ export default function NewProduct() {
                     ) : (
                       <div
                         style={{
-                          marginTop: "12px",
-                          color: "#9b7b62",
-                          fontSize: "12px",
+                          marginTop:
+                            "12px",
+
+                          color:
+                            "#9b7b62",
+
+                          fontSize:
+                            "12px",
                         }}
                       >
-                        No free shipping locations added.
+                        No free
+                        shipping
+                        locations
+                        added.
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
+              {/* =========================
+                  INTERNATIONAL
+              ========================= */}
+
               <div
                 style={{
                   border:
                     "1px solid rgba(122, 62, 24, 0.14)",
-                  borderRadius: "16px",
-                  padding: "18px",
-                  background: "#fffdfa",
+
+                  borderRadius:
+                    "16px",
+
+                  padding:
+                    "18px",
+
+                  background:
+                    "#fffdfa",
                 }}
               >
                 <div className="new-product-form-grid">
@@ -1955,10 +2862,15 @@ export default function NewProduct() {
                       value={
                         internationalShippingMode
                       }
-                      disabled={isSaving}
-                      onChange={(event) =>
+                      disabled={
+                        isSaving
+                      }
+                      onChange={(
+                        event
+                      ) =>
                         setInternationalShippingMode(
-                          event.target
+                          event
+                            .target
                             .value as ShippingMode
                         )
                       }
@@ -1973,59 +2885,26 @@ export default function NewProduct() {
                     </select>
                   </div>
 
-                  {internationalShippingMode ===
-                  "manual" ? (
-                    <div className="new-product-field">
-                      <label htmlFor="international-shipping-amount">
-                        Shipping Amount
-                      </label>
+                  <div className="new-product-field">
+                    <label>
+                      Shipping Charge
+                    </label>
 
-                      <div className="new-product-price-input">
-                        <span>₹</span>
-
-                        <input
-                          id="international-shipping-amount"
-                          type="number"
-                          min="0"
-                          placeholder="900"
-                          value={
-                            internationalShippingAmount
-                          }
-                          disabled={isSaving}
-                          onChange={(event) =>
-                            setInternationalShippingAmount(
-                              event.target.value
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="new-product-field">
-                      <label>Shipping Charge</label>
-
-                      <div
-                        style={{
-                          minHeight: "56px",
-                          border:
-                            "1px solid rgba(122, 62, 24, 0.14)",
-                          borderRadius: "12px",
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "0 16px",
-                          fontWeight: 700,
-                          color: "#6e3d19",
-                          background: "#fff",
-                        }}
-                      >
-                        Free Shipping
-                      </div>
-                    </div>
-                  )}
+                    <ShippingStatusBox>
+                      {internationalShippingMode ===
+                      "free"
+                        ? "Free Shipping"
+                        : "Calculated from Shipping Details"}
+                    </ShippingStatusBox>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
+
+          {/* =============================
+              COLOURS & IMAGES
+          ============================= */}
 
           <section className="new-product-card">
             <div className="new-product-card-heading new-product-variant-heading">
@@ -2035,18 +2914,24 @@ export default function NewProduct() {
                 </h2>
 
                 <p>
-                  Add images separately
-                  for every colour.
+                  Add images
+                  separately for
+                  every colour.
                 </p>
               </div>
 
               <button
                 type="button"
                 className="add-colour-button"
-                onClick={addVariant}
-                disabled={isSaving}
+                onClick={
+                  addVariant
+                }
+                disabled={
+                  isSaving
+                }
               >
                 <FiPlus />
+
                 Add Colour
               </button>
             </div>
@@ -2059,14 +2944,17 @@ export default function NewProduct() {
                 ) => (
                   <article
                     className="colour-variant-card"
-                    key={variant.id}
+                    key={
+                      variant.id
+                    }
                   >
                     <div className="colour-variant-header">
                       <div className="colour-variant-number">
                         <span
                           style={{
                             backgroundColor:
-                              variant.colourCode,
+                              variant
+                                .colourCode,
                           }}
                         />
 
@@ -2092,7 +2980,9 @@ export default function NewProduct() {
                             variant.id
                           )
                         }
-                        disabled={isSaving}
+                        disabled={
+                          isSaving
+                        }
                         aria-label="Remove colour variant"
                       >
                         <FiTrash2 />
@@ -2100,6 +2990,8 @@ export default function NewProduct() {
                     </div>
 
                     <div className="new-product-form-grid">
+                      {/* COLOUR NAME */}
+
                       <div className="new-product-field">
                         <label>
                           Colour Name
@@ -2109,7 +3001,8 @@ export default function NewProduct() {
                           type="text"
                           placeholder="Example: Maroon"
                           value={
-                            variant.colourName
+                            variant
+                              .colourName
                           }
                           disabled={
                             isSaving
@@ -2119,13 +3012,18 @@ export default function NewProduct() {
                           ) =>
                             updateVariant(
                               variant.id,
+
                               "colourName",
-                              event.target
+
+                              event
+                                .target
                                 .value
                             )
                           }
                         />
                       </div>
+
+                      {/* COLOUR CODE */}
 
                       <div className="new-product-field">
                         <label>
@@ -2136,7 +3034,8 @@ export default function NewProduct() {
                           <input
                             type="color"
                             value={
-                              variant.colourCode
+                              variant
+                                .colourCode
                             }
                             disabled={
                               isSaving
@@ -2146,8 +3045,11 @@ export default function NewProduct() {
                             ) =>
                               updateVariant(
                                 variant.id,
+
                                 "colourCode",
-                                event.target
+
+                                event
+                                  .target
                                   .value
                               )
                             }
@@ -2156,7 +3058,8 @@ export default function NewProduct() {
                           <input
                             type="text"
                             value={
-                              variant.colourCode
+                              variant
+                                .colourCode
                             }
                             disabled={
                               isSaving
@@ -2166,8 +3069,11 @@ export default function NewProduct() {
                             ) =>
                               updateVariant(
                                 variant.id,
+
                                 "colourCode",
-                                event.target
+
+                                event
+                                  .target
                                   .value
                               )
                             }
@@ -2175,14 +3081,19 @@ export default function NewProduct() {
                         </div>
                       </div>
 
+                      {/* SKU */}
+
                       <div className="new-product-field">
-                        <label>SKU</label>
+                        <label>
+                          SKU
+                        </label>
 
                         <input
                           type="text"
                           placeholder="VV-KHC-MAR-001"
                           value={
-                            variant.sku
+                            variant
+                              .sku
                           }
                           disabled={
                             isSaving
@@ -2192,13 +3103,18 @@ export default function NewProduct() {
                           ) =>
                             updateVariant(
                               variant.id,
+
                               "sku",
-                              event.target
+
+                              event
+                                .target
                                 .value
                             )
                           }
                         />
                       </div>
+
+                      {/* STOCK */}
 
                       <div className="new-product-field">
                         <label>
@@ -2210,7 +3126,8 @@ export default function NewProduct() {
                           min="0"
                           placeholder="20"
                           value={
-                            variant.stock
+                            variant
+                              .stock
                           }
                           disabled={
                             isSaving
@@ -2220,14 +3137,21 @@ export default function NewProduct() {
                           ) =>
                             updateVariant(
                               variant.id,
+
                               "stock",
-                              event.target
+
+                              event
+                                .target
                                 .value
                             )
                           }
                         />
                       </div>
                     </div>
+
+                    {/* =====================
+                        IMAGES
+                    ===================== */}
 
                     <div className="variant-images-section">
                       <div className="variant-images-heading">
@@ -2251,12 +3175,15 @@ export default function NewProduct() {
 
                         <span>
                           {
-                            variant.images
+                            variant
+                              .images
                               .length
                           }{" "}
                           image
-                          {variant.images
-                            .length === 1
+                          {variant
+                            .images
+                            .length ===
+                          1
                             ? ""
                             : "s"}
                         </span>
@@ -2270,9 +3197,9 @@ export default function NewProduct() {
                         </strong>
 
                         <small>
-                          JPG, PNG or WEBP.
-                          Multiple files
-                          allowed.
+                          JPG, PNG or
+                          WEBP. Multiple
+                          files allowed.
                         </small>
 
                         <input
@@ -2287,14 +3214,15 @@ export default function NewProduct() {
                           ) =>
                             handleImageUpload(
                               variant.id,
+
                               event
                             )
                           }
                         />
                       </label>
 
-                      {variant.images
-                        .length > 0 ? (
+                      {variant.images.length >
+                      0 ? (
                         <div className="variant-image-grid">
                           {variant.images.map(
                             (
@@ -2335,6 +3263,7 @@ export default function NewProduct() {
                                   onClick={() =>
                                     removeImage(
                                       variant.id,
+
                                       image.id
                                     )
                                   }
@@ -2366,16 +3295,29 @@ export default function NewProduct() {
             <button
               type="button"
               className="add-another-colour"
-              onClick={addVariant}
-              disabled={isSaving}
+              onClick={
+                addVariant
+              }
+              disabled={
+                isSaving
+              }
             >
               <FiPlus />
+
               Add Another Colour
             </button>
           </section>
         </div>
 
+        {/* =================================
+            SIDEBAR
+        ================================= */}
+
         <aside className="new-product-sidebar">
+          {/* =============================
+              PRODUCT OPTIONS
+          ============================= */}
+
           <section className="new-product-card">
             <div className="new-product-card-heading">
               <h2>
@@ -2386,11 +3328,19 @@ export default function NewProduct() {
             <label className="new-product-checkbox">
               <input
                 type="checkbox"
-                checked={isFeatured}
-                disabled={isSaving}
-                onChange={(event) =>
+                checked={
+                  isFeatured
+                }
+                disabled={
+                  isSaving
+                }
+                onChange={(
+                  event
+                ) =>
                   setIsFeatured(
-                    event.target.checked
+                    event
+                      .target
+                      .checked
                   )
                 }
               />
@@ -2401,8 +3351,10 @@ export default function NewProduct() {
                 </strong>
 
                 <span>
-                  Display this product
-                  in featured collections.
+                  Display this
+                  product in
+                  featured
+                  collections.
                 </span>
               </div>
             </label>
@@ -2410,11 +3362,19 @@ export default function NewProduct() {
             <label className="new-product-checkbox">
               <input
                 type="checkbox"
-                checked={isNewArrival}
-                disabled={isSaving}
-                onChange={(event) =>
+                checked={
+                  isNewArrival
+                }
+                disabled={
+                  isSaving
+                }
+                onChange={(
+                  event
+                ) =>
                   setIsNewArrival(
-                    event.target.checked
+                    event
+                      .target
+                      .checked
                   )
                 }
               />
@@ -2425,12 +3385,17 @@ export default function NewProduct() {
                 </strong>
 
                 <span>
-                  Show a new arrival
-                  badge on the website.
+                  Show a new
+                  arrival badge
+                  on the website.
                 </span>
               </div>
             </label>
           </section>
+
+          {/* =============================
+              SUMMARY
+          ============================= */}
 
           <section className="new-product-card product-summary-card">
             <h2>
@@ -2438,10 +3403,14 @@ export default function NewProduct() {
             </h2>
 
             <div>
-              <span>Colours</span>
+              <span>
+                Colours
+              </span>
 
               <strong>
-                {variants.length}
+                {
+                  variants.length
+                }
               </strong>
             </div>
 
@@ -2457,8 +3426,10 @@ export default function NewProduct() {
                     variant
                   ) =>
                     total +
-                    variant.images
+                    variant
+                      .images
                       .length,
+
                   0
                 )}
               </strong>
@@ -2480,11 +3451,16 @@ export default function NewProduct() {
                       variant.stock ||
                         0
                     ),
+
                   0
                 )}
               </strong>
             </div>
           </section>
+
+          {/* =============================
+              MOBILE SAVE
+          ============================= */}
 
           <button
             type="submit"
@@ -2492,7 +3468,8 @@ export default function NewProduct() {
             disabled={
               isSaving ||
               isLoadingCategories ||
-              categories.length === 0
+              categories.length ===
+                0
             }
           >
             {isSaving
