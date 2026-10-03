@@ -1,129 +1,219 @@
+/* =========================================
+   FINAL CTA SECTION
+========================================= */
+
 .final-cta-section {
   width: 100%;
-  padding: 30px 4% 56px;
+  position: relative;
+  overflow: hidden;
+
+  padding: 52px 24px 60px;
 
   background:
     radial-gradient(
-      circle at center,
-      rgba(224, 169, 80, 0.14),
-      transparent 42%
+      circle at 50% 45%,
+      rgba(224, 169, 80, 0.13),
+      transparent 48%
     ),
     linear-gradient(
       135deg,
-      #f8efe3,
-      #f2dfc6
+      #f8efe3 0%,
+      #f4e6d3 50%,
+      #f2dfc6 100%
     );
 
   text-align: center;
 }
 
+/* =========================================
+   INNER
+========================================= */
+
 .final-cta-inner {
-  width: min(900px, 100%);
+  width: min(100%, 780px);
+
   margin: 0 auto;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
+/* =========================================
+   EYEBROW
+========================================= */
+
 .final-cta-eyebrow {
-  display: inline-block;
-  margin-bottom: 10px;
+  display: block;
 
-  color: #b58136;
+  margin: 0 0 14px;
 
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 3px;
+  color: #a86a26;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  line-height: 1;
+
+  letter-spacing: 4px;
+
   text-transform: uppercase;
 }
 
-.final-cta-inner h2 {
-  margin: 0;
+/* =========================================
+   HEADING
+========================================= */
 
-  color: #432108;
+.final-cta-inner h2 {
+  width: min(100%, 720px);
+
+  margin: 0 auto;
+
+  color: #4b2208;
 
   font-family:
     "Cormorant Garamond",
     Georgia,
+    "Times New Roman",
     serif;
 
-  font-size: clamp(40px, 5vw, 62px);
+  font-size: clamp(
+    44px,
+    4.8vw,
+    64px
+  );
+
   font-weight: 650;
-  line-height: 1.05;
+
+  line-height: 0.98;
+
+  letter-spacing: -1px;
+
+  text-wrap: balance;
 }
+
+/* =========================================
+   DESCRIPTION
+========================================= */
 
 .final-cta-inner p {
-  max-width: 620px;
-  margin: 18px auto 0;
+  width: min(100%, 620px);
 
-  color: #6c523d;
+  margin: 20px auto 0;
 
-  font-size: 17px;
-  line-height: 1.65;
+  color: #72553e;
+
+  font-size: 16px;
+
+  line-height: 1.7;
+
+  text-align: center;
+
+  text-wrap: balance;
 }
 
+/* =========================================
+   WHATSAPP BUTTON
+========================================= */
+
 .final-whatsapp-button {
+  min-width: 245px;
+  min-height: 52px;
+
+  margin-top: 26px;
+
+  padding: 0 26px;
+
   display: inline-flex;
+
   align-items: center;
   justify-content: center;
+
   gap: 10px;
 
-  margin-top: 24px;
-
-  min-height: 50px;
-  padding: 12px 24px;
+  border: 0;
 
   border-radius: 999px;
 
-  background: #22b84b;
+  background: #20b94b;
+
   color: #ffffff;
 
   text-decoration: none;
+
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
+
+  line-height: 1;
 
   box-shadow:
     0 12px 28px
-    rgba(34, 184, 75, 0.22);
+      rgba(32, 185, 75, 0.2);
 
   transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    background 0.25s ease;
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease;
 }
 
 .final-whatsapp-button svg {
+  flex: 0 0 auto;
+
   font-size: 21px;
 }
 
-.final-whatsapp-button:hover {
-  transform: translateY(-3px);
+/* =========================================
+   BUTTON HOVER
+========================================= */
 
-  background: #1fa944;
+.final-whatsapp-button:hover {
+  transform: translateY(-2px);
+
+  background: #1aa843;
 
   box-shadow:
-    0 18px 34px
-    rgba(34, 184, 75, 0.3);
+    0 16px 32px
+      rgba(32, 185, 75, 0.28);
 }
 
-/* =========================
+/* =========================================
    TABLET
-========================= */
+========================================= */
 
 @media (max-width: 900px) {
   .final-cta-section {
-    padding: 26px 3% 50px;
+    padding:
+      44px
+      22px
+      52px;
   }
 
   .final-cta-inner h2 {
-    font-size: 42px;
+    width: min(
+      100%,
+      620px
+    );
+
+    font-size: 46px;
+  }
+
+  .final-cta-inner p {
+    max-width: 560px;
+
+    font-size: 15px;
   }
 }
 
-/* =========================
+/* =========================================
    MOBILE
-========================= */
+========================================= */
 
 @media (max-width: 700px) {
   .final-cta-section {
-    padding: 24px 18px 38px;
+    padding:
+      34px
+      18px
+      40px;
   }
 
   .final-cta-inner {
@@ -131,33 +221,114 @@
   }
 
   .final-cta-eyebrow {
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 
     font-size: 9px;
-    letter-spacing: 2px;
+
+    letter-spacing: 3px;
   }
 
   .final-cta-inner h2 {
-    font-size: clamp(28px, 8vw, 38px);
-    line-height: 1.08;
-    letter-spacing: -0.4px;
+    width: min(
+      100%,
+      340px
+    );
+
+    font-size: clamp(
+      32px,
+      9vw,
+      40px
+    );
+
+    line-height: 1;
+
+    letter-spacing: -0.7px;
   }
 
   .final-cta-inner p {
-    max-width: 360px;
-    margin: 14px auto 0;
+    width: min(
+      100%,
+      360px
+    );
+
+    margin-top: 16px;
 
     font-size: 13px;
+
+    line-height: 1.65;
+  }
+
+  .final-whatsapp-button {
+    min-width: 230px;
+
+    min-height: 48px;
+
+    margin-top: 22px;
+
+    padding:
+      0
+      22px;
+
+    gap: 9px;
+
+    font-size: 13px;
+  }
+
+  .final-whatsapp-button svg {
+    font-size: 19px;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+  .final-cta-section {
+    padding:
+      30px
+      16px
+      36px;
+  }
+
+  .final-cta-eyebrow {
+    margin-bottom: 11px;
+
+    font-size: 8.5px;
+
+    letter-spacing: 2.8px;
+  }
+
+  .final-cta-inner h2 {
+    max-width: 320px;
+
+    font-size: 34px;
+
+    line-height: 1.02;
+  }
+
+  .final-cta-inner p {
+    max-width: 340px;
+
+    margin-top: 15px;
+
+    font-size: 12.5px;
+
     line-height: 1.6;
   }
 
   .final-whatsapp-button {
-    margin-top: 20px;
+    min-width: 220px;
 
     min-height: 46px;
-    padding: 10px 20px;
 
-    font-size: 12px;
+    margin-top: 20px;
+
+    padding:
+      0
+      20px;
+
+    font-size: 12.5px;
   }
 
   .final-whatsapp-button svg {
@@ -165,20 +336,33 @@
   }
 }
 
-/* =========================
-   SMALL MOBILE
-========================= */
+/* =========================================
+   VERY SMALL MOBILE
+========================================= */
 
 @media (max-width: 380px) {
   .final-cta-section {
-    padding: 20px 12px 32px;
+    padding:
+      28px
+      14px
+      34px;
   }
 
   .final-cta-inner h2 {
-    font-size: 26px;
+    max-width: 290px;
+
+    font-size: 31px;
   }
 
   .final-cta-inner p {
+    max-width: 310px;
+
     font-size: 12px;
+  }
+
+  .final-whatsapp-button {
+    min-width: 210px;
+
+    min-height: 45px;
   }
 }
