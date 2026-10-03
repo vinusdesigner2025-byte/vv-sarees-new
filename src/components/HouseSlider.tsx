@@ -1,32 +1,45 @@
-
-  import {
+import {
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 
-import { useWebsiteMedia } from "../context/WebsiteMediaContext";
+import {
+  FiChevronLeft,
+  FiChevronRight,
+} from "react-icons/fi";
+
+import {
+  useWebsiteMedia,
+} from "../context/WebsiteMediaContext";
 
 import "./HouseSlider.css";
-
 
 type WebsiteMediaRow = {
   id: number | string;
   section: string | null;
   slot_key: string | null;
-  title: string | null;
-  image_url: string | null;
-  desktop_url: string | null;
-  mobile_url: string | null;
+
+  title?: string | null;
+
+  image_url?: string | null;
+  desktop_url?: string | null;
+  mobile_url?: string | null;
+
   display_order: number | null;
   is_active: boolean | null;
-  settings?: Record<string, unknown> | null;
+
+  settings?: {
+    title?: string;
+    alt?: string;
+  } | null;
 };
 
 type HouseImage = {
   id: number | string;
-  image: string;
+  desktopImage: string;
+  mobileImage: string;
   alt: string;
 };
 
@@ -42,8 +55,50 @@ export default function HouseOfVVSarees() {
   const animationFrameRef =
     useRef<number | null>(null);
 
-  const [activeIndex, setActiveIndex] =
-    useState(0);
+  const [
+    activeIndex,
+    setActiveIndex,
+  ] = useState(0);
+
+  const [
+    isMobile,
+    setIsMobile,
+  ] = useState(false);
+
+  /* =========================================
+     CHECK MOBILE / DESKTOP
+  ========================================= */
+
+  useEffect(() => {
+    const mediaQuery =
+      window.matchMedia(
+        "(max-width: 768px)"
+      );
+
+    const updateDevice = () => {
+      setIsMobile(
+        mediaQuery.matches
+      );
+    };
+
+    updateDevice();
+
+    mediaQuery.addEventListener(
+      "change",
+      updateDevice
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        updateDevice
+      );
+    };
+  }, []);
+
+  /* =========================================
+     GET HOUSE IMAGES
+  ========================================= */
 
   const houseImages =
     useMemo<HouseImage[]>(() => {
@@ -68,122 +123,184 @@ export default function HouseOfVVSarees() {
             )
         )
         .sort(
-          (first, second) =>
+          (
+            first,
+            second
+          ) =>
             Number(
-              first.display_order ?? 0
+              first.display_order ??
+                0
             ) -
             Number(
-              second.display_order ?? 0
+              second.display_order ??
+                0
             )
         )
-        .map((row, index) => ({
-          id: row.id,
+        .map(
+          (
+            row,
+            index
+          ) => {
+            /*
+             * Desktop:
+             * image_url first priority.
+             */
 
-          image:
-            row.image_url ||
-            row.desktop_url ||
-            row.mobile_url ||
-            "",
+            const desktopImage =
+              row.image_url ||
+              row.desktop_url ||
+              row.mobile_url ||
+              "";
 
-          alt:
-            row.title?.trim() ||
-            `VV Sarees showroom image ${
-              index + 1
-            }`,
-        }));
+            /*
+             * Mobile:
+             * mobile_url irundha first use pannum.
+             * Adhu load aagala na கீழே
+             * onError-la desktop image fallback aagum.
+             */
+
+            const mobileImage =
+              row.mobile_url ||
+              row.image_url ||
+              row.desktop_url ||
+              "";
+
+            return {
+              id: row.id,
+
+              desktopImage,
+
+              mobileImage,
+
+              alt:
+                row.settings?.alt?.trim() ||
+                row.settings?.title?.trim() ||
+                row.title?.trim() ||
+                `House Slide ${
+                  index + 1
+                }`,
+            };
+          }
+        );
     }, [
       media,
       loading,
     ]);
 
-  /*
-   * Image count change aana
-   * activeIndex valid range-la irukkanum.
-   */
+  /* =========================================
+     KEEP ACTIVE INDEX VALID
+  ========================================= */
+
   useEffect(() => {
-    if (houseImages.length === 0) {
+    if (
+      houseImages.length === 0
+    ) {
+      setActiveIndex(0);
+
       return;
     }
 
-    setActiveIndex((current) =>
-      Math.min(
-        current,
-        houseImages.length - 1
-      )
+    setActiveIndex(
+      (current) =>
+        Math.min(
+          current,
+          houseImages.length -
+            1
+        )
     );
-  }, [houseImages.length]);
+  }, [
+    houseImages.length,
+  ]);
 
-  /*
-   * Scroll event romba frequently fire aagum.
-   * requestAnimationFrame use panni
-   * once-per-frame mattum calculation.
-   */
+  /* =========================================
+     SCROLL EVENT
+  ========================================= */
+
   const handleScroll = () => {
-    if (animationFrameRef.current !== null) {
+    if (
+      animationFrameRef.current !==
+      null
+    ) {
       return;
     }
 
     animationFrameRef.current =
-      window.requestAnimationFrame(() => {
-        animationFrameRef.current = null;
+      window.requestAnimationFrame(
+        () => {
+          animationFrameRef.current =
+            null;
 
-        const slider =
-          sliderRef.current;
+          const slider =
+            sliderRef.current;
 
-        if (!slider) {
-          return;
-        }
+          if (!slider) {
+            return;
+          }
 
-        const cards =
-          slider.querySelectorAll<HTMLElement>(
-            ".house-mobile-card"
+          const cards =
+            slider.querySelectorAll<HTMLElement>(
+              ".house-slide"
+            );
+
+          if (
+            cards.length === 0
+          ) {
+            return;
+          }
+
+          const sliderCenter =
+            slider.scrollLeft +
+            slider.clientWidth /
+              2;
+
+          let closestIndex = 0;
+
+          let closestDistance =
+            Number.POSITIVE_INFINITY;
+
+          cards.forEach(
+            (
+              card,
+              index
+            ) => {
+              const cardCenter =
+                card.offsetLeft +
+                card.offsetWidth /
+                  2;
+
+              const distance =
+                Math.abs(
+                  sliderCenter -
+                    cardCenter
+                );
+
+              if (
+                distance <
+                closestDistance
+              ) {
+                closestDistance =
+                  distance;
+
+                closestIndex =
+                  index;
+              }
+            }
           );
 
-        if (cards.length === 0) {
-          return;
+          setActiveIndex(
+            (current) =>
+              current ===
+              closestIndex
+                ? current
+                : closestIndex
+          );
         }
-
-        const sliderCenter =
-          slider.scrollLeft +
-          slider.clientWidth / 2;
-
-        let closestIndex = 0;
-        let closestDistance =
-          Number.POSITIVE_INFINITY;
-
-        cards.forEach(
-          (card, index) => {
-            const cardCenter =
-              card.offsetLeft +
-              card.offsetWidth / 2;
-
-            const distance =
-              Math.abs(
-                sliderCenter -
-                  cardCenter
-              );
-
-            if (
-              distance <
-              closestDistance
-            ) {
-              closestDistance =
-                distance;
-
-              closestIndex =
-                index;
-            }
-          }
-        );
-
-        setActiveIndex(
-          (current) =>
-            current === closestIndex
-              ? current
-              : closestIndex
-        );
-      });
+      );
   };
+
+  /* =========================================
+     CLEANUP
+  ========================================= */
 
   useEffect(() => {
     return () => {
@@ -198,6 +315,10 @@ export default function HouseOfVVSarees() {
     };
   }, []);
 
+  /* =========================================
+     SCROLL TO SPECIFIC SLIDE
+  ========================================= */
+
   const scrollToSlide = (
     index: number
   ) => {
@@ -210,7 +331,7 @@ export default function HouseOfVVSarees() {
 
     const cards =
       slider.querySelectorAll<HTMLElement>(
-        ".house-mobile-card"
+        ".house-slide"
       );
 
     const targetCard =
@@ -223,27 +344,62 @@ export default function HouseOfVVSarees() {
     slider.scrollTo({
       left:
         targetCard.offsetLeft -
-        slider.clientWidth / 2 +
-        targetCard.offsetWidth / 2,
+        slider.clientWidth /
+          2 +
+        targetCard.offsetWidth /
+          2,
 
       behavior: "smooth",
     });
 
-    setActiveIndex(index);
+    setActiveIndex(
+      index
+    );
   };
 
-  const desktopLeft =
-    houseImages[0];
+  /* =========================================
+     PREVIOUS
+  ========================================= */
 
-  const desktopCenter =
-    houseImages[1] ??
-    houseImages[0];
+  const goPrevious = () => {
+    if (
+      houseImages.length === 0
+    ) {
+      return;
+    }
 
-  const desktopRight =
-    houseImages[2] ??
-    houseImages[
+    const newIndex =
+      activeIndex === 0
+        ? houseImages.length -
+          1
+        : activeIndex - 1;
+
+    scrollToSlide(
+      newIndex
+    );
+  };
+
+  /* =========================================
+     NEXT
+  ========================================= */
+
+  const goNext = () => {
+    if (
+      houseImages.length === 0
+    ) {
+      return;
+    }
+
+    const newIndex =
+      activeIndex ===
       houseImages.length - 1
-    ];
+        ? 0
+        : activeIndex + 1;
+
+    scrollToSlide(
+      newIndex
+    );
+  };
 
   return (
     <section
@@ -251,12 +407,19 @@ export default function HouseOfVVSarees() {
       aria-labelledby="house-section-title"
     >
       <div className="house-container">
+
+        {/* =====================================
+            HEADING
+        ===================================== */}
+
         <header className="house-heading">
           <span className="house-eyebrow">
-            Step Inside Our World
+            STEP INSIDE OUR WORLD
           </span>
 
-          <h2 id="house-section-title">
+          <h2
+            id="house-section-title"
+          >
             House Of VV Sarees
           </h2>
 
@@ -266,152 +429,196 @@ export default function HouseOfVVSarees() {
           />
         </header>
 
-        {/* =========================
-            LOADING PLACEHOLDER
-        ========================= */}
+        {/* =====================================
+            LOADING
+        ===================================== */}
 
         {loading && (
           <div
-            style={{
-              width: "100%",
-              minHeight: "360px",
-              borderRadius: "22px",
-              background: "#ead7be",
-            }}
+            className="house-loading"
             aria-hidden="true"
           />
         )}
 
+        {/* =====================================
+            NO IMAGES
+        ===================================== */}
+
         {!loading &&
-          houseImages.length === 0 && (
-            <div
-              style={{
-                width: "100%",
-                minHeight: "220px",
-                borderRadius: "22px",
-                display: "grid",
-                placeItems: "center",
-                background: "#f5eadb",
-                color: "#7a4a2a",
-                textAlign: "center",
-                padding: "24px",
-              }}
-            >
-              <span>
-                Showroom images are being updated.
-              </span>
+          houseImages.length ===
+            0 && (
+            <div className="house-empty">
+              Showroom images are
+              being updated.
             </div>
           )}
 
-        {/* =========================
-            DESKTOP GALLERY
-        ========================= */}
+        {/* =====================================
+            SLIDER
+        ===================================== */}
 
         {!loading &&
-          desktopLeft &&
-          desktopCenter &&
-          desktopRight && (
-            <div className="house-desktop-gallery">
-              <figure className="house-desktop-card house-desktop-card-small">
-                <img
-                  src={desktopLeft.image}
-                  alt={desktopLeft.alt}
-                  loading="lazy"
-                  decoding="async"
-                  fetchPriority="low"
-                  draggable={false}
-                />
-              </figure>
-
-              <figure className="house-desktop-card house-desktop-card-main">
-                <img
-                  src={
-                    desktopCenter.image
-                  }
-                  alt={
-                    desktopCenter.alt
-                  }
-                  loading="lazy"
-                  decoding="async"
-                  fetchPriority="low"
-                  draggable={false}
-                />
-
-                <figcaption>
-                  <span>
-                    VV Sarees
-                  </span>
-
-                  <strong>
-                    A home for timeless
-                    Indian weaves
-                  </strong>
-                </figcaption>
-              </figure>
-
-              <figure className="house-desktop-card house-desktop-card-small">
-                <img
-                  src={desktopRight.image}
-                  alt={desktopRight.alt}
-                  loading="lazy"
-                  decoding="async"
-                  fetchPriority="low"
-                  draggable={false}
-                />
-              </figure>
-            </div>
-          )}
-
-        {/* =========================
-            MOBILE SLIDER
-        ========================= */}
-
-        {!loading &&
-          houseImages.length > 0 && (
+          houseImages.length >
+            0 && (
             <>
-              <div
-                ref={sliderRef}
-                className="house-mobile-slider"
-                onScroll={handleScroll}
-                aria-label="VV Sarees showroom gallery"
-              >
-                {houseImages.map(
-                  (
-                    item,
-                    index
-                  ) => (
-                    <figure
-                      className={`house-mobile-card ${
-                        activeIndex ===
-                        index
-                          ? "house-mobile-card-active"
-                          : ""
-                      }`}
-                      key={item.id}
-                    >
-                      <img
-                        src={item.image}
-                        alt={item.alt}
-                        loading="lazy"
-                        decoding="async"
-                        fetchPriority="low"
-                        draggable={false}
-                      />
-                    </figure>
-                  )
+              <div className="house-slider-shell">
+
+                {/* ============================
+                    DESKTOP LEFT ARROW
+                ============================ */}
+
+                {houseImages.length >
+                  1 && (
+                  <button
+                    type="button"
+                    className="house-slider-arrow house-slider-arrow-left"
+                    onClick={
+                      goPrevious
+                    }
+                    aria-label="Previous showroom image"
+                  >
+                    <FiChevronLeft />
+                  </button>
+                )}
+
+                {/* ============================
+                    IMAGES
+                ============================ */}
+
+                <div
+                  ref={
+                    sliderRef
+                  }
+                  className="house-slider"
+                  onScroll={
+                    handleScroll
+                  }
+                  aria-label="VV Sarees showroom gallery"
+                >
+                  {houseImages.map(
+                    (
+                      item,
+                      index
+                    ) => {
+                      const imageSrc =
+                        isMobile
+                          ? item.mobileImage
+                          : item.desktopImage;
+
+                      const fallbackImage =
+                        isMobile
+                          ? item.desktopImage
+                          : item.mobileImage;
+
+                      return (
+                        <figure
+                          className={`house-slide ${
+                            activeIndex ===
+                            index
+                              ? "house-slide-active"
+                              : ""
+                          }`}
+                          key={
+                            item.id
+                          }
+                        >
+                          <img
+                            key={`${item.id}-${
+                              isMobile
+                                ? "mobile"
+                                : "desktop"
+                            }`}
+                            src={
+                              imageSrc
+                            }
+                            alt={
+                              item.alt
+                            }
+                            loading="lazy"
+                            decoding="async"
+                            fetchPriority="low"
+                            draggable={
+                              false
+                            }
+                            onError={(
+                              event
+                            ) => {
+                              const image =
+                                event.currentTarget;
+
+                              /*
+                               * Broken mobile URL na
+                               * automatically desktop image
+                               * use pannum.
+                               */
+
+                              if (
+                                image
+                                  .dataset
+                                  .fallbackApplied ===
+                                "true"
+                              ) {
+                                return;
+                              }
+
+                              if (
+                                !fallbackImage
+                              ) {
+                                return;
+                              }
+
+                              image.dataset.fallbackApplied =
+                                "true";
+
+                              image.src =
+                                fallbackImage;
+                            }}
+                          />
+                        </figure>
+                      );
+                    }
+                  )}
+                </div>
+
+                {/* ============================
+                    DESKTOP RIGHT ARROW
+                ============================ */}
+
+                {houseImages.length >
+                  1 && (
+                  <button
+                    type="button"
+                    className="house-slider-arrow house-slider-arrow-right"
+                    onClick={
+                      goNext
+                    }
+                    aria-label="Next showroom image"
+                  >
+                    <FiChevronRight />
+                  </button>
                 )}
               </div>
 
-              <div className="house-mobile-progress">
-                <span className="house-mobile-counter">
+              {/* =====================================
+                  BOTTOM PROGRESS
+              ===================================== */}
+
+              <div className="house-slider-progress">
+
+                {/* COUNTER */}
+
+                <span className="house-slider-counter">
                   {String(
-                    activeIndex + 1
+                    activeIndex +
+                      1
                   ).padStart(
                     2,
                     "0"
                   )}
 
-                  <small>/</small>
+                  <small>
+                    /
+                  </small>
 
                   {String(
                     houseImages.length
@@ -421,8 +628,10 @@ export default function HouseOfVVSarees() {
                   )}
                 </span>
 
+                {/* DOTS */}
+
                 <div
-                  className="house-mobile-dots"
+                  className="house-slider-dots"
                   aria-label="Choose showroom image"
                 >
                   {houseImages.map(
@@ -460,8 +669,10 @@ export default function HouseOfVVSarees() {
                   )}
                 </div>
 
+                {/* LABEL */}
+
                 <span className="house-swipe-label">
-                  Swipe to explore
+                  SWIPE TO EXPLORE
                 </span>
               </div>
             </>

@@ -1,526 +1,818 @@
+/* =========================================
+   HOUSE OF VV SAREES
+========================================= */
+
 .house-section {
   position: relative;
 
   width: 100%;
-  padding: 70px 0 78px;
 
   overflow: hidden;
 
+  padding: 72px 0 68px;
+
   background:
     radial-gradient(
-      circle at 12% 20%,
-      rgba(202, 145, 71, 0.12),
-      transparent 28%
+      circle at 50% 25%,
+      rgba(255, 255, 255, 0.55),
+      transparent 50%
     ),
-    radial-gradient(
-      circle at 90% 75%,
-      rgba(103, 46, 11, 0.07),
-      transparent 30%
-    ),
-    #fbf4ea;
+    #f8efe4;
 }
 
 .house-container {
-  width: min(1420px, calc(100% - 64px));
+  width: 100%;
+
   margin: 0 auto;
 }
 
-/* =========================
+/* =========================================
    HEADING
-========================= */
+========================================= */
 
 .house-heading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  width: 100%;
 
-  margin-bottom: 42px;
+  padding: 0 24px;
+
+  margin-bottom: 38px;
 
   text-align: center;
 }
 
 .house-eyebrow {
-  color: #b87022;
+  display: block;
 
-  font-size: 9px;
+  margin: 0 0 13px;
+
+  color: #a85616;
+
+  font-size: 10px;
+
   font-weight: 800;
-  letter-spacing: 3.7px;
+
+  line-height: 1.2;
+
+  letter-spacing: 6px;
+
   text-transform: uppercase;
 }
 
 .house-heading h2 {
-  margin: 10px 0 13px;
+  margin: 0;
 
-  color: #542509;
+  color: #59250d;
 
   font-family:
     "Cormorant Garamond",
     Georgia,
+    "Times New Roman",
     serif;
 
-  font-size: clamp(48px, 5vw, 72px);
+  font-size:
+    clamp(
+      54px,
+      5vw,
+      80px
+    );
+
   font-weight: 600;
-  line-height: 0.95;
-  letter-spacing: -1px;
+
+  line-height: 1;
+
+  letter-spacing: -1.7px;
 }
 
 .house-heading-line {
-  width: 54px;
+  display: block;
+
+  width: 62px;
+
   height: 1px;
+
+  margin: 25px auto 0;
 
   background:
     linear-gradient(
       90deg,
       transparent,
-      #b87935,
+      #cb986e,
       transparent
     );
 }
 
-/* =========================
-   DESKTOP GALLERY
-========================= */
+/* =========================================
+   LOADING
+========================================= */
 
-.house-desktop-gallery {
-  display: grid;
-  grid-template-columns:
-    minmax(180px, 0.55fr)
-    minmax(520px, 1.65fr)
-    minmax(180px, 0.55fr);
+.house-loading {
+  width:
+    min(
+      calc(100% - 48px),
+      1050px
+    );
 
-  align-items: center;
-  gap: 16px;
+  aspect-ratio: 16 / 9;
+
+  margin: 0 auto;
+
+  border-radius: 28px;
+
+  background: #ead7be;
 }
 
-.house-desktop-card {
+/* =========================================
+   EMPTY
+========================================= */
+
+.house-empty {
+  width:
+    min(
+      calc(100% - 48px),
+      1050px
+    );
+
+  min-height: 240px;
+
+  margin: 0 auto;
+
+  padding: 24px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 24px;
+
+  background: #f4e7d7;
+
+  color: #75421f;
+
+  font-size: 14px;
+
+  text-align: center;
+}
+
+/* =========================================
+   SLIDER SHELL
+========================================= */
+
+.house-slider-shell {
   position: relative;
+
+  width: 100%;
+}
+
+/* =========================================
+   SLIDER
+========================================= */
+
+.house-slider {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 28px;
+
+  overflow-x: auto;
+
+  overflow-y: hidden;
+
+  scroll-behavior: smooth;
+
+  scroll-snap-type: x mandatory;
+
+  overscroll-behavior-x:
+    contain;
+
+  scrollbar-width: none;
+
+  -webkit-overflow-scrolling:
+    touch;
+
+  padding-top: 16px;
+
+  padding-bottom: 24px;
+
+  padding-left:
+    max(
+      24px,
+      calc(
+        (
+            100vw -
+              min(
+                66vw,
+                1050px
+              )
+          ) /
+          2
+      )
+    );
+
+  padding-right:
+    max(
+      24px,
+      calc(
+        (
+            100vw -
+              min(
+                66vw,
+                1050px
+              )
+          ) /
+          2
+      )
+    );
+}
+
+.house-slider::-webkit-scrollbar {
+  display: none;
+}
+
+/* =========================================
+   SLIDE
+========================================= */
+
+.house-slide {
+  position: relative;
+
+  flex:
+    0 0
+    min(
+      66vw,
+      1050px
+    );
 
   margin: 0;
 
   overflow: hidden;
 
-  border: 1px solid rgba(130, 72, 25, 0.16);
-  border-radius: 22px;
+  border-radius: 28px;
 
-  background: #e6d3ba;
+  background: #3f210e;
+
+  scroll-snap-align: center;
+
+  scroll-snap-stop: always;
+
+  opacity: 0.62;
+
+  transform: scale(0.88);
 
   box-shadow:
-    0 24px 52px rgba(66, 31, 8, 0.13),
-    0 7px 18px rgba(66, 31, 8, 0.07);
-
-  transform: translateZ(0);
+    0 15px 38px
+      rgba(
+        63,
+        28,
+        5,
+        0.13
+      );
 
   transition:
-    transform 0.45s ease,
-    box-shadow 0.45s ease;
+    transform
+      280ms
+      ease,
+    opacity
+      280ms
+      ease,
+    box-shadow
+      280ms
+      ease;
 }
 
-.house-desktop-card-small {
-  height: clamp(280px, 29vw, 430px);
+.house-slide-active {
+  opacity: 1;
+
+  transform: scale(1);
+
+  box-shadow:
+    0 24px 58px
+      rgba(
+        63,
+        28,
+        5,
+        0.19
+      );
 }
 
-.house-desktop-card-main {
-  height: clamp(370px, 38vw, 570px);
-}
+/* =========================================
+   IMAGE
+========================================= */
 
-.house-desktop-card img {
+.house-slide img {
   display: block;
 
   width: 100%;
-  height: 100%;
+
+  height: auto;
+
+  aspect-ratio: 16 / 9;
 
   object-fit: cover;
+
   object-position: center;
 
-  transition:
-    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
-    filter 0.45s ease;
+  user-select: none;
 }
 
-.house-desktop-card-small img {
-  filter:
-    saturate(0.88)
-    brightness(0.91);
-}
+/* =========================================
+   DESKTOP ARROWS
+========================================= */
 
-.house-desktop-card figcaption {
+.house-slider-arrow {
   position: absolute;
-  right: 26px;
-  bottom: 24px;
-  left: 26px;
+
+  top: 50%;
+
+  z-index: 20;
+
+  width: 54px;
+
+  height: 54px;
+
+  padding: 0;
 
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
 
-  color: #fff;
-}
+  align-items: center;
 
-.house-desktop-card-main::after {
-  content: "";
+  justify-content: center;
 
-  position: absolute;
-  inset: 0;
-
-  background:
-    linear-gradient(
-      180deg,
-      transparent 55%,
-      rgba(29, 11, 1, 0.68) 100%
+  border:
+    1px
+    solid
+    rgba(
+      110,
+      61,
+      25,
+      0.13
     );
 
-  pointer-events: none;
+  border-radius: 50%;
+
+  background:
+    rgba(
+      255,
+      250,
+      245,
+      0.95
+    );
+
+  color: #713b17;
+
+  box-shadow:
+    0 10px 28px
+      rgba(
+        76,
+        34,
+        6,
+        0.17
+      );
+
+  cursor: pointer;
+
+  transform:
+    translateY(-50%);
+
+  transition:
+    transform
+      180ms
+      ease,
+    background
+      180ms
+      ease,
+    box-shadow
+      180ms
+      ease;
 }
 
-.house-desktop-card figcaption {
-  z-index: 2;
+.house-slider-arrow:hover {
+  background: #ffffff;
+
+  box-shadow:
+    0 14px 32px
+      rgba(
+        76,
+        34,
+        6,
+        0.22
+      );
 }
 
-.house-desktop-card figcaption span {
-  flex-shrink: 0;
-
-  color: #e8bb76;
-
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 2.8px;
-  text-transform: uppercase;
+.house-slider-arrow svg {
+  font-size: 27px;
 }
 
-.house-desktop-card figcaption strong {
-  max-width: 330px;
+.house-slider-arrow-left {
+  left: 28px;
+}
+
+.house-slider-arrow-right {
+  right: 28px;
+}
+
+/* =========================================
+   PROGRESS
+========================================= */
+
+.house-slider-progress {
+  width:
+    min(
+      calc(100% - 52px),
+      980px
+    );
+
+  margin: 12px auto 0;
+
+  display: grid;
+
+  grid-template-columns:
+    100px
+    1fr
+    180px;
+
+  align-items: center;
+
+  gap: 18px;
+}
+
+/* =========================================
+   COUNTER
+========================================= */
+
+.house-slider-counter {
+  color: #8d4d1d;
 
   font-family:
     "Cormorant Garamond",
     Georgia,
     serif;
 
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 0.95;
+  font-size: 17px;
+
+  font-weight: 700;
+
+  letter-spacing: 2px;
+}
+
+.house-slider-counter small {
+  margin: 0 5px;
+
+  color:
+    rgba(
+      117,
+      75,
+      42,
+      0.52
+    );
+
+  font-size: 11px;
+}
+
+/* =========================================
+   DOTS
+========================================= */
+
+.house-slider-dots {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 9px;
+}
+
+.house-dot {
+  width: 7px;
+
+  height: 7px;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 999px;
+
+  background: #d8c6b7;
+
+  cursor: pointer;
+
+  transition:
+    width
+      180ms
+      ease,
+    background
+      180ms
+      ease;
+}
+
+.house-dot-active {
+  width: 34px;
+
+  background: #91470c;
+}
+
+/* =========================================
+   SWIPE LABEL
+========================================= */
+
+.house-swipe-label {
+  color: #9c531e;
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 2.1px;
+
   text-align: right;
+
+  text-transform: uppercase;
 }
 
-.house-desktop-card:hover {
-  transform: translateY(-7px);
-
-  box-shadow:
-    0 34px 68px rgba(66, 31, 8, 0.18),
-    0 10px 22px rgba(66, 31, 8, 0.09);
-}
-
-.house-desktop-card:hover img {
-  transform: scale(1.025);
-
-  filter:
-    saturate(1.02)
-    brightness(1);
-}
-
-/* =========================
-   MOBILE ELEMENTS
-========================= */
-
-.house-mobile-slider,
-.house-mobile-progress {
-  display: none;
-}
-
-/* =========================
+/* =========================================
    TABLET
-========================= */
+========================================= */
 
-@media (max-width: 1050px) {
+@media (
+  max-width: 1024px
+) {
   .house-section {
-    padding: 58px 0 66px;
-  }
-
-  .house-container {
-    width: min(100% - 40px, 960px);
-  }
-
-  .house-desktop-gallery {
-    grid-template-columns:
-      minmax(130px, 0.45fr)
-      minmax(430px, 1.5fr)
-      minmax(130px, 0.45fr);
-
-    gap: 12px;
-  }
-
-  .house-desktop-card {
-    border-radius: 18px;
-  }
-
-  .house-desktop-card-main {
-    height: 430px;
-  }
-
-  .house-desktop-card-small {
-    height: 320px;
-  }
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 700px) {
-  .house-section {
-    padding: 34px 0 42px;
-  }
-
-  .house-container {
-    width: 100%;
+    padding:
+      58px
+      0
+      54px;
   }
 
   .house-heading {
-    width: calc(100% - 30px);
-    margin: 0 auto 24px;
+    margin-bottom: 32px;
+  }
+
+  .house-slider {
+    gap: 20px;
+  }
+
+  .house-slide {
+    flex-basis: 72vw;
+
+    border-radius: 24px;
+  }
+
+  .house-slider-arrow {
+    width: 48px;
+
+    height: 48px;
+  }
+
+  .house-slider-arrow-left {
+    left: 16px;
+  }
+
+  .house-slider-arrow-right {
+    right: 16px;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (
+  max-width: 768px
+) {
+  .house-section {
+    padding:
+      44px
+      0
+      42px;
+  }
+
+  /* =====================================
+     MOBILE HEADING
+  ===================================== */
+
+  .house-heading {
+    padding:
+      0
+      18px;
+
+    margin-bottom: 24px;
   }
 
   .house-eyebrow {
-    display: none;
+    margin-bottom: 14px;
+
+    font-size: 9px;
+
+    letter-spacing: 4.5px;
   }
 
   .house-heading h2 {
-    margin: 0;
+    font-size:
+      clamp(
+        39px,
+        10.5vw,
+        52px
+      );
 
-    font-size: clamp(36px, 10vw, 44px);
-    font-weight: 600;
     line-height: 1;
-    letter-spacing: -0.45px;
+
+    letter-spacing: -1px;
   }
 
   .house-heading-line {
     display: none;
   }
 
-  .house-desktop-gallery {
-    display: none;
+  /* =====================================
+     MOBILE SLIDER
+  ===================================== */
+
+  .house-slider {
+    gap: 15px;
+
+    padding-top: 6px;
+
+    padding-bottom: 16px;
+
+    /*
+     * 82vw card + 9vw left/right
+     * => first card centered.
+     */
+
+    padding-left: 9vw;
+
+    padding-right: 9vw;
+  }
+
+  .house-slide {
+    flex:
+      0
+      0
+      82vw;
+
+    border-radius: 19px;
+
+    opacity: 0.55;
+
+    transform:
+      scale(0.94);
+
+    box-shadow:
+      0 12px 26px
+        rgba(
+          64,
+          30,
+          8,
+          0.12
+        );
+  }
+
+  .house-slide-active {
+    opacity: 1;
+
+    transform: scale(1);
   }
 
   /*
-    Side images visible-a irukka horizontal padding
-    calculate pannirukkom.
-  */
+   * Mobile image portrait / square /
+   * landscape edhu upload pannalum
+   * crop aagama full image kaamikum.
+   */
 
-  .house-mobile-slider {
+  .house-slide img {
     width: 100%;
 
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    height: auto;
 
-    padding:
-      8px
-      calc((100vw - min(78vw, 350px)) / 2)
-      18px;
+    aspect-ratio: auto;
 
-    overflow-x: auto;
-    overflow-y: hidden;
+    object-fit: contain;
 
-    scroll-behavior: smooth;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
+    background: #f4e8da;
   }
 
-  .house-mobile-slider::-webkit-scrollbar {
+  /* =====================================
+     MOBILE ARROWS HIDE
+  ===================================== */
+
+  .house-slider-arrow {
     display: none;
   }
 
-  .house-mobile-card {
-    width: min(78vw, 350px);
-    height: 235px;
+  /* =====================================
+     MOBILE PROGRESS
+  ===================================== */
 
-    display: block;
-    flex: 0 0 min(78vw, 350px);
+  .house-slider-progress {
+    width:
+      calc(
+        100% - 20px
+      );
 
-    margin: 0;
+    margin-top: 12px;
 
-    overflow: hidden;
+    padding: 0;
 
-    border: 1px solid rgba(126, 67, 22, 0.14);
-    border-radius: 16px;
+    grid-template-columns:
+      70px
+      1fr
+      130px;
 
-    background: #e9d8c1;
-
-    box-shadow:
-      0 13px 28px rgba(66, 31, 8, 0.1);
-
-    opacity: 0.58;
-
-    scroll-snap-align: center;
-    scroll-snap-stop: always;
-
-    transform:
-      scale(0.91)
-      translateZ(0);
-
-    transition:
-      opacity 0.35s ease,
-      transform 0.35s ease,
-      box-shadow 0.35s ease;
+    gap: 8px;
   }
 
-  .house-mobile-card img {
-    display: block;
+  .house-slider-counter {
+    font-size: 14px;
 
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-    object-position: center;
+    letter-spacing: 1.6px;
   }
 
-  .house-mobile-card-active {
-    opacity: 1;
-
-    transform:
-      scale(1)
-      translateZ(0);
-
-    box-shadow:
-      0 21px 42px rgba(66, 31, 8, 0.17),
-      0 6px 14px rgba(66, 31, 8, 0.08);
+  .house-slider-counter small {
+    font-size: 9px;
   }
 
-  .house-mobile-progress {
-    width: calc(100% - 40px);
-    margin: 6px auto 0;
-
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .house-mobile-counter {
-    justify-self: start;
-
-    color: #6c3512;
-
-    font-family:
-      "Cormorant Garamond",
-      Georgia,
-      serif;
-
-    font-size: 16px;
-    font-weight: 650;
-    letter-spacing: 0.6px;
-  }
-
-  .house-mobile-counter small {
-    margin: 0 4px;
-
-    color: #b6885b;
-
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .house-mobile-dots {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+  .house-slider-dots {
+    gap: 7px;
   }
 
   .house-dot {
-    width: 5px;
-    height: 5px;
-    padding: 0;
+    width: 7px;
 
-    border: 0;
-    border-radius: 999px;
-
-    background: rgba(113, 56, 17, 0.25);
-
-    cursor: pointer;
-
-    transition:
-      width 0.3s ease,
-      background 0.3s ease;
+    height: 7px;
   }
 
   .house-dot-active {
-    width: 22px;
-
-    background: #783500;
+    width: 30px;
   }
 
   .house-swipe-label {
-    justify-self: end;
+    font-size: 8px;
 
-    color: #a06939;
-
-    font-size: 7px;
-    font-weight: 750;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
+    letter-spacing: 1.6px;
   }
 }
 
-/* =========================
+/* =========================================
    SMALL MOBILE
-========================= */
+========================================= */
 
-@media (max-width: 380px) {
+@media (
+  max-width: 480px
+) {
   .house-section {
-    padding: 30px 0 38px;
+    padding-top: 40px;
   }
 
   .house-heading {
-    margin-bottom: 20px;
+    margin-bottom: 22px;
   }
 
   .house-heading h2 {
-    font-size: 35px;
+    font-size: 42px;
   }
 
-  .house-mobile-slider {
-    gap: 11px;
+  .house-slider {
+    gap: 13px;
 
-    padding:
-      6px
-      calc((100vw - 80vw) / 2)
-      16px;
+    padding-left: 8vw;
+
+    padding-right: 8vw;
   }
 
-  .house-mobile-card {
-    width: 80vw;
-    height: 210px;
-    flex-basis: 80vw;
+  .house-slide {
+    flex-basis: 84vw;
 
-    border-radius: 14px;
+    border-radius: 18px;
   }
 
-  .house-mobile-progress {
-    width: calc(100% - 30px);
+  .house-slider-progress {
+    grid-template-columns:
+      62px
+      1fr
+      120px;
+  }
+
+  .house-slider-counter {
+    font-size: 13px;
   }
 
   .house-swipe-label {
-    font-size: 6px;
-  }
-}
+    font-size: 7.5px;
 
-/* =========================
-   REDUCED MOTION
-========================= */
-
-@media (prefers-reduced-motion: reduce) {
-  .house-mobile-slider {
-    scroll-behavior: auto;
+    letter-spacing: 1.4px;
   }
 
-  .house-desktop-card,
-  .house-desktop-card img,
-  .house-mobile-card,
   .house-dot {
-    transition: none;
+    width: 6px;
+
+    height: 6px;
+  }
+
+  .house-dot-active {
+    width: 28px;
   }
 }

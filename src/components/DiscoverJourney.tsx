@@ -1,8 +1,21 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { FiArrowUpRight } from "react-icons/fi";
 
-import { useWebsiteMedia } from "../context/WebsiteMediaContext";
+import {
+  FiArrowUpRight,
+} from "react-icons/fi";
+
+import {
+  FaYoutube,
+} from "react-icons/fa";
+
+import {
+  GiLotus,
+} from "react-icons/gi";
+
+import {
+  useWebsiteMedia,
+} from "../context/WebsiteMediaContext";
 
 import journeyFallback from "../assets/journey-screen.jpeg";
 
@@ -23,11 +36,11 @@ export default function DiscoverJourney() {
     loading,
   } = useWebsiteMedia();
 
+  /* =========================
+     JOURNEY POSTER
+  ========================= */
+
   const journeyImage = useMemo(() => {
-    /*
-     * Media loading time-la heavy local fallback
-     * image-ai browser load panna vendaam.
-     */
     if (loading) {
       return "";
     }
@@ -42,10 +55,6 @@ export default function DiscoverJourney() {
         Boolean(item.image_url)
     );
 
-    /*
-     * Supabase load complete aana apram
-     * database image illana mattum fallback.
-     */
     return (
       row?.image_url ??
       journeyFallback
@@ -54,6 +63,10 @@ export default function DiscoverJourney() {
     media,
     loading,
   ]);
+
+  /* =========================
+     YOUTUBE URL
+  ========================= */
 
   const youtubeUrl = useMemo(() => {
     const settingsRow = (
@@ -72,6 +85,29 @@ export default function DiscoverJourney() {
       : "";
   }, [media]);
 
+  /* =========================
+     BUTTON CONTENT
+  ========================= */
+
+  const buttonContent = (
+    <>
+      <span className="discover-journey-youtube-icon">
+        <FaYoutube
+          aria-hidden="true"
+        />
+      </span>
+
+      <span className="discover-journey-button-text">
+        Watch Our Journey
+      </span>
+
+      <FiArrowUpRight
+        className="discover-journey-button-arrow"
+        aria-hidden="true"
+      />
+    </>
+  );
+
   return (
     <section
       className="discover-journey"
@@ -80,32 +116,43 @@ export default function DiscoverJourney() {
       <div className="discover-journey-inner">
 
         {/* =========================
-            MOBILE HEADING
+            HEADING
         ========================= */}
 
-        <div className="journey-mobile-heading">
-          <span>
-            From Our Travels
-          </span>
+        <div className="discover-journey-heading">
+          <p className="discover-journey-eyebrow">
+            FROM OUR TRAVELS
+          </p>
 
-          <h2>
+          <div
+            className="discover-journey-divider"
+            aria-hidden="true"
+          >
+            <span />
+
+            <GiLotus />
+
+            <span />
+          </div>
+
+          <h2
+            id="discover-journey-title"
+            className="discover-journey-title"
+          >
             Discover Our Journey
           </h2>
         </div>
 
         {/* =========================
-            IMAGE
+            POSTER
         ========================= */}
 
-        <Link
-          to="/journey"
-          className="discover-journey-media"
-          aria-label="View the VV Sarees journey"
-        >
+        <div className="discover-journey-poster-wrap">
           {journeyImage ? (
             <img
               src={journeyImage}
               alt="VV Sarees journey across India"
+              className="discover-journey-poster"
               loading="lazy"
               decoding="async"
               fetchPriority="low"
@@ -113,84 +160,35 @@ export default function DiscoverJourney() {
             />
           ) : (
             <div
+              className="discover-journey-poster-placeholder"
               aria-hidden="true"
-              style={{
-                width: "100%",
-                height: "100%",
-                minHeight: "260px",
-                background: "#ead7be",
-              }}
             />
           )}
-        </Link>
+        </div>
 
         {/* =========================
-            CONTENT
+            YOUTUBE BUTTON
         ========================= */}
 
-        <div className="discover-journey-content">
-          <span className="discover-journey-eyebrow">
-            From Our Travels
-          </span>
-
-          <h2 id="discover-journey-title">
-            Discover Our
-            <br />
-            Journey
-          </h2>
-
-          <p className="journey-desktop-description">
-            Every journey begins with a passion for
-            discovering something extraordinary.
-            Across India, we meet skilled weavers,
-            explore traditional weaving villages,
-            and carefully handpick premium sarees
-            that celebrate heritage and
-            craftsmanship. Join us behind the
-            scenes and experience the stories,
-            dedication, and timeless artistry
-            that make every VV Sarees collection
-            truly special.
-          </p>
-
-          <p className="journey-mobile-description">
-            Travel with us across India as we
-            meet skilled weavers, discover
-            timeless traditions and handpick
-            sarees filled with heritage and
-            craftsmanship.
-          </p>
-
-          {youtubeUrl ? (
-            <a
-              href={youtubeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="discover-journey-button"
-            >
-              <span>
-                Watch Our Journey
-              </span>
-
-              <FiArrowUpRight
-                aria-hidden="true"
-              />
-            </a>
-          ) : (
-            <Link
-              to="/journey"
-              className="discover-journey-button"
-            >
-              <span>
-                Watch Our Journey
-              </span>
-
-              <FiArrowUpRight
-                aria-hidden="true"
-              />
-            </Link>
-          )}
-        </div>
+        {youtubeUrl ? (
+          <a
+            href={youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="discover-journey-button"
+            aria-label="Watch VV Sarees journey on YouTube"
+          >
+            {buttonContent}
+          </a>
+        ) : (
+          <Link
+            to="/journey"
+            className="discover-journey-button"
+            aria-label="Watch VV Sarees journey"
+          >
+            {buttonContent}
+          </Link>
+        )}
       </div>
     </section>
   );

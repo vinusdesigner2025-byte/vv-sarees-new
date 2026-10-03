@@ -1,490 +1,652 @@
+/* =========================================
+   DISCOVER JOURNEY SECTION
+========================================= */
+
 .discover-journey {
   position: relative;
   width: 100%;
-  padding: 68px 0;
   overflow: hidden;
+
+  padding: 72px 32px 82px;
 
   background:
     radial-gradient(
-      circle at 8% 20%,
-      rgba(198, 130, 48, 0.08),
-      transparent 28%
+      circle at 50% 40%,
+      rgba(255, 255, 255, 0.6),
+      transparent 55%
     ),
-    radial-gradient(
-      circle at 94% 80%,
-      rgba(95, 42, 10, 0.06),
-      transparent 30%
-    ),
-    #f8efe3;
+    #f8efe4;
 }
 
 .discover-journey-inner {
-  width: min(1440px, calc(100% - 64px));
-  margin: 0 auto;
-
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1.65fr)
-    minmax(360px, 0.95fr);
-
-  align-items: center;
-  gap: clamp(60px, 7vw, 120px);
-}
-
-/* =========================
-   MEDIA
-========================= */
-
-.discover-journey-media {
   position: relative;
 
-  display: block;
-  width: 100%;
-  aspect-ratio: 1.86 / 1;
+  width: min(100%, 1420px);
 
-  overflow: hidden;
+  margin: 0 auto;
 
-  border: 1px solid rgba(137, 78, 24, 0.18);
-  border-radius: 24px;
-
-  background: #2b1205;
-
-  box-shadow:
-    0 30px 65px rgba(60, 27, 7, 0.15),
-    0 8px 20px rgba(60, 27, 7, 0.08);
-
-  text-decoration: none;
-
-  transition:
-    transform 0.45s ease,
-    box-shadow 0.45s ease;
-}
-
-.discover-journey-media img {
-  display: block;
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-  object-position: center;
-
-  transition:
-    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
-    filter 0.5s ease;
-}
-
-.discover-journey-overlay {
-  position: absolute;
-  inset: 0;
-
-  background:
-    linear-gradient(
-      120deg,
-      rgba(30, 12, 2, 0.05),
-      transparent 45%,
-      rgba(30, 12, 2, 0.12)
-    );
-
-  pointer-events: none;
-}
-
-.discover-journey-play {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-
-  width: 76px;
-  height: 76px;
-
-  display: grid;
-  place-items: center;
-
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  border-radius: 50%;
-
-  background: rgba(35, 15, 4, 0.32);
-  color: #fff;
-
-  font-size: 31px;
-
-  box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.25),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-
-  backdrop-filter: blur(9px);
-  -webkit-backdrop-filter: blur(9px);
-
-  transform: translate(-50%, -50%);
-
-  transition:
-    transform 0.4s ease,
-    background 0.4s ease;
-}
-
-.discover-journey-play svg {
-  margin-left: 4px;
-  fill: currentColor;
-}
-
-.journey-mobile-caption {
-  display: none;
-}
-
-.discover-journey-media:hover {
-  transform: translateY(-7px);
-
-  box-shadow:
-    0 40px 80px rgba(60, 27, 7, 0.2),
-    0 10px 24px rgba(60, 27, 7, 0.1);
-}
-
-.discover-journey-media:hover img {
-  transform: scale(1.025);
-  filter: saturate(1.04);
-}
-
-.discover-journey-media:hover
-  .discover-journey-play {
-  background: rgba(103, 45, 8, 0.75);
-
-  transform:
-    translate(-50%, -50%)
-    scale(1.08);
-}
-
-/* =========================
-   CONTENT
-========================= */
-
-.discover-journey-content {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* =========================================
+   HEADING
+========================================= */
+
+.discover-journey-heading {
+  width: 100%;
+
+  margin-bottom: 38px;
 
   text-align: center;
 }
 
 .discover-journey-eyebrow {
-  color: #b76c19;
+  margin: 0;
 
-  font-size: 11px;
+  color: #a65317;
+
+  font-size: 13px;
   font-weight: 800;
-  line-height: 1;
-  letter-spacing: 4px;
+
+  line-height: 1.2;
+
+  letter-spacing: 7px;
+
   text-transform: uppercase;
 }
 
-.discover-journey-content h2 {
-  margin: 22px 0;
+/* =========================================
+   DIVIDER
+========================================= */
 
-  color: #542509;
+.discover-journey-divider {
+  display: flex;
 
-  font-family:
-    "Cormorant Garamond",
-    Georgia,
-    serif;
-
-  font-size: clamp(58px, 5vw, 82px);
-  font-weight: 600;
-  line-height: 0.88;
-  letter-spacing: -1.5px;
-}
-
-.discover-journey-content p {
-  max-width: 570px;
-  margin: 0;
-
-  color: #a35316;
-
-  font-family:
-    "Cormorant Garamond",
-    Georgia,
-    serif;
-
-  font-size: clamp(21px, 1.6vw, 27px);
-  font-weight: 500;
-  line-height: 1.08;
-}
-
-.journey-mobile-description {
-  display: none;
-}
-
-.discover-journey-button {
-  min-width: 208px;
-  min-height: 58px;
-  margin-top: 34px;
-  padding: 0 28px;
-
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 22px;
 
-  border: 1px solid #713003;
+  gap: 16px;
+
+  margin: 16px auto 12px;
+
+  color: #c7792a;
+}
+
+.discover-journey-divider span {
+  display: block;
+
+  width: 92px;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #c7792a
+    );
+}
+
+.discover-journey-divider span:last-child {
+  background:
+    linear-gradient(
+      90deg,
+      #c7792a,
+      transparent
+    );
+}
+
+.discover-journey-divider svg {
+  flex: 0 0 auto;
+
+  font-size: 27px;
+}
+
+/* =========================================
+   TITLE
+========================================= */
+
+.discover-journey-title {
+  margin: 0;
+
+  color: #542109;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    clamp(
+      58px,
+      6vw,
+      96px
+    );
+
+  font-weight: 600;
+
+  line-height: 0.98;
+
+  letter-spacing: -2.4px;
+}
+
+/* =========================================
+   POSTER
+========================================= */
+
+.discover-journey-poster-wrap {
+  width: min(
+    100%,
+    1240px
+  );
+
+  margin: 0 auto;
+
+  overflow: hidden;
+
+  border-radius: 28px;
+
+  background: #281306;
+
+  box-shadow:
+    0 20px 50px
+      rgba(
+        80,
+        38,
+        7,
+        0.13
+      );
+}
+
+.discover-journey-poster {
+  display: block;
+
+  width: 100%;
+  height: auto;
+
+  object-fit: cover;
+
+  border-radius: inherit;
+}
+
+.discover-journey-poster-placeholder {
+  width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3b1a08,
+      #6f3514
+    );
+}
+
+/* =========================================
+   WATCH BUTTON
+========================================= */
+
+.discover-journey-button {
+  width: min(
+    100%,
+    520px
+  );
+
+  min-height: 88px;
+
+  margin-top: 38px;
+
+  padding: 0 34px;
+
+  display: grid;
+
+  grid-template-columns:
+    52px
+    1fr
+    30px;
+
+  align-items: center;
+
+  gap: 18px;
+
+  border:
+    1px
+    solid
+    rgba(
+      226,
+      156,
+      66,
+      0.7
+    );
+
   border-radius: 999px;
 
-  background: #793300;
-  color: #fff;
+  background:
+    linear-gradient(
+      135deg,
+      #9a490e 0%,
+      #743407 55%,
+      #582405 100%
+    );
 
-  font-size: 14px;
-  font-weight: 750;
+  color: #ffffff;
 
   text-decoration: none;
 
   box-shadow:
-    0 18px 34px rgba(103, 43, 3, 0.17);
+    0 16px 34px
+      rgba(
+        94,
+        41,
+        7,
+        0.22
+      ),
+    inset 0 1px 0
+      rgba(
+        255,
+        255,
+        255,
+        0.12
+      );
 
   transition:
-    transform 0.35s ease,
-    background 0.35s ease,
-    box-shadow 0.35s ease;
-}
-
-.discover-journey-button svg {
-  font-size: 18px;
-  transition: transform 0.35s ease;
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .discover-journey-button:hover {
-  background: #5f2700;
   transform: translateY(-3px);
 
   box-shadow:
-    0 23px 42px rgba(103, 43, 3, 0.23);
+    0 20px 42px
+      rgba(
+        94,
+        41,
+        7,
+        0.28
+      );
 }
 
-.discover-journey-button:hover svg {
-  transform: translate(3px, -3px);
+/* =========================================
+   YOUTUBE ICON
+========================================= */
+
+.discover-journey-youtube-icon {
+  width: 52px;
+  height: 44px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #fff3d8;
+
+  color: #c92117;
 }
 
-/* =========================
-   MOBILE HEADING
-========================= */
+.discover-journey-youtube-icon svg {
+  display: block;
 
-.journey-mobile-heading {
-  display: none;
+  font-size: 29px;
 }
 
-/* =========================
+/* =========================================
+   BUTTON TEXT
+========================================= */
+
+.discover-journey-button-text {
+  display: block;
+
+  text-align: center;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 28px;
+
+  font-weight: 700;
+
+  line-height: 1;
+}
+
+/* =========================================
+   BUTTON ARROW
+========================================= */
+
+.discover-journey-button-arrow {
+  justify-self: end;
+
+  font-size: 26px;
+}
+
+/* =========================================
    TABLET
-========================= */
+========================================= */
 
-@media (max-width: 1050px) {
+@media (max-width: 1024px) {
   .discover-journey {
-    padding: 56px 0;
+    padding:
+      50px
+      24px
+      64px;
   }
 
-  .discover-journey-inner {
-    width: min(100% - 40px, 960px);
-    grid-template-columns:
-      minmax(0, 1.35fr)
-      minmax(310px, 0.85fr);
-    gap: 42px;
+  .discover-journey-heading {
+    margin-bottom: 28px;
   }
 
-  .discover-journey-content h2 {
-    font-size: clamp(50px, 6vw, 66px);
+  .discover-journey-title {
+    font-size:
+      clamp(
+        48px,
+        7vw,
+        72px
+      );
   }
 
-  .discover-journey-content p {
-    font-size: 20px;
-  }
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 700px) {
-  .discover-journey {
-    padding: 40px 0 32px;
-  }
-
-  .discover-journey-inner {
-    width: calc(100% - 28px);
-    max-width: 520px;
-    margin: 0 auto;
-
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-  }
-
-  .journey-mobile-heading {
-    order: 1;
-    display: block;
-    width: 100%;
-    margin: 0 0 22px;
-    text-align: center;
-  }
-
-  .journey-mobile-heading span {
-    display: block;
-    margin-bottom: 10px;
-    color: #a55a19;
-    font-size: 10px;
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: 3.5px;
-    text-transform: uppercase;
-  }
-
-  .journey-mobile-heading h2 {
-    margin: 0;
-    color: #58250d;
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-size: clamp(29px, 7.2vw, 36px);
-    font-weight: 600;
-    line-height: 1.05;
-    letter-spacing: -0.5px;
-  }
-
-  .discover-journey-media {
-    order: 2;
-    width: 100%;
-    height: auto;
-    aspect-ratio: auto;
-    border: 0;
-    border-radius: 22px;
-    overflow: hidden;
-    box-sizing: border-box;
-    box-shadow:
-      0 18px 38px rgba(62, 27, 7, 0.15),
-      0 6px 14px rgba(62, 27, 7, 0.07);
-  }
-
-  .discover-journey-media img {
-    display: block;
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-    object-position: center;
-  }
-
-  .discover-journey-overlay,
-  .discover-journey-play,
-  .journey-mobile-caption {
-    display: none !important;
-  }
-
-  .discover-journey-media:hover {
-    transform: none;
-    box-shadow:
-      0 18px 38px rgba(62, 27, 7, 0.15),
-      0 6px 14px rgba(62, 27, 7, 0.07);
-  }
-
-  .discover-journey-media:hover img {
-    transform: none;
-    filter: none;
-  }
-
-  .discover-journey-content {
-    order: 3;
-    width: 100%;
-    padding: 32px 0 0;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 24px;
-    text-align: left;
-    box-sizing: border-box;
-  }
-
-  .discover-journey-eyebrow,
-  .discover-journey-content > h2,
-  .journey-desktop-description {
-    display: none;
-  }
-
-  .journey-mobile-description {
-    display: block;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    color: #7e4319;
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 1.32;
+  .discover-journey-poster-wrap {
+    border-radius: 24px;
   }
 
   .discover-journey-button {
-    width: 100%;
-    min-width: 0;
-    min-height: 62px;
-    margin: 0;
-    padding: 0 22px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 18px;
-    box-sizing: border-box;
-    font-size: 14px;
-    box-shadow:
-      0 14px 28px rgba(103, 43, 3, 0.16);
+    width: min(
+      100%,
+      470px
+    );
+
+    min-height: 76px;
+
+    margin-top: 28px;
+
+    padding:
+      0
+      28px;
+
+    grid-template-columns:
+      48px
+      1fr
+      26px;
+
+    gap: 14px;
   }
 
-  .discover-journey-button:hover {
-    transform: none;
+  .discover-journey-youtube-icon {
+    width: 48px;
+    height: 40px;
+  }
+
+  .discover-journey-youtube-icon svg {
+    font-size: 26px;
+  }
+
+  .discover-journey-button-text {
+    font-size: 25px;
+  }
+
+  .discover-journey-button-arrow {
+    font-size: 23px;
   }
 }
 
-/* =========================
-   SMALL MOBILE
-========================= */
+/* =========================================
+   MOBILE
+========================================= */
 
-@media (max-width: 380px) {
+@media (max-width: 768px) {
   .discover-journey {
-    padding: 34px 0 28px;
+    padding:
+      18px
+      14px
+      46px;
   }
 
-  .discover-journey-inner {
-    width: calc(100% - 22px);
-  }
+  /* HEADING */
 
-  .journey-mobile-heading {
+  .discover-journey-heading {
     margin-bottom: 20px;
   }
 
-  .journey-mobile-heading h2 {
-    font-size: 27px;
+  .discover-journey-eyebrow {
+    font-size: 10px;
+
+    letter-spacing: 4px;
   }
 
-  .discover-journey-media {
-    border-radius: 18px;
+  .discover-journey-divider {
+    gap: 10px;
+
+    margin:
+      11px
+      auto
+      9px;
   }
 
-  .discover-journey-content {
-    padding-top: 28px;
-    gap: 20px;
+  .discover-journey-divider span {
+    width: 54px;
   }
 
-  .journey-mobile-description {
-    font-size: 19px;
-    line-height: 1.3;
+  .discover-journey-divider svg {
+    font-size: 22px;
   }
+
+  .discover-journey-title {
+    max-width: 100%;
+
+    font-size:
+      clamp(
+        39px,
+        10.8vw,
+        56px
+      );
+
+    line-height: 0.95;
+
+    letter-spacing: -1.5px;
+  }
+
+  /* POSTER */
+
+  .discover-journey-poster-wrap {
+    width: 100%;
+
+    border-radius: 20px;
+
+    box-shadow:
+      0 14px 30px
+        rgba(
+          80,
+          38,
+          7,
+          0.13
+        );
+  }
+
+  /* BUTTON */
 
   .discover-journey-button {
+    width: 88%;
+
+    max-width: 390px;
+
     min-height: 58px;
-    padding: 0 20px;
-    font-size: 13px;
+
+    margin-top: 20px;
+
+    padding:
+      0
+      18px;
+
+    grid-template-columns:
+      38px
+      1fr
+      20px;
+
+    gap: 10px;
+
+    border-radius: 999px;
+  }
+
+  .discover-journey-youtube-icon {
+    width: 38px;
+    height: 34px;
+
+    border-radius: 9px;
+  }
+
+  .discover-journey-youtube-icon svg {
+    font-size: 21px;
+  }
+
+  .discover-journey-button-text {
+    font-size: 20px;
+
+    line-height: 1;
+  }
+
+  .discover-journey-button-arrow {
+    font-size: 19px;
   }
 }
 
-/* =========================
-   REDUCED MOTION
-========================= */
+/* =========================================
+   SMALL MOBILE
+========================================= */
 
-@media (prefers-reduced-motion: reduce) {
-  .discover-journey-media,
-  .discover-journey-media img,
-  .discover-journey-play,
-  .discover-journey-button,
- .discover-journey-button svg {
-    transition: none;
+@media (max-width: 480px) {
+  .discover-journey {
+    padding:
+      14px
+      12px
+      40px;
+  }
+
+  .discover-journey-heading {
+    margin-bottom: 18px;
+  }
+
+  .discover-journey-eyebrow {
+    font-size: 9px;
+
+    letter-spacing: 3.2px;
+  }
+
+  .discover-journey-divider {
+    margin:
+      9px
+      auto
+      8px;
+  }
+
+  .discover-journey-divider span {
+    width: 45px;
+  }
+
+  .discover-journey-divider svg {
+    font-size: 20px;
+  }
+
+  .discover-journey-title {
+    font-size: 42px;
+
+    line-height: 0.93;
+  }
+
+  .discover-journey-poster-wrap {
+    border-radius: 18px;
+  }
+
+  /* SMALLER BUTTON */
+
+  .discover-journey-button {
+    width: 86%;
+
+    max-width: 360px;
+
+    min-height: 56px;
+
+    margin-top: 18px;
+
+    padding:
+      0
+      16px;
+
+    grid-template-columns:
+      36px
+      1fr
+      19px;
+
+    gap: 9px;
+  }
+
+  .discover-journey-youtube-icon {
+    width: 36px;
+    height: 32px;
+
+    border-radius: 8px;
+  }
+
+  .discover-journey-youtube-icon svg {
+    font-size: 20px;
+  }
+
+  .discover-journey-button-text {
+    font-size: 19px;
+  }
+
+  .discover-journey-button-arrow {
+    font-size: 18px;
+  }
+}
+
+/* =========================================
+   VERY SMALL MOBILE
+========================================= */
+
+@media (max-width: 360px) {
+  .discover-journey {
+    padding:
+      12px
+      10px
+      36px;
+  }
+
+  .discover-journey-heading {
+    margin-bottom: 16px;
+  }
+
+  .discover-journey-title {
+    font-size: 38px;
+  }
+
+  .discover-journey-button {
+    width: 90%;
+
+    min-height: 54px;
+
+    padding:
+      0
+      14px;
+
+    grid-template-columns:
+      34px
+      1fr
+      18px;
+  }
+
+  .discover-journey-youtube-icon {
+    width: 34px;
+    height: 30px;
+  }
+
+  .discover-journey-button-text {
+    font-size: 18px;
   }
 }
