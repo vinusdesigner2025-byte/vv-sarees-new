@@ -8,6 +8,7 @@ import {
   FiCheck,
   FiRefreshCw,
   FiSearch,
+  FiSend,
   FiTrash2,
   FiX,
 } from "react-icons/fi";
@@ -17,6 +18,10 @@ import {
 } from "../../lib/adminSupabase";
 
 import "../css/WholesaleApplications.css";
+
+/* =========================================
+   TYPES
+========================================= */
 
 type ApprovalStatus =
   | "pending"
@@ -73,9 +78,32 @@ type WholesaleApplication = {
   approved_at:
     string | null;
 
+  whatsapp_approval_sent_at:
+    string | null;
+
+  whatsapp_approval_message_id:
+    string | null;
+
+  whatsapp_approval_last_error:
+    string | null;
+
   created_at: string;
 
   updated_at: string;
+};
+
+type BulkWhatsAppResult = {
+  id: string;
+  name: string;
+  success: boolean;
+  error: string | null;
+};
+
+type BulkProgress = {
+  sent: number;
+  failed: number;
+  remaining: number;
+  batches: number;
 };
 
 type AdminFunctionResponse = {
@@ -87,6 +115,27 @@ type AdminFunctionResponse = {
 
   emailSent?: boolean;
 
+  whatsappSent?: boolean;
+
+  whatsappMessageId?:
+    string | null;
+
+  whatsappError?:
+    string | null;
+
+  completed?: boolean;
+
+  attempted?: number;
+
+  sent?: number;
+
+  failed?: number;
+
+  remaining?: number;
+
+  results?:
+    BulkWhatsAppResult[];
+
   applications?:
     WholesaleApplication[];
 
@@ -95,6 +144,10 @@ type AdminFunctionResponse = {
 
   applicationId?: string;
 };
+
+/* =========================================
+   HELPERS
+========================================= */
 
 const getStatusLabel = (
   status: ApprovalStatus
@@ -130,6 +183,10 @@ const formatDate = (
     new Date(value)
   );
 };
+
+/* =========================================
+   COMPONENT
+========================================= */
 
 export default function WholesaleApplications() {
   const [
@@ -185,6 +242,25 @@ export default function WholesaleApplications() {
       null
     >(null);
 
+  const [
+    isBulkSending,
+    setIsBulkSending,
+  ] =
+    useState(false);
+
+  const [
+    bulkProgress,
+    setBulkProgress,
+  ] =
+    useState<
+      BulkProgress |
+      null
+    >(null);
+
+  /* =========================================
+     INVOKE EDGE FUNCTION
+  ========================================= */
+
   const invokeAdminFunction =
     async (
       body:
@@ -231,18 +307,29 @@ export default function WholesaleApplications() {
             }
           );
 
-      if (error) {
+      if (
+        error
+      ) {
         throw error;
       }
 
-      return data as AdminFunctionResponse;
+      return data as
+        AdminFunctionResponse;
     };
+
+  /* =========================================
+     LOAD APPLICATIONS
+  ========================================= */
 
   const fetchApplications =
     async () => {
-      setIsLoading(true);
+      setIsLoading(
+        true
+      );
 
-      setErrorMessage("");
+      setErrorMessage(
+        ""
+      );
 
       try {
         const result =
@@ -267,7 +354,9 @@ export default function WholesaleApplications() {
             .applications ??
             []
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         console.error(
           "Wholesale applications load error:",
           error
@@ -289,6 +378,10 @@ export default function WholesaleApplications() {
   useEffect(() => {
     void fetchApplications();
   }, []);
+
+  /* =========================================
+     FILTER
+  ========================================= */
 
   const filteredApplications =
     useMemo(() => {
@@ -333,6 +426,15 @@ export default function WholesaleApplications() {
               .toLowerCase()
               .includes(
                 normalized
+              ) ||
+            (
+              application
+                .whatsapp_number ||
+              ""
+            )
+              .toLowerCase()
+              .includes(
+                normalized
               );
 
           return (
@@ -347,6 +449,10 @@ export default function WholesaleApplications() {
       statusFilter,
     ]);
 
+  /* =========================================
+     APPROVE
+  ========================================= */
+
   const handleApprove =
     async (
       application:
@@ -357,7 +463,9 @@ export default function WholesaleApplications() {
           `Approve wholesale access for ${application.company_name}?`
         );
 
-      if (!confirmed) {
+      if (
+        !confirmed
+      ) {
         return;
       }
 
@@ -423,14 +531,43 @@ export default function WholesaleApplications() {
               : current
         );
 
-        window.alert(
+        if (
           updated.access_code
-            ? result.emailSent
-              ? `Approved successfully.\nAccess Code: ${updated.access_code}\nCode sent to ${updated.email}`
-              : `Approved successfully.\nAccess Code: ${updated.access_code}\nEmail could not be sent.`
-            : "Approved successfully."
-        );
-      } catch (error) {
+        ) {
+          if (
+            result.whatsappSent &&
+            result.emailSent
+          ) {
+            window.alert(
+              `Approved successfully.\n\nAccess Code: ${updated.access_code}\n\nWhatsApp message sent successfully.\nEmail sent successfully.`
+            );
+          } else if (
+            result.whatsappSent
+          ) {
+            window.alert(
+              `Approved successfully.\n\nAccess Code: ${updated.access_code}\n\nWhatsApp message sent successfully.`
+            );
+          } else if (
+            result.emailSent
+          ) {
+            window.alert(
+              `Approved successfully.\n\nAccess Code: ${updated.access_code}\n\nEmail sent successfully.\nWhatsApp message could not be sent.`
+            );
+          } else {
+            window.alert(
+              `Approved successfully.\n\nAccess Code: ${updated.access_code}\n\nWhatsApp and email could not be sent.`
+            );
+          }
+        } else {
+          window.alert(
+            "Approved successfully."
+          );
+        }
+
+        await fetchApplications();
+      } catch (
+        error
+      ) {
         console.error(
           "Wholesale approve error:",
           error
@@ -448,6 +585,10 @@ export default function WholesaleApplications() {
         );
       }
     };
+
+  /* =========================================
+     REJECT
+  ========================================= */
 
   const handleReject =
     async (
@@ -539,7 +680,9 @@ export default function WholesaleApplications() {
         window.alert(
           "Wholesale request rejected."
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         console.error(
           "Wholesale reject error:",
           error
@@ -558,6 +701,10 @@ export default function WholesaleApplications() {
       }
     };
 
+  /* =========================================
+     REMOVE
+  ========================================= */
+
   const handleRemove =
     async (
       application:
@@ -568,7 +715,9 @@ export default function WholesaleApplications() {
           `Remove ${application.company_name} from wholesale access?\n\nThey will need to submit the wholesale registration form again.`
         );
 
-      if (!confirmed) {
+      if (
+        !confirmed
+      ) {
         return;
       }
 
@@ -617,7 +766,9 @@ export default function WholesaleApplications() {
         window.alert(
           "Wholesale user removed successfully."
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         console.error(
           "Wholesale remove error:",
           error
@@ -635,6 +786,10 @@ export default function WholesaleApplications() {
         );
       }
     };
+
+  /* =========================================
+     COUNTS
+  ========================================= */
 
   const pendingCount =
     applications.filter(
@@ -666,6 +821,232 @@ export default function WholesaleApplications() {
         "rejected"
     ).length;
 
+  const whatsappSentCount =
+    applications.filter(
+      (
+        item
+      ) =>
+        item
+          .approval_status ===
+          "approved" &&
+        Boolean(
+          item
+            .whatsapp_approval_sent_at
+        )
+    ).length;
+
+  const whatsappFailedCount =
+    applications.filter(
+      (
+        item
+      ) =>
+        item
+          .approval_status ===
+          "approved" &&
+        Boolean(
+          item
+            .whatsapp_approval_last_error
+        ) &&
+        !item
+          .whatsapp_approval_sent_at
+    ).length;
+
+  const whatsappWaitingCount =
+    applications.filter(
+      (
+        item
+      ) =>
+        item
+          .approval_status ===
+          "approved" &&
+        Boolean(
+          item
+            .access_code
+        ) &&
+        !item
+          .whatsapp_approval_sent_at &&
+        !item
+          .whatsapp_approval_last_error
+    ).length;
+
+  /* =========================================
+     BULK WHATSAPP
+  ========================================= */
+
+  const handleBulkWhatsApp =
+    async () => {
+      if (
+        whatsappWaitingCount ===
+        0
+      ) {
+        window.alert(
+          "There are no approved customers waiting for a WhatsApp approval message."
+        );
+
+        return;
+      }
+
+      const confirmed =
+        window.confirm(
+          `Send WhatsApp access-code messages to ${whatsappWaitingCount} approved customer${whatsappWaitingCount === 1 ? "" : "s"}?\n\nMessages will be sent in batches of 20. Customers already marked as sent will be skipped.`
+        );
+
+      if (
+        !confirmed
+      ) {
+        return;
+      }
+
+      setIsBulkSending(
+        true
+      );
+
+      setBulkProgress({
+        sent: 0,
+        failed: 0,
+        remaining:
+          whatsappWaitingCount,
+        batches: 0,
+      });
+
+      let totalSent =
+        0;
+
+      let totalFailed =
+        0;
+
+      let remaining =
+        whatsappWaitingCount;
+
+      let batches =
+        0;
+
+      try {
+        /*
+         * Maximum 20 batches.
+         *
+         * 20 customers per batch means
+         * maximum 400 customers per click.
+         */
+        for (
+          let batchNumber = 0;
+          batchNumber < 20;
+          batchNumber += 1
+        ) {
+          const result =
+            await invokeAdminFunction({
+              action:
+                "bulk-whatsapp",
+
+              batchSize:
+                20,
+            });
+
+          if (
+            !result
+              ?.success
+          ) {
+            throw new Error(
+              result
+                ?.error ||
+                "Unable to send the WhatsApp batch."
+            );
+          }
+
+          const sentNow =
+            Number(
+              result.sent ??
+              0
+            );
+
+          const failedNow =
+            Number(
+              result.failed ??
+              0
+            );
+
+          totalSent +=
+            sentNow;
+
+          totalFailed +=
+            failedNow;
+
+          remaining =
+            Number(
+              result.remaining ??
+              0
+            );
+
+          batches +=
+            1;
+
+          setBulkProgress({
+            sent:
+              totalSent,
+
+            failed:
+              totalFailed,
+
+            remaining,
+
+            batches,
+          });
+
+          if (
+            result.completed ||
+            remaining === 0
+          ) {
+            break;
+          }
+
+          /*
+           * Tiny pause between batches.
+           */
+          await new Promise<void>(
+            (
+              resolve
+            ) => {
+              window.setTimeout(
+                () =>
+                  resolve(),
+                700
+              );
+            }
+          );
+        }
+
+        await fetchApplications();
+
+        window.alert(
+          `WhatsApp bulk send completed.\n\nSent: ${totalSent}\nFailed: ${totalFailed}\nRemaining: ${remaining}`
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Bulk WhatsApp send error:",
+          error
+        );
+
+        await fetchApplications();
+
+        window.alert(
+          error instanceof
+          Error
+            ? `Bulk WhatsApp sending stopped.\n\n${error.message}\n\nSent so far: ${totalSent}\nFailed: ${totalFailed}\nRemaining: ${remaining}`
+            : "Unable to complete the WhatsApp bulk send."
+        );
+      } finally {
+        setIsBulkSending(
+          false
+        );
+      }
+    };
+
+  /* =========================================
+     TABLE ACTIONS
+  ========================================= */
+
   const renderActions = (
     application:
       WholesaleApplication
@@ -685,7 +1066,8 @@ export default function WholesaleApplications() {
             type="button"
             className="wholesale-approve-btn"
             disabled={
-              isBusy
+              isBusy ||
+              isBulkSending
             }
             onClick={() =>
               void handleApprove(
@@ -695,14 +1077,17 @@ export default function WholesaleApplications() {
           >
             <FiCheck />
 
-            Approve
+            {isBusy
+              ? "Approving..."
+              : "Approve"}
           </button>
 
           <button
             type="button"
             className="wholesale-reject-btn"
             disabled={
-              isBusy
+              isBusy ||
+              isBulkSending
             }
             onClick={() =>
               void handleReject(
@@ -724,7 +1109,8 @@ export default function WholesaleApplications() {
           type="button"
           className="wholesale-remove-btn"
           disabled={
-            isBusy
+            isBusy ||
+            isBulkSending
           }
           onClick={() =>
             void handleRemove(
@@ -742,8 +1128,16 @@ export default function WholesaleApplications() {
     );
   };
 
+  /* =========================================
+     UI
+  ========================================= */
+
   return (
     <div className="wholesale-admin-page">
+      {/* =====================================
+          HEADER
+      ===================================== */}
+
       <div className="wholesale-admin-header">
         <div>
           <span className="wholesale-admin-eyebrow">
@@ -760,21 +1154,96 @@ export default function WholesaleApplications() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="wholesale-admin-refresh"
-          onClick={() =>
-            void fetchApplications()
-          }
-          disabled={
-            isLoading
-          }
-        >
-          <FiRefreshCw />
+        <div
+          style={{
+            display:
+              "flex",
 
-          Refresh
-        </button>
+            alignItems:
+              "center",
+
+            justifyContent:
+              "flex-end",
+
+            gap:
+              "12px",
+
+            flexWrap:
+              "wrap",
+          }}
+        >
+          {/* BULK WHATSAPP BUTTON */}
+
+          <button
+            type="button"
+            className="wholesale-admin-refresh"
+            onClick={() =>
+              void handleBulkWhatsApp()
+            }
+            disabled={
+              isBulkSending ||
+              isLoading ||
+              whatsappWaitingCount ===
+                0
+            }
+            style={{
+              background:
+                isBulkSending ||
+                whatsappWaitingCount ===
+                  0
+                  ? "#f3e7dc"
+                  : "#6f3514",
+
+              color:
+                isBulkSending ||
+                whatsappWaitingCount ===
+                  0
+                  ? "#9c806d"
+                  : "#ffffff",
+
+              borderColor:
+                "#d8b99f",
+
+              cursor:
+                isBulkSending ||
+                whatsappWaitingCount ===
+                  0
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            <FiSend />
+
+            {isBulkSending
+              ? "Sending WhatsApp..."
+              : `Send WhatsApp (${whatsappWaitingCount})`}
+          </button>
+
+          {/* REFRESH */}
+
+          <button
+            type="button"
+            className="wholesale-admin-refresh"
+            onClick={() =>
+              void fetchApplications()
+            }
+            disabled={
+              isLoading ||
+              isBulkSending
+            }
+          >
+            <FiRefreshCw />
+
+            {isLoading
+              ? "Refreshing..."
+              : "Refresh"}
+          </button>
+        </div>
       </div>
+
+      {/* =====================================
+          SUMMARY CARDS
+      ===================================== */}
 
       <div className="wholesale-admin-summary">
         <button
@@ -854,6 +1323,118 @@ export default function WholesaleApplications() {
         </button>
       </div>
 
+      {/* =====================================
+          WHATSAPP PROGRESS
+      ===================================== */}
+
+      {(bulkProgress ||
+        whatsappSentCount >
+          0 ||
+        whatsappFailedCount >
+          0) && (
+        <div
+          style={{
+            margin:
+              "0 0 22px",
+
+            padding:
+              "16px 18px",
+
+            display:
+              "flex",
+
+            alignItems:
+              "center",
+
+            justifyContent:
+              "space-between",
+
+            gap:
+              "16px",
+
+            flexWrap:
+              "wrap",
+
+            border:
+              "1px solid #ead8c8",
+
+            borderRadius:
+              "16px",
+
+            background:
+              "#fffaf5",
+
+            color:
+              "#653114",
+          }}
+        >
+          <div>
+            <strong
+              style={{
+                display:
+                  "block",
+
+                marginBottom:
+                  "5px",
+              }}
+            >
+              WhatsApp Approval Messages
+            </strong>
+
+            <span
+              style={{
+                fontSize:
+                  "13px",
+
+                color:
+                  "#8d6d58",
+              }}
+            >
+              Sent:{" "}
+              {bulkProgress
+                ? bulkProgress.sent
+                : whatsappSentCount}
+
+              {" · "}
+
+              Failed:{" "}
+              {bulkProgress
+                ? bulkProgress.failed
+                : whatsappFailedCount}
+
+              {" · "}
+
+              Waiting:{" "}
+              {bulkProgress
+                ? bulkProgress.remaining
+                : whatsappWaitingCount}
+
+              {bulkProgress
+                ? ` · Batches: ${bulkProgress.batches}`
+                : ""}
+            </span>
+          </div>
+
+          {isBulkSending && (
+            <span
+              style={{
+                fontSize:
+                  "13px",
+
+                fontWeight:
+                  700,
+              }}
+            >
+              Please keep this page open while messages are sending.
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* =====================================
+          SEARCH + FILTER
+      ===================================== */}
+
       <div className="wholesale-admin-toolbar">
         <div className="wholesale-admin-search">
           <FiSearch />
@@ -884,7 +1465,8 @@ export default function WholesaleApplications() {
             event
           ) =>
             setStatusFilter(
-              event.target
+              event
+                .target
                 .value as
                 | "all"
                 | ApprovalStatus
@@ -909,6 +1491,10 @@ export default function WholesaleApplications() {
         </select>
       </div>
 
+      {/* =====================================
+          CONTENT
+      ===================================== */}
+
       {isLoading ? (
         <div className="wholesale-admin-empty">
           Loading wholesale requests...
@@ -916,14 +1502,17 @@ export default function WholesaleApplications() {
       ) : errorMessage ? (
         <div className="wholesale-admin-empty">
           <strong>
-            Requests load aagala
+            Unable to load requests
           </strong>
 
           <p>
-            {errorMessage}
+            {
+              errorMessage
+            }
           </p>
         </div>
-      ) : filteredApplications.length ===
+      ) : filteredApplications
+          .length ===
         0 ? (
         <div className="wholesale-admin-empty">
           No wholesale requests found.
@@ -973,6 +1562,8 @@ export default function WholesaleApplications() {
                       application.id
                     }
                   >
+                    {/* BUSINESS */}
+
                     <td>
                       <button
                         type="button"
@@ -985,68 +1576,90 @@ export default function WholesaleApplications() {
                       >
                         <strong>
                           {
-                            application.company_name
+                            application
+                              .company_name
                           }
                         </strong>
 
                         <span>
                           {
-                            application.full_name
+                            application
+                              .full_name
                           }
                         </span>
                       </button>
                     </td>
 
+                    {/* CONTACT */}
+
                     <td>
                       <div className="wholesale-admin-contact">
                         <span>
                           {
-                            application.phone
+                            application
+                              .phone
                           }
                         </span>
 
                         <small>
                           {
-                            application.email
+                            application
+                              .email
                           }
                         </small>
                       </div>
                     </td>
 
+                    {/* GST */}
+
                     <td>
-                      {application.gst_registered
-                        ? application.gstin ||
+                      {application
+                        .gst_registered
+                        ? application
+                            .gstin ||
                           "Registered"
                         : "Not Registered"}
                     </td>
 
+                    {/* REQUESTED */}
+
                     <td>
                       {formatDate(
-                        application.created_at
+                        application
+                          .created_at
                       )}
                     </td>
+
+                    {/* STATUS */}
 
                     <td>
                       <span
                         className={`wholesale-status wholesale-status-${application.approval_status}`}
                       >
                         {getStatusLabel(
-                          application.approval_status
+                          application
+                            .approval_status
                         )}
                       </span>
                     </td>
 
+                    {/* ACCESS CODE */}
+
                     <td>
-                      {application.access_code ? (
+                      {application
+                        .access_code ? (
                         <code className="wholesale-access-code">
                           {
-                            application.access_code
+                            application
+                              .access_code
                           }
                         </code>
                       ) : (
                         "—"
                       )}
                     </td>
+
+                    {/* ACTIONS */}
 
                     <td>
                       {renderActions(
@@ -1060,6 +1673,10 @@ export default function WholesaleApplications() {
           </table>
         </div>
       )}
+
+      {/* =====================================
+          CUSTOMER DETAIL MODAL
+      ===================================== */}
 
       {selectedApplication && (
         <div
@@ -1078,6 +1695,8 @@ export default function WholesaleApplications() {
               event.stopPropagation()
             }
           >
+            {/* MODAL HEADER */}
+
             <div className="wholesale-admin-modal-header">
               <div>
                 <span>
@@ -1086,7 +1705,8 @@ export default function WholesaleApplications() {
 
                 <h2>
                   {
-                    selectedApplication.company_name
+                    selectedApplication
+                      .company_name
                   }
                 </h2>
               </div>
@@ -1104,6 +1724,8 @@ export default function WholesaleApplications() {
               </button>
             </div>
 
+            {/* DETAILS */}
+
             <div className="wholesale-admin-detail-grid">
               <div>
                 <span>
@@ -1112,7 +1734,8 @@ export default function WholesaleApplications() {
 
                 <strong>
                   {
-                    selectedApplication.full_name
+                    selectedApplication
+                      .full_name
                   }
                 </strong>
               </div>
@@ -1124,7 +1747,8 @@ export default function WholesaleApplications() {
 
                 <strong>
                   {
-                    selectedApplication.company_name
+                    selectedApplication
+                      .company_name
                   }
                 </strong>
               </div>
@@ -1135,7 +1759,8 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.business_type ||
+                  {selectedApplication
+                    .business_type ||
                     "—"}
                 </strong>
               </div>
@@ -1146,7 +1771,8 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.gst_registered
+                  {selectedApplication
+                    .gst_registered
                     ? "Yes"
                     : "No"}
                 </strong>
@@ -1158,8 +1784,10 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.gst_registered
-                    ? selectedApplication.gstin ||
+                  {selectedApplication
+                    .gst_registered
+                    ? selectedApplication
+                        .gstin ||
                       "—"
                     : "Not Registered"}
                 </strong>
@@ -1172,7 +1800,8 @@ export default function WholesaleApplications() {
 
                 <strong>
                   {
-                    selectedApplication.phone
+                    selectedApplication
+                      .phone
                   }
                 </strong>
               </div>
@@ -1183,8 +1812,10 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.whatsapp_number ||
-                    selectedApplication.phone}
+                  {selectedApplication
+                    .whatsapp_number ||
+                    selectedApplication
+                      .phone}
                 </strong>
               </div>
 
@@ -1195,7 +1826,8 @@ export default function WholesaleApplications() {
 
                 <strong>
                   {
-                    selectedApplication.email
+                    selectedApplication
+                      .email
                   }
                 </strong>
               </div>
@@ -1206,7 +1838,8 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.address ||
+                  {selectedApplication
+                    .address ||
                     "—"}
                 </strong>
               </div>
@@ -1217,7 +1850,8 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.city ||
+                  {selectedApplication
+                    .city ||
                     "—"}
                 </strong>
               </div>
@@ -1228,7 +1862,8 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.state ||
+                  {selectedApplication
+                    .state ||
                     "—"}
                 </strong>
               </div>
@@ -1239,7 +1874,8 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.pincode ||
+                  {selectedApplication
+                    .pincode ||
                     "—"}
                 </strong>
               </div>
@@ -1251,7 +1887,8 @@ export default function WholesaleApplications() {
 
                 <strong>
                   {getStatusLabel(
-                    selectedApplication.approval_status
+                    selectedApplication
+                      .approval_status
                   )}
                 </strong>
               </div>
@@ -1262,7 +1899,8 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.access_code ||
+                  {selectedApplication
+                    .access_code ||
                     "Not generated"}
                 </strong>
               </div>
@@ -1274,7 +1912,8 @@ export default function WholesaleApplications() {
 
                 <strong>
                   {formatDate(
-                    selectedApplication.created_at
+                    selectedApplication
+                      .created_at
                   )}
                 </strong>
               </div>
@@ -1285,15 +1924,98 @@ export default function WholesaleApplications() {
                 </span>
 
                 <strong>
-                  {selectedApplication.approved_at
+                  {selectedApplication
+                    .approved_at
                     ? formatDate(
-                        selectedApplication.approved_at
+                        selectedApplication
+                          .approved_at
                       )
                     : "—"}
                 </strong>
               </div>
 
-              {selectedApplication.rejection_reason && (
+              {/* WHATSAPP STATUS */}
+
+              <div>
+                <span>
+                  WhatsApp Status
+                </span>
+
+                <strong>
+                  {selectedApplication
+                    .whatsapp_approval_sent_at
+                    ? "Sent"
+                    : selectedApplication
+                        .whatsapp_approval_last_error
+                      ? "Failed"
+                      : selectedApplication
+                            .approval_status ===
+                          "approved"
+                        ? "Waiting"
+                        : "—"}
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  WhatsApp Sent On
+                </span>
+
+                <strong>
+                  {selectedApplication
+                    .whatsapp_approval_sent_at
+                    ? formatDate(
+                        selectedApplication
+                          .whatsapp_approval_sent_at
+                      )
+                    : "—"}
+                </strong>
+              </div>
+
+              {selectedApplication
+                .whatsapp_approval_message_id && (
+                <div className="wholesale-admin-detail-full">
+                  <span>
+                    WhatsApp Message ID
+                  </span>
+
+                  <strong
+                    style={{
+                      wordBreak:
+                        "break-all",
+                    }}
+                  >
+                    {
+                      selectedApplication
+                        .whatsapp_approval_message_id
+                    }
+                  </strong>
+                </div>
+              )}
+
+              {selectedApplication
+                .whatsapp_approval_last_error && (
+                <div className="wholesale-admin-detail-full">
+                  <span>
+                    WhatsApp Error
+                  </span>
+
+                  <strong
+                    style={{
+                      color:
+                        "#a33a28",
+                    }}
+                  >
+                    {
+                      selectedApplication
+                        .whatsapp_approval_last_error
+                    }
+                  </strong>
+                </div>
+              )}
+
+              {selectedApplication
+                .rejection_reason && (
                 <div className="wholesale-admin-detail-full">
                   <span>
                     Rejection Reason
@@ -1301,13 +2023,15 @@ export default function WholesaleApplications() {
 
                   <strong>
                     {
-                      selectedApplication.rejection_reason
+                      selectedApplication
+                        .rejection_reason
                     }
                   </strong>
                 </div>
               )}
 
-              {selectedApplication.admin_notes && (
+              {selectedApplication
+                .admin_notes && (
                 <div className="wholesale-admin-detail-full">
                   <span>
                     Admin Notes
@@ -1315,15 +2039,21 @@ export default function WholesaleApplications() {
 
                   <strong>
                     {
-                      selectedApplication.admin_notes
+                      selectedApplication
+                        .admin_notes
                     }
                   </strong>
                 </div>
               )}
             </div>
 
+            {/* =====================================
+                MODAL ACTIONS
+            ===================================== */}
+
             <div className="wholesale-admin-modal-actions">
-              {selectedApplication.approval_status ===
+              {selectedApplication
+                .approval_status ===
               "pending" ? (
                 <>
                   <button
@@ -1331,7 +2061,9 @@ export default function WholesaleApplications() {
                     className="wholesale-approve-btn"
                     disabled={
                       actionLoadingId ===
-                      selectedApplication.id
+                        selectedApplication
+                          .id ||
+                      isBulkSending
                     }
                     onClick={() =>
                       void handleApprove(
@@ -1341,7 +2073,11 @@ export default function WholesaleApplications() {
                   >
                     <FiCheck />
 
-                    Approve Request
+                    {actionLoadingId ===
+                    selectedApplication
+                      .id
+                      ? "Approving..."
+                      : "Approve Request"}
                   </button>
 
                   <button
@@ -1349,7 +2085,9 @@ export default function WholesaleApplications() {
                     className="wholesale-reject-btn"
                     disabled={
                       actionLoadingId ===
-                      selectedApplication.id
+                        selectedApplication
+                          .id ||
+                      isBulkSending
                     }
                     onClick={() =>
                       void handleReject(
@@ -1368,7 +2106,9 @@ export default function WholesaleApplications() {
                   className="wholesale-remove-btn"
                   disabled={
                     actionLoadingId ===
-                    selectedApplication.id
+                      selectedApplication
+                        .id ||
+                    isBulkSending
                   }
                   onClick={() =>
                     void handleRemove(
@@ -1379,7 +2119,8 @@ export default function WholesaleApplications() {
                   <FiTrash2 />
 
                   {actionLoadingId ===
-                  selectedApplication.id
+                  selectedApplication
+                    .id
                     ? "Removing..."
                     : "Remove User"}
                 </button>
